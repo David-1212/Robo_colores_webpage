@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROBO·COLORES · Duelo de Memoria</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Escena 3D -->
+  <div id="scene"></div>
+
+  <!-- HUD superior -->
+  <header id="hud">
+    <div class="score-box p1"><span class="num" id="score1">0</span></div>
+    <div id="brand">ROBO·COLORES</div>
+    <div class="score-box p2"><span class="num" id="score2">0</span></div>
+  </header>
+
+  <!-- Avisos -->
+  <div id="roundinfo" class="hidden"></div>
+  <div id="banner" class="hidden"></div>
+
+  <!-- Secuencia de colores -->
+  <div id="stage" class="hidden">
+    <div id="swatch"></div>
+    <div id="swatch-name"></div>
+    <div id="swatch-keys"></div>
+  </div>
+
+  <!-- Cuenta regresiva -->
+  <div id="count" class="hidden"></div>
+
+  <!-- Pips y controles -->
+  <div id="pips1" class="pips left off"></div>
+  <div id="pips2" class="pips right off"></div>
+  <div id="controls1" class="controls left off"></div>
+  <div id="controls2" class="controls right off"></div>
+
+  <!-- Menú principal -->
+  <div id="overlay-menu" class="overlay">
+    <div class="card">
+      <h1>ROBO·COLORES</h1>
+      <p class="sub">Duelo de memoria · Colores secundarios</p>
+
+      <div class="story">
+        <p>En la fábrica de colores de <b>Pixelópolis</b>, el malvado <b>Dr. Gris</b> disparó su rayo decolorante y dejó apagados a los cinco robots de la fábrica.</p>
+        <p>La máquina arcoíris lanza secuencias mágicas de colores secundarios: quien las repita de memoria <b>primero</b>, recuperará los colores de su robot.</p>
+      </div>
+
+      <div class="rules">
+        <div><b>1.</b> Los 5 robots van uno después de otro: <b>VOLT</b>, <b>NOVA</b>, <b>TURBO</b>, <b>PIXEL</b> y <b>LUNA</b>. Los triunfos de cada robot se acumulan.</div>
+        <div><b>2.</b> Observa la secuencia de 4 a 7 colores.</div>
+        <div><b>3.</b> Jugador 1: teclas <kbd>1</kbd>–<kbd>7</kbd> · Jugador 2: teclas <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><kbd>F</kbd><kbd>G</kbd><kbd>H</kbd><kbd>J</kbd> (o toca los botones).</div>
+        <div><b>4.</b> Un color equivocado = derrota inmediata.</div>
+      </div>
+
+      <div class="diff" id="diff">
+        <button data-len="4">4 · Fácil</button>
+        <button data-len="5" class="sel">5 · Normal</button>
+        <button data-len="6">6 · Difícil</button>
+        <button data-len="7">7 · Experto</button>
+      </div>
+
+      <button id="btn-play">JUGAR</button>
+    </div>
+  </div>
+
+  <!-- Resultados -->
+  <div id="overlay-result" class="overlay hidden">
+    <div class="card">
+      <h2 id="win-title"></h2>
+      <p id="win-reason"></p>
+      <div id="win-score"></div>
+      <div class="btnrow">
+        <button id="btn-next" class="hidden">SIGUIENTE ROBOT</button>
+        <button id="btn-menu">MENÚ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

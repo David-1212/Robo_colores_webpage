@@ -1,0 +1,586 @@
+/* ============================================================
+   ROBO·COLORES · Hoja de estilos
+   Secciones:
+   1. Variables y base
+   2. HUD (marcador)
+   3. Avisos de ronda y banner
+   4. Escenario de secuencia (swatch / minis)
+   5. Cuenta regresiva
+   6. Controles de jugadores
+   7. Pips de progreso
+   8. Overlays (menú / resultados)
+   9. Animaciones
+   10. Responsive
+   ============================================================ */
+
+/* ---------- 1. Variables y base ---------- */
+
+:root {
+  --p1: #00e5ff;
+  --p2: #ff2d78;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+  background: radial-gradient(1200px 700px at 50% -10%, #1b2350 0%, #0b0e1c 60%);
+  overflow: hidden;
+  color: #eef2ff;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#scene,
+#scene canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ---------- 2. HUD (marcador) ---------- */
+
+#hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 22px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+#brand {
+  font-weight: 800;
+  letter-spacing: .35em;
+  font-size: clamp(13px, 2vw, 20px);
+  background: linear-gradient(90deg, var(--p1), #aeea00, var(--p2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.score-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(10, 14, 30, .55);
+  border: 1px solid rgba(255, 255, 255, .12);
+  padding: 6px 14px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+
+.score-box .num {
+  font-size: clamp(18px, 2.4vw, 26px);
+  font-weight: 800;
+}
+
+.score-box.p1 {
+  border-color: rgba(0, 229, 255, .5);
+}
+
+.score-box.p2 {
+  border-color: rgba(255, 45, 120, .5);
+}
+
+/* ---------- 3. Avisos de ronda y banner ---------- */
+
+#roundinfo {
+  position: fixed;
+  top: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  font-size: 12px;
+  letter-spacing: .18em;
+  font-weight: 800;
+  color: #aebfff;
+  background: rgba(10, 14, 30, .55);
+  border: 1px solid rgba(140, 160, 255, .3);
+  padding: 4px 14px;
+  border-radius: 999px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+#banner {
+  position: fixed;
+  top: 98px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  font-size: clamp(19px, 3.4vw, 34px);
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-shadow: 0 0 24px rgba(120, 160, 255, .85);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ---------- 4. Escenario de secuencia ---------- */
+
+#stage {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -58%);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  pointer-events: none;
+}
+
+#swatch {
+  width: clamp(110px, 16vh, 170px);
+  aspect-ratio: 1;
+  border-radius: 28%;
+  border: 6px solid rgba(255, 255, 255, .85);
+}
+
+#swatch.pop {
+  animation: pop .5s cubic-bezier(.2, 1.6, .4, 1);
+}
+
+#swatch-name {
+  font-size: clamp(22px, 3vw, 34px);
+  font-weight: 800;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, .65);
+}
+
+#swatch-keys {
+  font-size: clamp(13px, 1.6vw, 17px);
+  opacity: .95;
+  background: rgba(8, 10, 24, .6);
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .15);
+}
+
+#stage.row {
+  flex-direction: row;
+  gap: 12px;
+}
+
+#stage.row #swatch,
+#stage.row #swatch-name,
+#stage.row #swatch-keys {
+  display: none;
+}
+
+.mini {
+  width: clamp(34px, 5vh, 54px);
+  aspect-ratio: 1;
+  border-radius: 12px;
+  border: 3px solid rgba(255, 255, 255, .8);
+  animation: pop .4s cubic-bezier(.2, 1.6, .4, 1);
+}
+
+/* ---------- 5. Cuenta regresiva ---------- */
+
+#count {
+  position: fixed;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 7;
+  font-size: clamp(70px, 14vw, 150px);
+  font-weight: 800;
+  text-shadow: 0 0 40px var(--p1), 0 0 80px var(--p2);
+  pointer-events: none;
+}
+
+#count.zoom {
+  animation: zoom .6s ease;
+}
+
+/* ---------- 6. Controles de jugadores ---------- */
+
+.controls {
+  position: fixed;
+  bottom: 18px;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: opacity .3s;
+}
+
+.controls.left {
+  left: 18px;
+  align-items: flex-start;
+}
+
+.controls.right {
+  right: 18px;
+  align-items: flex-end;
+}
+
+.ctag {
+  font-size: 11px;
+  letter-spacing: .14em;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(8, 12, 26, .7);
+  border: 1px solid rgba(0, 229, 255, .45);
+  color: var(--p1);
+  white-space: nowrap;
+}
+
+.ctag.p2 {
+  border-color: rgba(255, 45, 120, .5);
+  color: var(--p2);
+}
+
+.crow {
+  display: flex;
+  gap: 8px;
+}
+
+.color-btn {
+  width: clamp(48px, 6.4vw, 76px);
+  aspect-ratio: .86;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  background: rgba(14, 18, 38, .85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform .12s, filter .12s;
+  backdrop-filter: blur(4px);
+  touch-action: manipulation;
+  padding: 6px 0;
+}
+
+.color-btn .chip {
+  width: 56%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 16px var(--c);
+}
+
+.color-btn .lab {
+  font-weight: 800;
+  font-size: clamp(14px, 1.8vw, 19px);
+  color: #dfe7ff;
+}
+
+.color-btn:hover {
+  transform: translateY(-3px);
+}
+
+.color-btn.pressed {
+  transform: scale(.88);
+  filter: brightness(1.7);
+}
+
+.color-btn.wrong {
+  animation: shake .35s;
+  filter: saturate(0) brightness(1.3);
+}
+
+.color-btn.hint {
+  box-shadow: 0 0 0 3px #fff, 0 0 22px var(--c);
+}
+
+.off {
+  opacity: .25;
+  pointer-events: none;
+  filter: grayscale(.7);
+}
+
+/* ---------- 7. Pips de progreso ---------- */
+
+.pips {
+  position: fixed;
+  bottom: 138px;
+  z-index: 8;
+  display: flex;
+  gap: 7px;
+}
+
+.pips.left {
+  left: 22px;
+}
+
+.pips.right {
+  right: 22px;
+}
+
+.pips span {
+  width: clamp(16px, 2vw, 22px);
+  height: clamp(16px, 2vw, 22px);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .08);
+  border: 2px solid rgba(255, 255, 255, .25);
+}
+
+.pips span.current {
+  border-color: #fff;
+  animation: pulse 1s infinite;
+}
+
+/* ---------- 8. Overlays (menú / resultados) ---------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 7, 16, .72);
+  backdrop-filter: blur(8px);
+}
+
+.card {
+  max-width: min(700px, 94vw);
+  max-height: 92vh;
+  overflow: auto;
+  background: linear-gradient(160deg, rgba(23, 30, 60, .96), rgba(12, 15, 32, .96));
+  border: 1px solid rgba(120, 150, 255, .35);
+  border-radius: 24px;
+  padding: clamp(20px, 4vw, 40px);
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .6);
+}
+
+.card h1 {
+  font-size: clamp(34px, 6vw, 58px);
+  letter-spacing: .08em;
+  background: linear-gradient(90deg, var(--p1), #aeea00, var(--p2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.sub {
+  opacity: .8;
+  margin: 4px 0 16px;
+  letter-spacing: .2em;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.story {
+  text-align: left;
+  background: rgba(0, 229, 255, .06);
+  border: 1px dashed rgba(0, 229, 255, .35);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.story p + p {
+  margin-top: 8px;
+}
+
+.story b {
+  color: var(--p1);
+}
+
+.rules {
+  text-align: left;
+  display: grid;
+  gap: 6px;
+  font-size: 14.5px;
+  margin-bottom: 16px;
+  line-height: 1.55;
+}
+
+.rules kbd {
+  background: #1c2444;
+  border: 1px solid #3a4a8a;
+  border-bottom-width: 3px;
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-family: inherit;
+  font-weight: 700;
+  margin: 0 1px;
+}
+
+.diff {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.diff button {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  background: rgba(255, 255, 255, .05);
+  color: #cdd8ff;
+  cursor: pointer;
+  transition: .15s;
+}
+
+.diff button.sel {
+  background: linear-gradient(90deg, var(--p1), var(--p2));
+  color: #081018;
+  border-color: transparent;
+  transform: scale(1.06);
+}
+
+.btnrow {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+#btn-play,
+#btn-next,
+#btn-menu {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: .12em;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform .15s;
+}
+
+#btn-play {
+  font-size: clamp(20px, 3vw, 26px);
+  padding: 14px 58px;
+  background: linear-gradient(90deg, var(--p1), #7c4dff, var(--p2));
+  color: #071018;
+  box-shadow: 0 10px 40px rgba(0, 229, 255, .35);
+}
+
+#btn-play:hover {
+  transform: scale(1.05);
+}
+
+#btn-next {
+  font-size: 17px;
+  padding: 12px 30px;
+  background: linear-gradient(90deg, var(--p1), var(--p2));
+  color: #071018;
+}
+
+#btn-menu {
+  font-size: 15px;
+  padding: 12px 26px;
+  background: rgba(255, 255, 255, .08);
+  color: #dfe7ff;
+  border: 1px solid rgba(255, 255, 255, .25) !important;
+}
+
+#btn-next:hover,
+#btn-menu:hover {
+  transform: scale(1.05);
+}
+
+#win-title {
+  font-size: clamp(32px, 6vw, 54px);
+  margin-bottom: 6px;
+}
+
+#win-title.w1 {
+  color: var(--p1);
+  text-shadow: 0 0 30px rgba(0, 229, 255, .6);
+}
+
+#win-title.w2 {
+  color: var(--p2);
+  text-shadow: 0 0 30px rgba(255, 45, 120, .6);
+}
+
+#win-reason {
+  opacity: .9;
+  margin-bottom: 10px;
+  font-size: clamp(15px, 2vw, 19px);
+}
+
+#win-score {
+  font-size: clamp(28px, 5vw, 42px);
+  font-weight: 800;
+  margin-bottom: 20px;
+  letter-spacing: .2em;
+}
+
+/* ---------- 9. Animaciones ---------- */
+
+@keyframes pop {
+  0% { transform: scale(.3); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes zoom {
+  0% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, .5); }
+  50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0); }
+}
+
+/* ---------- 10. Responsive ---------- */
+
+@media (max-width: 760px) {
+  .controls.left { left: 8px; }
+  .controls.right { right: 8px; }
+
+  .crow {
+    gap: 5px;
+  }
+
+  .color-btn {
+    width: 11.5vw;
+  }
+
+  .pips {
+    bottom: 122px;
+  }
+
+  #roundinfo {
+    top: 48px;
+    font-size: 10px;
+  }
+
+  #banner {
+    top: 76px;
+    font-size: 17px;
+  }
+}
