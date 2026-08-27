@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Papirolas - Secuenciador 3D de 9 Cubos</title>
+    <meta name="description" content="Un juego inmersivo en 3D para emparejar secuencias construido con Three.js y audio sintetizado. ¡Empareja la secuencia antes de que se agote el tiempo!">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #8a2be2;
+            --accent-red: #ff3b30;
+            --accent-orange: #ff9500;
+            --accent-yellow: #ffcc00;
+            --accent-green: #4cd964;
+            --accent-cyan: #5ac8fa;
+            --accent-blue: #007aff;
+            --accent-indigo: #5856d6;
+            --accent-purple: #af52de;
+            --accent-pink: #ff2d55;
+            --gray-cube: #4a4a4a;
+            --bg-gradient: radial-gradient(circle at center, #1b1035 0%, #080315 100%);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: rgba(0, 0, 0, 0.5);
+            --text-glow: 0 0 10px rgba(138, 43, 226, 0.8), 0 0 20px rgba(138, 43, 226, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: #ffffff;
+            touch-action: none;
+        }
+
+        /* Ambient background star dust effect */
+        #stars-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Main Game Canvas (Three.js) */
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* CSS UI Layer Overlay */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        /* Make interactive items clickable */
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 var(--glass-shadow);
+        }
+
+        /* HUD top bar */
+        header {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 15px 20px;
+            text-align: center;
+        }
+
+        .hud-item {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .hud-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #8c88a5;
+            margin-bottom: 4px;
+        }
+
+        .hud-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        }
+
+        .hud-value.glow-green {
+            color: var(--accent-green);
+            text-shadow: 0 0 10px rgba(76, 217, 100, 0.6);
+        }
+
+        /* Timer bar wrapper */
+        .timer-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 10px auto 0 auto;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .timer-bar {
+            width: 100%;
+            height: 100%;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 8px var(--accent-cyan);
+            transition: width 0.1s linear, background-color 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        .timer-low {
+            background: var(--accent-red);
+            box-shadow: 0 0 12px var(--accent-red);
+        }
+
+        /* Main Menu / Screen overlay cards */
+        .screen-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% - 40px);
+            max-width: 450px;
+            padding: 40px 30px;
+            text-align: center;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .screen-overlay.hidden {
+            opacity: 0;
+            transform: translate(-50%, -45%);
+            pointer-events: none;
+        }
+
+        .game-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 3rem;
+            letter-spacing: 6px;
+            color: #ffffff;
+            margin-bottom: 10px;
+            text-shadow: var(--text-glow);
+            background: linear-gradient(135deg, #ffffff 30%, #b886fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .game-subtitle {
+            font-size: 0.95rem;
+            color: #9d9aa7;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            color: #ffffff;
+            background: linear-gradient(135deg, #8a2be2 0%, #4b0082 100%);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(138, 43, 226, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.4);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Info box */
+        .info-box {
+            font-size: 0.8rem;
+            color: #7b7891;
+            margin-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 20px;
+            width: 100%;
+        }
+
+        .info-box p {
+            margin-bottom: 5px;
+        }
+
+        /* Game State messages (e.g. "Match Sequence", "Success!") */
+        .status-message {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 5;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .status-message.visible {
+            opacity: 1;
+            top: 18%; /* slightly higher to fit the 3x3 grid nicely */
+        }
+
+        .status-play {
+            color: var(--accent-yellow);
+            text-shadow: 0 0 15px rgba(255, 204, 51, 0.6);
+        }
+
+        .status-input {
+            color: var(--accent-cyan);
+            text-shadow: 0 0 15px rgba(90, 200, 250, 0.6);
+        }
+
+        .status-success {
+            color: var(--accent-green);
+            text-shadow: 0 0 15px rgba(76, 217, 100, 0.6);
+            font-size: 2.2rem;
+            animation: pulse-grow 0.5s ease alternate infinite;
+        }
+
+        /* Audio and Instructions controls (Bottom Panel) */
+        footer {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+        }
+
+        .control-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .control-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Red Overlay Flash for Failure */
+        #flash-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+            pointer-events: none;
+            background: rgba(255, 59, 48, 0.4);
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        #flash-overlay.flash-active {
+            opacity: 1;
+        }
+
+        #flash-overlay.success-flash-active {
+            background: rgba(76, 217, 100, 0.2);
+            opacity: 1;
+        }
+
+        /* Instructions Modal */
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(8, 3, 21, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            width: 90%;
+            max-width: 450px;
+            padding: 35px;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #8c88a5;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: #ffffff;
+        }
+
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--accent-cyan);
+        }
+
+        .instruction-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #d1cfe2;
+        }
+
+        .step-num {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            background: var(--primary);
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 0.8rem;
+            box-shadow: 0 0 8px var(--primary);
+        }
+
+        /* Animations */
+        @keyframes pulse-grow {
+            from {
+                transform: translateX(-50%) scale(1);
+            }
+
+            to {
+                transform: translateX(-50%) scale(1.08);
+            }
+        }
+
+        /* Screen size configurations */
+        @media (max-width: 480px) {
+            .game-title {
+                font-size: 2.2rem;
+            }
+
+            .hud-value {
+                font-size: 1.2rem;
+            }
+
+            .screen-overlay {
+                padding: 30px 20px;
+            }
+
+            .status-message {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Starfield Backdrop Canvas -->
+    <canvas id="stars-canvas"></canvas>
+
+    <!-- 3D Scene Canvas -->
+    <div id="game-canvas"></div>
+
+    <!-- Red/Green flash wrapper -->
+    <div id="flash-overlay"></div>
+
+    <!-- UI Overlay Layer -->
+    <div id="ui-layer">
+        <!-- TOP HUD -->
+        <header class="glass-panel interactive">
+            <div class="hud-item">
+                <div class="hud-label" id="hud-level-lbl">Nivel</div>
+                <div id="level-display" class="hud-value">1</div>
+            </div>
+            <div class="hud-item">
+                <div class="hud-label" id="hud-score-lbl">Puntaje</div>
+                <div id="score-display" class="hud-value">0</div>
+            </div>
+            <div class="hud-item">
+                <div class="hud-label" id="hud-highscore-lbl">Récord</div>
+                <div id="highscore-display" class="hud-value glow-green">0</div>
+            </div>
+        </header>
+
+        <!-- Dynamic Timer Bar -->
+        <div class="timer-container interactive">
+            <div id="timer-bar" class="timer-bar"></div>
+        </div>
+
+        <!-- Status Message Indicator (Play / Guess / Correct) -->
+        <div id="status-msg" class="status-message">Repite la secuencia</div>
+
+        <!-- BOTTOM CONTROLS -->
+        <footer class="interactive">
+            <button id="info-btn" class="control-btn" title="Cómo Jugar">
+                <!-- Info Icon -->
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                </svg>
+            </button>
+            <button id="mute-btn" class="control-btn" title="Alternar Sonido">
+                <!-- Speaker Icon -->
+                <svg id="mute-icon" viewBox="0 0 24 24">
+                    <path
+                        d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                </svg>
+            </button>
+        </footer>
+    </div>
+
+    <!-- SCREENS -->
+    <!-- Start Screen Overlay -->
+    <div id="start-screen" class="screen-overlay glass-panel interactive">
+        <h1 class="game-title" id="start-title">SECUENCIADOR 3D</h1>
+        <p class="game-subtitle" id="start-subtitle" style="max-width: 460px; text-align: left;">
+            <b>REGLAS</b><br><br>
+            • Observa 9 cubos iluminarse en una secuencia con tonos musicales.<br>
+            • Cuando terminen, todos se vuelven grises: es tu turno.<br>
+            • Repite la secuencia tocando los cubos en el orden exacto.<br>
+            • La secuencia crece en uno en cada nivel.<br>
+            • Tienes <b>10 segundos</b> para recrearla; si fallas o se acaba el tiempo, fin del juego.
+        </p>
+        <button id="start-btn" class="btn">JUGAR</button>
+        <div class="info-box">
+            <p id="start-info">Creado con Three.js y Sintetizador de Web Audio</p>
+        </div>
+    </div>
+
+    <!-- Game Over Screen Overlay -->
+    <div id="game-over-screen" class="screen-overlay glass-panel interactive hidden">
+        <h1 class="game-title" id="game-over-title"
+            style="background: linear-gradient(135deg, #ff3b30 30%, #ff5e55 100%); -webkit-background-clip: text;">JUEGO TERMINADO</h1>
+        <p class="game-subtitle" id="game-over-reason">¡Te equivocaste en la secuencia!</p>
+        <div style="display: flex; gap: 40px; margin-bottom: 30px;">
+            <div style="text-align: center;">
+                <div class="hud-label" id="go-level-lbl">Nivel Final</div>
+                <div id="final-level" class="hud-value" style="font-size: 2rem;">1</div>
+            </div>
+            <div style="text-align: center;">
+                <div class="hud-label" id="go-score-lbl">Puntaje Final</div>
+                <div id="final-score" class="hud-value" style="font-size: 2rem; color: var(--accent-yellow);">0</div>
+            </div>
+        </div>
+        <button id="restart-btn" class="btn">JUGAR DE NUEVO</button>
+        <button id="gameover-menu-btn" class="btn" style="margin-top: 15px; background: linear-gradient(135deg, #555 0%, #222 100%); box-shadow: none;">VOLVER AL MENÚ</button>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div id="instructions-modal" class="modal">
+        <div class="modal-content glass-panel">
+            <button class="modal-close" id="modal-close-btn">&times;</button>
+            <h2 class="modal-title" id="modal-title">CÓMO JUGAR</h2>
+
+            <div class="instruction-step">
+                <span class="step-num">1</span>
+                <div id="step-1-text">Los cubos se iluminarán en una secuencia aleatoria acompañados de tonos musicales únicos.</div>
+            </div>
+
+            <div class="instruction-step">
+                <span class="step-num">2</span>
+                <div id="step-2-text">Una vez que termine la secuencia, todos los cubos se volverán grises, indicando tu turno.</div>
+            </div>
+
+            <div class="instruction-step">
+                <span class="step-num">3</span>
+                <div id="step-3-text">Haz clic en los cubos en el orden exacto mostrado. La secuencia crece en uno cada nivel.</div>
+            </div>
+
+            <div class="instruction-step">
+                <span class="step-num">4</span>
+                <div id="step-4-text">¡Tienes un límite estricto de 10 segundos para recrear la secuencia en tu turno!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Game Script -->
+    <script>
+        // --- TEXTOS DEL JUEGO (HARDCODED PARA FÁCIL EDICIÓN MANUAL) ---
+        const GAME_TEXTS = {
+            // Documento y metadatos
+            docTitle: "Papirolas - Secuenciador 3D de 9 Cubos",
+            
+            // HUD Superior
+            hudLevel: "Nivel",
+            hudScore: "Puntaje",
+            hudHighScore: "Récord",
+            
+            // Pantalla de Inicio
+            startTitle: "PAPIROLAS",
+            startSubtitle: "Un espectacular desafío 3D en cuadrícula de 3x3. ¡Escucha los tonos musicales, observa los cubos de colores brillantes y repite el patrón antes de que se agote el tiempo!",
+            startBtn: "INICIAR JUEGO",
+            startFooter: "Creado con Three.js y Sintetizador de Web Audio",
+            
+            // Pantalla de Juego Terminado
+            gameOverTitle: "JUEGO TERMINADO",
+            gameOverReasonMissed: "¡Te equivocaste en la secuencia!",
+            gameOverReasonTimeout: "¡Se acabó el tiempo!",
+            gameOverFinalLevel: "Nivel Final",
+            gameOverFinalScore: "Puntaje Final",
+            gameOverRestartBtn: "JUGAR DE NUEVO",
+            
+            // Modal de Instrucciones
+            instructionsTitle: "CÓMO JUGAR",
+            instructionStep1: "Los cubos se iluminarán en una secuencia aleatoria acompañados de tonos musicales únicos.",
+            instructionStep2: "Una vez que termine la secuencia, todos los cubos se volverán grises, indicando tu turno.",
+            instructionStep3: "Haz clic en los cubos en el orden exacto mostrado. La secuencia crece en uno cada nivel.",
+            instructionStep4: "¡Tienes un límite estricto de 10 segundos para recrear la secuencia en tu turno!",
+            
+            // Mensajes de Estado en Pantalla
+            statusWatch: "Escucha y Observa",
+            statusYourTurn: "¡Tu Turno!",
+            statusPerfect: "¡Perfecto!",
+            statusReady: "Repite la secuencia",
+            
+            // Tooltips / Ayudas
+            tooltipHowToPlay: "Cómo Jugar",
+            tooltipToggleSound: "Alternar Sonido"
+        };
+
+        // Función para aplicar los textos a los elementos de la interfaz
+        function applyGameTexts() {
+            document.title = GAME_TEXTS.docTitle;
+            
+            // HUD
+            document.getElementById('hud-level-lbl').textContent = GAME_TEXTS.hudLevel;
+            document.getElementById('hud-score-lbl').textContent = GAME_TEXTS.hudScore;
+            document.getElementById('hud-highscore-lbl').textContent = GAME_TEXTS.hudHighScore;
+            
+            // Pantalla de inicio
+            document.getElementById('start-title').textContent = GAME_TEXTS.startTitle;
+            document.getElementById('start-subtitle').textContent = GAME_TEXTS.startSubtitle;
+            document.getElementById('start-btn').textContent = GAME_TEXTS.startBtn;
+            document.getElementById('start-info').textContent = GAME_TEXTS.startFooter;
+            
+            // Pantalla de juego terminado
+            document.getElementById('game-over-title').textContent = GAME_TEXTS.gameOverTitle;
+            document.getElementById('go-level-lbl').textContent = GAME_TEXTS.gameOverFinalLevel;
+            document.getElementById('go-score-lbl').textContent = GAME_TEXTS.gameOverFinalScore;
+            document.getElementById('restart-btn').textContent = GAME_TEXTS.gameOverRestartBtn;
+            
+            // Modal de Instrucciones
+            document.getElementById('modal-title').textContent = GAME_TEXTS.instructionsTitle;
+            document.getElementById('step-1-text').textContent = GAME_TEXTS.instructionStep1;
+            document.getElementById('step-2-text').textContent = GAME_TEXTS.instructionStep2;
+            document.getElementById('step-3-text').textContent = GAME_TEXTS.instructionStep3;
+            document.getElementById('step-4-text').textContent = GAME_TEXTS.instructionStep4;
+            
+            // Botones de ayuda y volumen
+            document.getElementById('info-btn').setAttribute('title', GAME_TEXTS.tooltipHowToPlay);
+            document.getElementById('mute-btn').setAttribute('title', GAME_TEXTS.tooltipToggleSound);
+            
+            // Estado inicial
+            document.getElementById('status-msg').textContent = GAME_TEXTS.statusReady;
+        }
+
+        // Ejecutar la aplicación de textos inmediatamente
+        applyGameTexts();
+
+
+        // --- STARFIELD BACKGROUND ---
+        const starCanvas = document.getElementById('stars-canvas');
+        const starCtx = starCanvas.getContext('2d');
+        let stars = [];
+
+        function resizeStarsCanvas() {
+            starCanvas.width = window.innerWidth;
+            starCanvas.height = window.innerHeight;
+            initStars();
+        }
+
+        function initStars() {
+            stars = [];
+            const count = Math.floor((starCanvas.width * starCanvas.height) / 8000);
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * starCanvas.width,
+                    y: Math.random() * starCanvas.height,
+                    radius: Math.random() * 1.5,
+                    alpha: Math.random(),
+                    speed: 0.02 + Math.random() * 0.05
+                });
+            }
+        }
+
+        function animateStars() {
+            starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+            starCtx.fillStyle = '#ffffff';
+            stars.forEach(star => {
+                starCtx.beginPath();
+                starCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                starCtx.globalAlpha = star.alpha;
+                starCtx.fill();
+
+                // Twinkle effect
+                star.alpha += star.speed;
+                if (star.alpha > 1 || star.alpha < 0.2) {
+                    star.speed = -star.speed;
+                }
+            });
+            starCtx.globalAlpha = 1;
+            requestAnimationFrame(animateStars);
+        }
+
+        window.addEventListener('resize', resizeStarsCanvas);
+        resizeStarsCanvas();
+        animateStars();
+
+
+        // --- AUDIO SYNTHESIZER ---
+        class GameAudio {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+
+                // Define 9 distinct musical frequencies (C Major scale: C4 to D5)
+                this.cubeFreqs = [
+                    261.63, // C4
+                    293.66, // D4
+                    329.63, // E4
+                    349.23, // F4
+                    392.00, // G4
+                    440.00, // A4
+                    493.88, // B4
+                    523.25, // C5
+                    587.33  // D5
+                ];
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playTone(cubeIndex, duration = 0.4) {
+                if (this.muted) return;
+                this.init();
+
+                const time = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                // Kid-friendly game vibe: triangle waves sound soft, clean, and retro
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(this.cubeFreqs[cubeIndex], time);
+
+                // ADSR envelope
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(0.4, time + 0.05); // Attack
+                gain.gain.exponentialRampToValueAtTime(0.001, time + duration); // Decay/Release
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(time);
+                osc.stop(time + duration);
+            }
+
+            playLevelUp() {
+                if (this.muted) return;
+                this.init();
+                const time = this.ctx.currentTime;
+
+                // Beautiful ascending chime arpeggio
+                const freqs = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                freqs.forEach((freq, index) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, time + index * 0.08);
+
+                    gain.gain.setValueAtTime(0, time + index * 0.08);
+                    gain.gain.linearRampToValueAtTime(0.2, time + index * 0.08 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, time + index * 0.08 + 0.25);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(time + index * 0.08);
+                    osc.stop(time + index * 0.08 + 0.3);
+                });
+            }
+
+            playBuzzer() {
+                if (this.muted) return;
+                this.init();
+                const time = this.ctx.currentTime;
+
+                const osc1 = this.ctx.createOscillator();
+                const osc2 = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc1.type = 'sawtooth';
+                osc2.type = 'sawtooth';
+
+                // Declining sweep buzzer
+                osc1.frequency.setValueAtTime(150, time);
+                osc1.frequency.linearRampToValueAtTime(80, time + 0.6);
+
+                osc2.frequency.setValueAtTime(153, time);
+                osc2.frequency.linearRampToValueAtTime(81, time + 0.6);
+
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(0.3, time + 0.05);
+                gain.gain.linearRampToValueAtTime(0.3, time + 0.4);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.6);
+
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc1.start(time);
+                osc2.start(time);
+
+                osc1.stop(time + 0.6);
+                osc2.stop(time + 0.6);
+            }
+
+            toggleMute() {
+                this.muted = !this.muted;
+                const muteIcon = document.getElementById('mute-icon');
+                if (this.muted) {
+                    muteIcon.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.21.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+                } else {
+                    muteIcon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+                }
+            }
+        }
+
+        const audio = new GameAudio();
+
+
+        // --- THREE.JS GAME ENVIRONMENT ---
+        const container = document.getElementById('game-canvas');
+        let scene, camera, renderer, raycaster, mouse;
+        let cubes = [];
+        let lights = [];
+        let currentHoveredCube = null;
+
+        // Kid-like dynamic bright colors: green, yellow, red, blue, orange, pink, cyan, purple, lime
+        const CUBE_COLORS = {
+            active: [
+                0xff3b30, // Red
+                0xff9500, // Orange
+                0xffcc00, // Yellow
+                0x4cd964, // Green
+                0x00c7be, // Mint/Teal
+                0x5ac8fa, // Cyan
+                0x007aff, // Blue
+                0xaf52de, // Purple
+                0xff2d55  // Pink
+            ],
+            inactive: 0x3a3a44 // gray metallic
+        };
+
+        // Positions for a 3x3 grid centered in 3D space
+        const cubePositions = [];
+        const spacing = 1.6; // slightly adjusted to fit camera perfectly
+        for (let r = 0; r < 3; r++) {       // Rows: Top to Bottom
+            for (let c = 0; c < 3; c++) {   // Cols: Left to Right
+                cubePositions.push({
+                    x: (c - 1) * spacing,
+                    y: (1 - r) * spacing,
+                    z: 0
+                });
+            }
+        }
+
+        function init3D() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x080315, 0.07);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 0, 9.5); // Pulled back slightly from 8 to 9.5 to fit all 9 cubes
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            dirLight.position.set(5, 7, 10);
+            scene.add(dirLight);
+
+            // Group container for visual angle tilting
+            const boardGroup = new THREE.Group();
+            boardGroup.rotation.set(0.12, -0.18, 0.02);
+            scene.add(boardGroup);
+
+            // Generate 9 Cubes
+            cubePositions.forEach((pos, index) => {
+                // Glow light helper
+                const pointLight = new THREE.PointLight(CUBE_COLORS.active[index], 0, 4);
+                pointLight.position.set(pos.x, pos.y, pos.z + 0.6);
+                boardGroup.add(pointLight);
+                lights.push(pointLight);
+
+                // Grid Cube Shape (scaled to 1.1 so it spacing looks balanced)
+                const geometry = new THREE.BoxGeometry(1.1, 1.1, 1.1);
+
+                const material = new THREE.MeshStandardMaterial({
+                    color: CUBE_COLORS.inactive,
+                    roughness: 0.15,
+                    metalness: 0.8,
+                    emissive: 0x000000,
+                    emissiveIntensity: 0
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(pos.x, pos.y, pos.z);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+
+                mesh.userData = {
+                    index: index,
+                    basePos: { ...pos },
+                    phase: Math.random() * Math.PI * 2,
+                    activeColor: CUBE_COLORS.active[index],
+                    isGlowing: false,
+                    scaleTarget: 1.0
+                };
+
+                boardGroup.add(mesh);
+                cubes.push(mesh);
+            });
+
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointerdown', onPointerDown);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onPointerMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function onPointerDown(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            checkClickInteraction();
+        }
+
+        // --- CUBE ANIMATIONS ---
+
+        function triggerCubeFlash(index, duration = 400) {
+            const cube = cubes[index];
+            const light = lights[index];
+            if (!cube) return;
+
+            cube.userData.isGlowing = true;
+            cube.userData.scaleTarget = 1.2;
+
+            cube.material.color.setHex(cube.userData.activeColor);
+            cube.material.emissive.setHex(cube.userData.activeColor);
+            cube.material.emissiveIntensity = 2.0;
+            light.intensity = 3.5;
+
+            audio.playTone(index, duration / 1000);
+
+            setTimeout(() => {
+                revertCube(index);
+            }, duration);
+        }
+
+        function revertCube(index) {
+            const cube = cubes[index];
+            const light = lights[index];
+            if (!cube) return;
+
+            cube.userData.isGlowing = false;
+            cube.userData.scaleTarget = 1.0;
+
+            cube.material.color.setHex(CUBE_COLORS.inactive);
+            cube.material.emissive.setHex(0x000000);
+            cube.material.emissiveIntensity = 0;
+            light.intensity = 0;
+        }
+
+        function updateHoverState() {
+            if (gameState !== 'PLAYER_INPUT') {
+                document.body.style.cursor = 'default';
+                return;
+            }
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(cubes);
+
+            if (intersects.length > 0) {
+                const hovered = intersects[0].object;
+                document.body.style.cursor = 'pointer';
+
+                if (currentHoveredCube !== hovered) {
+                    if (currentHoveredCube && !currentHoveredCube.userData.isGlowing) {
+                        currentHoveredCube.material.emissive.setHex(0x000000);
+                    }
+                    currentHoveredCube = hovered;
+                    if (!currentHoveredCube.userData.isGlowing) {
+                        currentHoveredCube.material.emissive.setHex(currentHoveredCube.userData.activeColor);
+                        currentHoveredCube.material.emissiveIntensity = 0.3;
+                    }
+                }
+            } else {
+                document.body.style.cursor = 'default';
+                if (currentHoveredCube) {
+                    if (!currentHoveredCube.userData.isGlowing) {
+                        currentHoveredCube.material.emissive.setHex(0x000000);
+                        currentHoveredCube.material.emissiveIntensity = 0;
+                    }
+                    currentHoveredCube = null;
+                }
+            }
+        }
+
+        function checkClickInteraction() {
+            if (gameState !== 'PLAYER_INPUT') return;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(cubes);
+
+            if (intersects.length > 0) {
+                const clickedCube = intersects[0].object;
+                handleUserClick(clickedCube.userData.index);
+            }
+        }
+
+        function animate3D(time) {
+            requestAnimationFrame(animate3D);
+
+            updateHoverState();
+
+            // Bobbing & scaling
+            cubes.forEach((cube) => {
+                cube.userData.phase += 0.015;
+                const bobOffset = Math.sin(cube.userData.phase) * 0.08;
+                cube.position.y = cube.userData.basePos.y + bobOffset;
+
+                cube.rotation.x += 0.003;
+                cube.rotation.y += 0.004;
+
+                cube.scale.x += (cube.userData.scaleTarget - cube.scale.x) * 0.15;
+                cube.scale.y += (cube.userData.scaleTarget - cube.scale.y) * 0.15;
+                cube.scale.z += (cube.userData.scaleTarget - cube.scale.z) * 0.15;
+            });
+
+            // Camera drift
+            const speed = 0.0005;
+            camera.position.x = Math.sin(time * speed) * 0.5;
+            camera.position.y = Math.cos(time * speed) * 0.5;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+
+        // --- CORE GAME STATE CONTROLLER ---
+        let gameState = 'START_MENU';
+        let level = 1;
+        let score = 0;
+        let highScore = localStorage.getItem('papirolas_highscore') || 0;
+        let sequence = [];
+        let playerSequenceIndex = 0;
+        let inputTimer = null;
+        let timeLeft = 10.0;
+        let totalTurnTime = 10.0;
+        let sequenceSpeed = 700; // ms per step
+
+        // HUD Elements
+        const levelDisplay = document.getElementById('level-display');
+        const scoreDisplay = document.getElementById('score-display');
+        const highscoreDisplay = document.getElementById('highscore-display');
+        const timerBar = document.getElementById('timer-bar');
+        const statusMsg = document.getElementById('status-msg');
+
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const flashOverlay = document.getElementById('flash-overlay');
+        const gameReason = document.getElementById('game-over-reason');
+
+        highscoreDisplay.textContent = highScore;
+
+        // Button events
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+        document.getElementById('gameover-menu-btn').addEventListener('click', () => {
+            window.location.href = 'menu.html';
+        });
+        document.getElementById('mute-btn').addEventListener('click', () => audio.toggleMute());
+
+        // Modal events
+        const infoBtn = document.getElementById('info-btn');
+        const instructionsModal = document.getElementById('instructions-modal');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        infoBtn.addEventListener('click', () => instructionsModal.classList.add('visible'));
+        modalCloseBtn.addEventListener('click', () => instructionsModal.classList.remove('visible'));
+        instructionsModal.addEventListener('click', (e) => {
+            if (e.target === instructionsModal) instructionsModal.classList.remove('visible');
+        });
+
+        init3D();
+        animate3D(0);
+
+        function startGame() {
+            audio.init();
+
+            level = 1;
+            score = 0;
+            sequence = [];
+            levelDisplay.textContent = level;
+            scoreDisplay.textContent = score;
+
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+
+            nextLevel();
+        }
+
+        function nextLevel() {
+            // Speed increases slightly at higher levels
+            sequenceSpeed = Math.max(250, 750 - (level * 30));
+
+            // Random index from 0 to 8
+            sequence.push(Math.floor(Math.random() * 9));
+
+            playerSequenceIndex = 0;
+            gameState = 'PLAY_SEQUENCE';
+
+            statusMsg.textContent = GAME_TEXTS.statusWatch;
+            statusMsg.className = "status-message visible status-play";
+
+            timerBar.style.width = '100%';
+            timerBar.classList.remove('timer-low');
+
+            setTimeout(() => {
+                playSequence(0);
+            }, 800);
+        }
+
+        function playSequence(index) {
+            if (index >= sequence.length) {
+                startPlayerTurn();
+                return;
+            }
+
+            triggerCubeFlash(sequence[index], sequenceSpeed * 0.7);
+
+            setTimeout(() => {
+                playSequence(index + 1);
+            }, sequenceSpeed);
+        }
+
+        function startPlayerTurn() {
+            gameState = 'PLAYER_INPUT';
+            statusMsg.textContent = GAME_TEXTS.statusYourTurn;
+            statusMsg.className = "status-message visible status-input";
+
+            timeLeft = 10.0;
+            totalTurnTime = 10.0;
+            timerBar.style.width = '100%';
+
+            if (inputTimer) clearInterval(inputTimer);
+
+            const intervalMs = 50;
+            inputTimer = setInterval(() => {
+                timeLeft -= (intervalMs / 1000);
+
+                const pct = Math.max(0, (timeLeft / totalTurnTime) * 100);
+                timerBar.style.width = `${pct}%`;
+
+                if (timeLeft <= 3.0) {
+                    timerBar.classList.add('timer-low');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(inputTimer);
+                    endGame(GAME_TEXTS.gameOverReasonTimeout);
+                }
+            }, intervalMs);
+        }
+
+        function handleUserClick(cubeIndex) {
+            triggerCubeFlash(cubeIndex, 250);
+
+            if (cubeIndex === sequence[playerSequenceIndex]) {
+                score += 10;
+                scoreDisplay.textContent = score;
+                playerSequenceIndex++;
+
+                if (playerSequenceIndex >= sequence.length) {
+                    clearInterval(inputTimer);
+                    gameState = 'LEVEL_COMPLETE';
+
+                    statusMsg.textContent = GAME_TEXTS.statusPerfect;
+                    statusMsg.className = "status-message visible status-success";
+
+                    flashOverlay.className = "success-flash-active";
+                    setTimeout(() => {
+                        flashOverlay.className = "";
+                    }, 200);
+
+                    audio.playLevelUp();
+
+                    level++;
+                    levelDisplay.textContent = level;
+
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem('papirolas_highscore', highScore);
+                        highscoreDisplay.textContent = highScore;
+                    }
+
+                    setTimeout(() => {
+                        nextLevel();
+                    }, 1200);
+                }
+            } else {
+                clearInterval(inputTimer);
+                endGame(GAME_TEXTS.gameOverReasonMissed);
+            }
+        }
+
+        function endGame(reason) {
+            gameState = 'GAME_OVER';
+            audio.playBuzzer();
+
+            flashOverlay.className = "flash-active";
+            setTimeout(() => {
+                flashOverlay.className = "";
+            }, 500);
+
+            statusMsg.classList.remove('visible');
+
+            document.getElementById('final-level').textContent = level;
+            document.getElementById('final-score').textContent = score;
+            gameReason.textContent = reason;
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('papirolas_highscore', highScore);
+                highscoreDisplay.textContent = highScore;
+            }
+
+            setTimeout(() => {
+                gameOverScreen.classList.remove('hidden');
+            }, 600);
+        }
+    </script>
+</body>
+</html>

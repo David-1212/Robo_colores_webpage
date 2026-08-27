@@ -7,8 +7,8 @@ const PALETTE = [
   { nombre: 'Violeta',  hex: 0xaa00ff, css: '#aa00ff', nota: 329.63 },
   { nombre: 'Cian',     hex: 0x00e5ff, css: '#00e5ff', nota: 392.00 },
   { nombre: 'Magenta',  hex: 0xf50057, css: '#f50057', nota: 440.00 },
-  { nombre: 'Lima',     hex: 0xaeea00, css: '#aeea00', nota: 523.25 },
-  { nombre: 'Turquesa', hex: 0x1de9b6, css: '#1de9b6', nota: 587.33 }
+  { nombre: 'Amarillo', hex: 0xffd600, css: '#ffd600', nota: 523.25 },
+  { nombre: 'Azul',     hex: 0x2979ff, css: '#2979ff', nota: 587.33 }
 ];
 const KEYS_P1 = ['1','2','3','4','5','6','7'];
 const KEYS_P2 = ['A','S','D','F','G','H','J'];
@@ -20,7 +20,11 @@ const ROSTER = [
   { id: 'pixel', name: 'PIXEL', css: '#aa00ff' },
   { id: 'luna',  name: 'LUNA',  css: '#f50057' }
 ];
-const STEP_MS = 980;
+const ROUND_LENS = [3, 4, 5, 6, 7];
+
+function stepMs() {
+  return { 3: 1700, 4: 1500, 5: 1350, 6: 1150, 7: 1000 }[seq.length] || 1350;
+}
 
 let actx = null;
 function tone(freq, dur = 0.18, type = 'sine', vol = 0.18, delay = 0) {
@@ -538,7 +542,12 @@ const els = {
   winReason: $('#win-reason'),
   winScore: $('#win-score'),
   score: { 1: $('#score1'), 2: $('#score2') },
-  btnNext: $('#btn-next')
+  btnNext: $('#btn-next'),
+  introOverlay: $('#overlay-intro'),
+  introVideo: $('#intro-video'),
+  introTitle: $('#intro-title'),
+  introTap: $('#btn-intro-tap'),
+  btnSkip: $('#btn-skip')
 };
 
 let state = 'menu';
@@ -547,11 +556,55 @@ let pairs = [];
 let pairIdx = 0;
 let seq = [];
 let prog = { 1: 0, 2: 0 };
-let seqLen = 5;
 let timers = [];
 let overAction = null;
 function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
 function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+
+const VIDEO_DIR = 'assets/video/';
+const videoCache = {};
+let introDone = null;
+
+function hasVideo(name) {
+  if (!(name in videoCache)) {
+    videoCache[name] = fetch(VIDEO_DIR + name + '.mp4', { method: 'HEAD' })
+      .then(r => r.ok)
+      .catch(() => false);
+  }
+  return videoCache[name];
+}
+
+function playIntro(name, title, onDone) {
+  hasVideo(name).then(ok => {
+    if (!ok) { onDone(); return; }
+    state = 'video';
+    introDone = onDone;
+    const v = els.introVideo;
+    els.introTitle.textContent = title;
+    els.introTap.classList.add('hidden');
+    v.onended = endIntro;
+    v.onerror = endIntro;
+    v.src = VIDEO_DIR + name + '.mp4';
+    els.introOverlay.classList.remove('hidden');
+    v.play().catch(() => els.introTap.classList.remove('hidden'));
+  });
+}
+
+function endIntro() {
+  if (state !== 'video') return;
+  const cb = introDone;
+  introDone = null;
+  state = 'menu';
+  const v = els.introVideo;
+  try { v.pause(); } catch (e) {}
+  v.onended = null;
+  v.onerror = null;
+  v.removeAttribute('src');
+  try { v.load(); } catch (e) {}
+  els.introOverlay.classList.add('hidden');
+  els.introTap.classList.add('hidden');
+  if (cb) cb();
+}
 
 function genSeq(n) {
   const s = [];
@@ -616,7 +669,7 @@ function hideBanner() { els.banner.classList.add('hidden'); }
 
 function applyMatchUI() {
   const pr = pairs[pairIdx];
-  els.roundinfo.textContent = `ROBOT ${pairIdx + 1}/5 · ${curRobo.name}`;
+  els.roundinfo.textContent = `ROBOT ${pairIdx + 1}/5 · ${curRobo.name} · ${seq.length} COLORES`;
   els.ctag[1].textContent = `${curRobo.name} · JUGADOR 1 · TECLAS 1-7`;
   els.ctag[2].textContent = `${curRobo.name} · JUGADOR 2 · TECLAS A S D F G H J`;
   els.score[1].textContent = pr.w1;
@@ -663,7 +716,7 @@ function safeShowStep(ci) {
     showSwatch(ci);
     [1, 2].forEach(p => {
       if (robots[p]) robots[p].setEyes(PALETTE[ci].hex);
-      flashBtn(p, ci, 'hint', 620);
+      flashBtn(p, ci, 'hint', Math.round(stepMs() * 0.63));
     });
     tone(PALETTE[ci].nota, 0.24, 'sine', 0.22);
   } catch (e) {
@@ -674,10 +727,11 @@ function safeShowStep(ci) {
 function playShow(initialDelay) {
   clearTimers();
   state = 'show';
-  seq.forEach((ci, i) => later(() => safeShowStep(ci), initialDelay + i * STEP_MS));
+  const ms = stepMs();
+  seq.forEach((ci, i) => later(() => safeShowStep(ci), initialDelay + i * ms));
   later(() => {
     try { recap(); } catch (e) { console.error('Error en repaso:', e); recap(); }
-  }, initialDelay + seq.length * STEP_MS);
+  }, initialDelay + seq.length * ms);
 }
 
 function recap() {
@@ -742,9 +796,9 @@ function press(p, idx) {
   }
 }
 
-function prepRound() {
+function prepRound(len) {
   clearTimers();
-  seq = genSeq(seqLen);
+  seq = genSeq(len);
   prog = { 1: 0, 2: 0 };
   els.menu.classList.add('hidden');
   els.result.classList.add('hidden');
@@ -757,13 +811,16 @@ function prepRound() {
 }
 
 function startPair() {
-  prepRound();
+  prepRound(ROUND_LENS[pairIdx % ROUND_LENS.length]);
   buildRobots(ROSTER[pairIdx % ROSTER.length]);
   robots[1].resetAll();
   robots[2].resetAll();
   applyMatchUI();
-  setBanner(`ROBOT ${pairIdx + 1} de 5: ¡a jugar!`);
-  playShow(1100);
+  const robo = curRobo;
+  playIntro(robo.id, `${robo.name} · ASÍ SE JUEGA`, () => {
+    setBanner(`ROBOT ${pairIdx + 1} de 5: ¡a jugar!`);
+    playShow(1100);
+  });
 }
 
 function finish(winner, how, errBy) {
@@ -815,14 +872,6 @@ function goMenu() {
 buildControls();
 buildRobots(ROSTER[0]);
 
-document.querySelectorAll('#diff button').forEach(b => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('#diff button').forEach(x => x.classList.remove('sel'));
-    b.classList.add('sel');
-    seqLen = +b.dataset.len;
-    tone(660, 0.07, 'square', 0.1);
-  });
-});
 $('#btn-play').addEventListener('click', () => {
   tone(660, 0.1, 'square', 0.12);
   startSeqGame();
@@ -831,10 +880,22 @@ els.btnNext.addEventListener('click', () => {
   pairIdx = (pairIdx + 1) % ROSTER.length;
   startPair();
 });
-$('#btn-menu').addEventListener('click', () => goMenu());
+$('#btn-menu').addEventListener('click', () => { location.href = 'menu.html'; });
+els.btnSkip.addEventListener('click', () => endIntro());
+els.introTap.addEventListener('click', () => {
+  els.introTap.classList.add('hidden');
+  els.introVideo.play().catch(() => endIntro());
+});
 
 addEventListener('keydown', e => {
   if (e.repeat) return;
+  if (state === 'video') {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+      endIntro();
+      e.preventDefault();
+    }
+    return;
+  }
   if (e.key === 'Enter') {
     if (state === 'menu') { $('#btn-play').click(); return; }
     if (state === 'over' && !els.result.classList.contains('hidden')) {
@@ -851,6 +912,9 @@ addEventListener('keydown', e => {
   if (i1 >= 0) press(1, i1);
   else if (i2 >= 0) press(2, i2);
 });
+
+state = 'menu';
+els.menu.classList.remove('hidden');
 
 const clock = new THREE.Clock();
 (function loop() {

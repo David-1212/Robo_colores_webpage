@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAPIROLAS · Menú de Juegos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --p1: #00e5ff;
+      --p2: #ff2d78;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+      background: radial-gradient(1200px 700px at 50% -10%, #1b2350 0%, #0b0e1c 60%);
+      color: #eef2ff;
+      overflow: hidden;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* Fondo 3D animado */
+    #bg-anim {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .menu {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 34px;
+      padding: 40px 20px;
+    }
+
+    .brand {
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .brand h1 {
+      font-size: clamp(40px, 7vw, 72px);
+      font-weight: 800;
+      letter-spacing: .1em;
+      background: linear-gradient(90deg, var(--p1), #aeea00, var(--p2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 40px rgba(120, 160, 255, .35);
+    }
+
+    .brand p {
+      margin-top: 6px;
+      letter-spacing: .25em;
+      font-size: 13px;
+      text-transform: uppercase;
+      opacity: .8;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    .game-card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 26px 22px;
+      border-radius: 22px;
+      background: linear-gradient(160deg, rgba(23, 30, 60, .92), rgba(12, 15, 32, .92));
+      border: 1px solid rgba(120, 150, 255, .35);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, .5);
+      backdrop-filter: blur(6px);
+      text-decoration: none;
+      color: inherit;
+      transition: transform .18s, box-shadow .18s, border-color .18s, background .18s;
+      cursor: pointer;
+    }
+
+    .game-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      border-color: rgba(0, 229, 255, .7);
+      box-shadow: 0 26px 70px rgba(0, 229, 255, .22);
+      background: linear-gradient(160deg, rgba(30, 40, 80, .95), rgba(16, 20, 44, .95));
+    }
+
+    .game-icon {
+      width: 76px;
+      height: 76px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .game-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .mini-badge {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .1);
+      border: 1px solid rgba(255, 255, 255, .18);
+      color: #a9b6e8;
+    }
+
+    .game-card:hover .game-icon svg {
+      transform: scale(1.12);
+    }
+
+    .game-icon svg {
+      transition: transform .25s;
+    }
+
+    .game-name {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .game-desc {
+      font-size: 13.5px;
+      line-height: 1.5;
+      opacity: .82;
+    }
+
+    .game-go {
+      margin-top: auto;
+      font-weight: 800;
+      letter-spacing: .1em;
+      font-size: 13px;
+      padding: 9px 16px;
+      border-radius: 999px;
+      text-align: center;
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(255, 255, 255, .2);
+      color: #dfe7ff;
+      transition: .15s;
+    }
+
+    .game-card:hover .game-go {
+      background: linear-gradient(90deg, var(--p1), var(--p2));
+      color: #071018;
+      border-color: transparent;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: .35; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes walk {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(4px); }
+    }
+
+    @keyframes chew {
+      0%, 100% { transform: scaleX(1); }
+      50% { transform: scaleX(.82); }
+    }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    @keyframes antWiggle {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(14deg); }
+    }
+
+    /* Logos institucionales en las esquinas */
+    .corner-logo {
+      position: fixed;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 16px 9px 9px;
+      border-radius: 16px;
+      background: rgba(14, 19, 46, .72);
+      border: 1px solid rgba(120, 150, 255, .25);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+      opacity: .92;
+      transition: transform .2s, opacity .2s, border-color .2s;
+    }
+    .corner-logo:hover {
+      transform: translateY(-3px);
+      opacity: 1;
+      border-color: rgba(0, 229, 255, .6);
+    }
+    .corner-logo img {
+      height: 46px;
+      width: auto;
+      filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .55));
+    }
+    .cl-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+    }
+    .cl-text strong {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: .05em;
+      color: #eef2ff;
+    }
+    .cl-text span {
+      font-size: 9.5px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      opacity: .7;
+    }
+    .corner-logo.tl { top: 18px; left: 18px; }
+    .corner-logo.bl { bottom: 18px; left: 18px; }
+    .corner-logo.br { bottom: 18px; right: 18px; }
+    .corner-logo.tr { top: 18px; right: 18px; }
+
+    @media (max-width: 560px) {
+      .menu {
+        gap: 22px;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .corner-logo { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fondo 3D animado -->
+  <div id="bg-anim"></div>
+
+  <!-- Logos institucionales en las esquinas -->
+  <div class="corner-logo tl">
+    <img src="assets/cucei_shield.png" alt="CUCEI">
+    <div class="cl-text">
+      <strong>CUCEI</strong>
+      <span>Centro Universitario</span>
+    </div>
+  </div>
+
+  <div class="corner-logo bl">
+    <img src="assets/itrans.png" alt="ITRANS">
+    <div class="cl-text">
+      <strong>ITRANS</strong>
+      <span>Investigación y Servicios</span>
+    </div>
+  </div>
+
+  <div class="corner-logo br">
+    <img src="assets/cucei_shield.png" alt="Maestría en Cómputo Aplicado">
+    <div class="cl-text">
+      <strong>CÓMPUTO APLICADO</strong>
+      <span>Maestría · CUCEI</span>
+    </div>
+  </div>
+
+  <div class="menu">
+    <div class="brand">
+      <h1>PAPIROLAS</h1>
+      <p>Elige un juego</p>
+    </div>
+
+    <div class="grid">
+      <a class="game-card" href="robotcolores.html">
+        <div class="game-icon" style="background:linear-gradient(135deg,#002b3a,#01313f)">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <g style="transform-origin:50px 8px;animation:antWiggle 2.4s ease-in-out infinite">
+              <line x1="50" y1="22" x2="50" y2="8" stroke="#9ad7ff" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="50" cy="7" r="3.6" fill="#00e5ff"/>
+            </g>
+            <rect x="28" y="24" width="44" height="34" rx="10" fill="#2b3b5e" stroke="#00e5ff" stroke-width="2.5"/>
+            <circle cx="40" cy="39" r="7" fill="#ffffff"/>
+            <circle cx="60" cy="39" r="7" fill="#ffffff"/>
+            <circle cx="40" cy="39" r="3.4" fill="#00e5ff"/>
+            <circle cx="60" cy="39" r="3.4" fill="#f50057"/>
+            <rect x="46" y="50" width="8" height="5" rx="2.5" fill="#0c1222"/>
+            <rect x="18" y="40" width="8" height="12" rx="3" fill="#00e5ff"/>
+            <rect x="74" y="40" width="8" height="12" rx="3" fill="#00e5ff"/>
+            <rect x="34" y="58" width="32" height="18" rx="6" fill="#3d4f7d" stroke="#00e5ff" stroke-width="2.5"/>
+            <circle cx="34" cy="58" r="3" fill="#00e5ff"/>
+            <circle cx="50" cy="58" r="3" fill="#00e5ff"/>
+            <circle cx="66" cy="58" r="3" fill="#00e5ff"/>
+            <rect x="30" y="76" width="10" height="14" rx="4" fill="#36477a"/>
+            <rect x="60" y="76" width="10" height="14" rx="4" fill="#36477a"/>
+            <rect x="31" y="76" width="3" height="14" fill="#00e5ff"/>
+            <rect x="66" y="76" width="3" height="14" fill="#f50057"/>
+          </svg>
+        </div>
+        <div class="game-name">ROBO·COLORES <span class="mini-badge">2 JUGADORES</span></div>
+        <div class="game-desc">Duelo de memoria para 2 jugadores. Repite la secuencia de colores, pinta los robots y gana.</div>
+        <div class="game-go">JUGAR</div>
+      </a>
+
+      <a class="game-card" href="secuenciador.html">
+        <div class="game-icon" style="background:linear-gradient(135deg,#1a0b33,#1d0d3e)">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <rect x="14" y="14" width="22" height="22" rx="4" fill="#7c4dff" style="animation:blink 2.2s ease-in-out infinite"/>
+            <rect x="39" y="14" width="22" height="22" rx="4" fill="#00e5ff" style="animation:blink 2.2s .35s ease-in-out infinite"/>
+            <rect x="64" y="14" width="22" height="22" rx="4" fill="#aeea00" style="animation:blink 2.2s .7s ease-in-out infinite"/>
+            <rect x="14" y="39" width="22" height="22" rx="4" fill="#f50057" style="animation:blink 2.2s 1.05s ease-in-out infinite"/>
+            <rect x="39" y="39" width="22" height="22" rx="4" fill="#ffd600" style="animation:blink 2.2s 1.4s ease-in-out infinite"/>
+            <rect x="64" y="39" width="22" height="22" rx="4" fill="#2979ff" style="animation:blink 2.2s 1.75s ease-in-out infinite"/>
+            <rect x="14" y="64" width="22" height="22" rx="4" fill="#00c853" style="animation:blink 2.2s .2s ease-in-out infinite"/>
+            <rect x="39" y="64" width="22" height="22" rx="4" fill="#ff6d00" style="animation:blink 2.2s .55s ease-in-out infinite"/>
+            <rect x="64" y="64" width="22" height="22" rx="4" fill="#aa00ff" style="animation:blink 2.2s .9s ease-in-out infinite"/>
+          </svg>
+        </div>
+        <div class="game-name">SECUENCIADOR 3D <span class="mini-badge">INDIVIDUAL</span></div>
+        <div class="game-desc">Observa y repite la secuencia de 9 cubos con tonos musicales antes de que se agote el tiempo.</div>
+        <div class="game-go">JUGAR</div>
+      </a>
+
+      <a class="game-card" href="snake.html">
+        <div class="game-icon" style="background:linear-gradient(135deg,#001a33,#00264d)">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <circle cx="16" cy="70" r="7" fill="#00c853"/>
+            <circle cx="28" cy="60" r="7" fill="#ffd600"/>
+            <circle cx="42" cy="52" r="7" fill="#2979ff"/>
+            <circle cx="58" cy="46" r="7" fill="#f50057"/>
+            <circle cx="74" cy="42" r="7" fill="#aeea00"/>
+            <g style="transform-origin:84px 40px;animation:chew 1.6s ease-in-out infinite">
+              <path d="M74 42 a7 7 0 0 1 14 -6 a7 7 0 0 1 0 12 a7 7 0 0 1 -14 -6z" fill="#009688"/>
+              <circle cx="84" cy="42" r="1.6" fill="#fff"/>
+            </g>
+            <g style="animation:floaty 2s ease-in-out infinite">
+              <circle cx="86" cy="18" r="6" fill="#ff3b30"/>
+              <line x1="86" y1="18" x2="82" y2="22" stroke="#0a5f2a" stroke-width="2" stroke-linecap="round"/>
+              <line x1="85" y1="18" x2="89" y2="12.5" stroke="#0a5f2a" stroke-width="2" stroke-linecap="round"/>
+              <rect x="84.4" y="9.5" width="3.4" height="4" rx="1" fill="#6d8b3a"/>
+            </g>
+          </svg>
+        </div>
+        <div class="game-name">SERPIENTE 3D <span class="mini-badge">INDIVIDUAL</span></div>
+        <div class="game-desc">Serpiente semitridimensional que cambia de color según la mezcla de colores que come.</div>
+        <div class="game-go">JUGAR</div>
+      </a>
+
+      <a class="game-card" href="pacman.html">
+        <div class="game-icon" style="background:linear-gradient(135deg,#332300,#4d3500)">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <g style="animation:blink 1.8s ease-in-out infinite">
+              <path d="M22 78 a7 7 0 0 1 14 0z" fill="#ff0000"/>
+              <circle cx="27" cy="70" r="2" fill="#99c2ff"/>
+              <path d="M14 78 l4 -6" stroke="#ff0000" stroke-width="2" stroke-linecap="round"/>
+              <path d="M30 78 l4 -6" stroke="#ff0000" stroke-width="2" stroke-linecap="round"/>
+            </g>
+            <g style="animation:blink 1.8s .7s ease-in-out infinite">
+              <path d="M58 74 a7 7 0 0 1 14 0z" fill="#ff8c00"/>
+              <circle cx="63" cy="66" r="2" fill="#fff"/>
+              <path d="M50 74 l4 -6" stroke="#ff8c00" stroke-width="2" stroke-linecap="round"/>
+              <path d="M66 74 l4 -6" stroke="#ff8c00" stroke-width="2" stroke-linecap="round"/>
+            </g>
+            <g style="transform-origin:40px 52px;animation:chew 1s steps(2,end) infinite">
+              <path d="M40 28 A20 20 0 1 0 40 76 L40 52 Z" fill="#ffe000"/>
+              <circle cx="46" cy="42" r="2.6" fill="#000"/>
+              <circle cx="46" cy="42" r="1" fill="#fff"/>
+            </g>
+          </svg>
+        </div>
+        <div class="game-name">PACMAN <span class="mini-badge">INDIVIDUAL</span></div>
+        <div class="game-desc">Clásico Pac-Man con mezcla cromática. Come, crece y esquiva a los fantasmas.</div>
+        <div class="game-go">JUGAR</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Three.js fondo animado -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    (function () {
+      const COLORS = [0x00e5ff, 0xaa00ff, 0xf50057, 0x00c853, 0xff6d00, 0xffd600, 0x2979ff];
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.z = 9;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      document.getElementById('bg-anim').appendChild(renderer.domElement);
+
+      const group = new THREE.Group();
+      scene.add(group);
+
+      const shapes = [];
+      const geometries = [
+        new THREE.BoxGeometry(1, 1, 1),
+        new THREE.IcosahedronGeometry(0.55, 0),
+        new THREE.OctahedronGeometry(0.6, 0),
+        new THREE.TorusGeometry(0.45, 0.18, 12, 24),
+        new THREE.ConeGeometry(0.55, 0.9, 6)
+      ];
+      const num = window.innerWidth < 600 ? 16 : 28;
+      for (let i = 0; i < num; i++) {
+        const mat = new THREE.MeshStandardMaterial({
+          color: COLORS[i % COLORS.length],
+          roughness: 0.35,
+          metalness: 0.2,
+          emissive: COLORS[i % COLORS.length],
+          emissiveIntensity: 0.25
+        });
+        const mesh = new THREE.Mesh(geometries[i % geometries.length], mat);
+        const size = 0.28 + Math.random() * 0.5;
+        mesh.scale.setScalar(size);
+        const radius = 3.2 + Math.random() * 4.5;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 0.15 + Math.random() * 0.35;
+        const spin = (Math.random() - 0.5) * 1.5;
+        const bobSpeed = 0.5 + Math.random() * 1.2;
+        mesh.position.y = (Math.random() - 0.5) * 6;
+        group.add(mesh);
+        shapes.push({ mesh, radius, angle, speed, spin, bobSpeed, bobPhase: Math.random() * Math.PI * 2 });
+      }
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+      const l1 = new THREE.DirectionalLight(0xffffff, 0.6);
+      l1.position.set(4, 6, 6);
+      scene.add(l1);
+      const l2 = new THREE.PointLight(0x00e5ff, 0.9, 30);
+      l2.position.set(-5, -2, 4);
+      scene.add(l2);
+      const l3 = new THREE.PointLight(0xff2d78, 0.9, 30);
+      l3.position.set(5, 3, 5);
+      scene.add(l3);
+
+      function onResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+      window.addEventListener('resize', onResize);
+
+      const clock = new THREE.Clock();
+      (function animate() {
+        requestAnimationFrame(animate);
+        const t = clock.getElapsedTime();
+        shapes.forEach(s => {
+          s.angle += s.speed * 0.005;
+          s.mesh.position.x = Math.cos(s.angle) * s.radius;
+          s.mesh.position.z = Math.sin(s.angle) * s.radius;
+          s.mesh.position.y += Math.sin(t * s.bobSpeed + s.bobPhase) * 0.002;
+          s.mesh.rotation.x += s.spin * 0.01;
+          s.mesh.rotation.y += s.spin * 0.013;
+        });
+        group.rotation.y = t * 0.03;
+        renderer.render(scene, camera);
+      })();
+    })();
+  </script>
+</body>
+</html>

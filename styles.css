@@ -425,34 +425,6 @@ body {
   margin: 0 1px;
 }
 
-.diff {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-.diff button {
-  font-family: inherit;
-  font-weight: 700;
-  font-size: 14px;
-  padding: 9px 16px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, .2);
-  background: rgba(255, 255, 255, .05);
-  color: #cdd8ff;
-  cursor: pointer;
-  transition: .15s;
-}
-
-.diff button.sel {
-  background: linear-gradient(90deg, var(--p1), var(--p2));
-  color: #081018;
-  border-color: transparent;
-  transform: scale(1.06);
-}
-
 .btnrow {
   display: flex;
   gap: 10px;
@@ -530,6 +502,79 @@ body {
   font-weight: 800;
   margin-bottom: 20px;
   letter-spacing: .2em;
+}
+
+/* ---------- 8b. Video de introducción ---------- */
+
+#overlay-intro {
+  z-index: 30;
+}
+
+.intro-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: min(900px, 94vw);
+}
+
+#intro-title {
+  font-weight: 800;
+  letter-spacing: .15em;
+  font-size: clamp(16px, 2.6vw, 26px);
+  color: #dfe7ff;
+  text-shadow: 0 0 18px rgba(120, 160, 255, .7);
+}
+
+.video-wrap {
+  position: relative;
+  width: min(880px, 92vw);
+  aspect-ratio: 16 / 9;
+  background: #05070f;
+  border: 1px solid rgba(120, 150, 255, .4);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
+}
+
+#intro-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: #05070f;
+}
+
+#btn-intro-tap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: clamp(18px, 3vw, 28px);
+  letter-spacing: .12em;
+  color: #071018;
+  background: linear-gradient(90deg, var(--p1), var(--p2));
+  border: none;
+  cursor: pointer;
+}
+
+#btn-skip {
+  align-self: flex-end;
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: .14em;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .3);
+  background: rgba(255, 255, 255, .08);
+  color: #dfe7ff;
+  cursor: pointer;
+  transition: transform .15s;
+}
+
+#btn-skip:hover {
+  transform: scale(1.05);
 }
 
 /* ---------- 9. Animaciones ---------- */
