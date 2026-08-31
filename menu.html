@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PAPIROLAS · Menú de Juegos</title>
+  <link rel="icon" type="image/png" href="assets/cucei_shield.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
   <style>
@@ -26,7 +27,8 @@
       font-family: 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
       background: radial-gradient(1200px 700px at 50% -10%, #1b2350 0%, #0b0e1c 60%);
       color: #eef2ff;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
       -webkit-user-select: none;
       user-select: none;
     }
@@ -248,14 +250,102 @@
     .corner-logo.br { bottom: 18px; right: 18px; }
     .corner-logo.tr { top: 18px; right: 18px; }
 
+    /* Botón de música */
+    .music-btn {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      z-index: 3;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--p1), var(--p2));
+      box-shadow: 0 10px 28px rgba(0, 229, 255, .45);
+      transition: transform .18s, box-shadow .18s;
+    }
+    .music-btn:hover { transform: translateX(-50%) scale(1.1); }
+    .music-btn:active { transform: translateX(-50%) scale(.95); }
+    @keyframes musicPulse {
+      0%, 100% { box-shadow: 0 10px 28px rgba(0, 229, 255, .45); }
+      50% { box-shadow: 0 10px 34px rgba(0, 229, 255, .8); }
+    }
+    .music-btn.is-on { animation: musicPulse 2.2s ease-in-out infinite; }
+    .music-btn .spk-mute { display: none; }
+    .music-btn.is-off .spk-wave { display: none; }
+    .music-btn.is-off .spk-mute { display: block; }
+
+    /* Botón de pantalla completa */
+    .fs-btn {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 3;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #4caf50, #00b0ff);
+      box-shadow: 0 10px 28px rgba(0, 229, 255, .45);
+      transition: transform .18s, box-shadow .18s;
+    }
+    .fs-btn:hover { transform: scale(1.1); }
+    .fs-btn:active { transform: scale(.95); }
+    .fs-btn svg path { stroke: #071018; }
+
     @media (max-width: 560px) {
       .menu {
-        gap: 22px;
+        gap: 18px;
+        padding: 24px 14px 96px;
+        justify-content: flex-start;
       }
+      .brand h1 { font-size: clamp(28px, 8vw, 42px); }
+      .brand p { font-size: 11px; letter-spacing: .18em; }
       .grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        max-width: 640px;
       }
+      .game-card {
+        gap: 7px;
+        padding: 10px 8px;
+        border-radius: 14px;
+        align-items: center;
+      }
+      .game-card:hover { transform: translateY(-3px) scale(1.01); }
+      .game-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+      }
+      .game-name {
+        font-size: 12px;
+        line-height: 1.1;
+        gap: 4px;
+        text-align: center;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .mini-badge { font-size: 8px; padding: 2px 5px; }
+      .game-desc { font-size: 10px; line-height: 1.3; text-align: center; }
+      .game-go { font-size: 10px; padding: 6px 8px; width: 100%; }
       .corner-logo { display: none; }
+    }
+
+    @media (max-width: 340px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .game-card { padding: 12px 10px; }
+      .game-icon { width: 44px; height: 44px; }
+      .game-name { font-size: 13px; }
     }
   </style>
 </head>
@@ -282,12 +372,34 @@
   </div>
 
   <div class="corner-logo br">
-    <img src="assets/cucei_shield.png" alt="Maestría en Cómputo Aplicado">
+    <img src="assets/maestria.png" alt="Maestría en Cómputo Aplicado">
     <div class="cl-text">
       <strong>CÓMPUTO APLICADO</strong>
       <span>Maestría · CUCEI</span>
     </div>
   </div>
+
+  <!-- Botón de música del menú -->
+  <button id="music-btn" class="music-btn is-on" aria-label="Alternar música" title="Música">
+    <svg viewBox="0 0 40 40" width="26" height="26" aria-hidden="true">
+      <rect x="7" y="15" width="7" height="10" rx="1.5" fill="#071018"/>
+      <path d="M14 15 L21 9 L21 31 L14 25 Z" fill="#071018"/>
+      <g class="spk-wave">
+        <path d="M24 15 a5 5 0 0 1 0 10" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M28 12 a9 9 0 0 1 0 16" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round"/>
+      </g>
+      <g class="spk-mute">
+        <path d="M23 15 L34 26 M34 15 L23 26" stroke="#071018" stroke-width="2.6" stroke-linecap="round"/>
+      </g>
+    </svg>
+  </button>
+
+  <!-- Botón de pantalla completa -->
+  <button id="fs-btn" class="fs-btn" aria-label="Pantalla completa" title="Pantalla completa">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9 V4 H9 M20 9 V4 H15 M4 15 V20 H9 M20 15 V20 H15"/>
+    </svg>
+  </button>
 
   <div class="menu">
     <div class="brand">
@@ -396,6 +508,35 @@
         <div class="game-desc">Clásico Pac-Man con mezcla cromática. Come, crece y esquiva a los fantasmas.</div>
         <div class="game-go">JUGAR</div>
       </a>
+
+      <a class="game-card" href="robolane.html">
+        <div class="game-icon" style="background:linear-gradient(135deg,#0a1b3a,#0d1020)">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <rect x="10" y="72" width="80" height="8" rx="4" fill="#1a2a4a"/>
+            <rect x="14" y="74" width="12" height="4" rx="2" fill="#00e5ff" style="animation:blink 2s ease-in-out infinite"/>
+            <rect x="34" y="74" width="12" height="4" rx="2" fill="#f50057" style="animation:blink 2s .4s ease-in-out infinite"/>
+            <rect x="54" y="74" width="12" height="4" rx="2" fill="#aeea00" style="animation:blink 2s .8s ease-in-out infinite"/>
+            <rect x="74" y="74" width="12" height="4" rx="2" fill="#aa00ff" style="animation:blink 2s 1.2s ease-in-out infinite"/>
+            <g>
+              <rect x="34" y="30" width="32" height="26" rx="8" fill="#2b3b5e" stroke="#00e5ff" stroke-width="2.5"/>
+              <circle cx="43" cy="43" r="6.5" fill="#ffffff"/>
+              <circle cx="57" cy="43" r="6.5" fill="#ffffff"/>
+              <circle cx="43" cy="43" r="3" fill="#00e5ff"/>
+              <circle cx="57" cy="43" r="3" fill="#f50057"/>
+              <rect x="44" y="51" width="12" height="4" rx="2" fill="#0c1222"/>
+              <rect x="22" y="40" width="9" height="12" rx="3" fill="#aa00ff"/>
+              <rect x="69" y="40" width="9" height="12" rx="3" fill="#aa00ff"/>
+              <g style="animation:walk .7s ease-in-out infinite">
+                <rect x="38" y="56" width="8" height="16" rx="3" fill="#36477a"/>
+              </g>
+              <rect x="54" y="56" width="8" height="16" rx="3" fill="#36477a"/>
+            </g>
+          </svg>
+        </div>
+        <div class="game-name">ROBO·LANE <span class="mini-badge">INDIVIDUAL</span></div>
+        <div class="game-desc">Guía al robot Volt por la autopista, elige las puertas de colores correctas y píntalo de objetivo.</div>
+        <div class="game-go">JUGAR</div>
+      </a>
     </div>
   </div>
 
@@ -480,6 +621,185 @@
         group.rotation.y = t * 0.03;
         renderer.render(scene, camera);
       })();
+    })();
+  </script>
+
+  <!-- Música de fondo (melodía original libre de derechos) -->
+  <script>
+    (function () {
+      const btn = document.getElementById('music-btn');
+      if (!btn) return;
+
+      const actx = new (window.AudioContext || window.webkitAudioContext)();
+      const master = actx.createGain();
+      master.gain.value = 0.9;
+      master.connect(actx.destination);
+
+      const N = {
+        C2: 65.41, F2: 87.31, G2: 98.00, A2: 110.00,
+        C3: 130.81, D3: 146.83, E3: 164.81, F3: 174.61, G3: 196.00, A3: 220.00, B3: 246.94,
+        C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.00, A4: 440.00, B4: 493.88,
+        C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880.00, B5: 987.77,
+        C6: 1046.50, D6: 1174.66, E6: 1318.51, F6: 1396.91, G6: 1567.98
+      };
+
+      function lead(f, t, dur) {
+        const o = actx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+        const g = actx.createGain();
+        o.connect(g); g.connect(master);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.14, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.start(t); o.stop(t + dur + 0.06);
+        const o2 = actx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 2;
+        const g2 = actx.createGain();
+        o2.connect(g2); g2.connect(master);
+        g2.gain.setValueAtTime(0.0001, t);
+        g2.gain.exponentialRampToValueAtTime(0.05, t + 0.015);
+        g2.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.6);
+        o2.start(t); o2.stop(t + dur);
+      }
+
+      function pluck(f, t, dur, vol) {
+        const o = actx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+        const g = actx.createGain();
+        o.connect(g); g.connect(master);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.start(t); o.stop(t + dur + 0.05);
+      }
+
+      function bass(f, t, dur) {
+        const o = actx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+        const g = actx.createGain();
+        o.connect(g); g.connect(master);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.09, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.start(t); o.stop(t + dur + 0.05);
+      }
+
+      function pad(freqs, t, dur, vol) {
+        freqs.forEach(f => {
+          const o = actx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+          const g = actx.createGain();
+          o.connect(g); g.connect(master);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(vol, t + 0.18);
+          g.gain.setValueAtTime(vol, t + dur - 0.25);
+          g.gain.linearRampToValueAtTime(0.0001, t + dur);
+          o.start(t); o.stop(t + dur + 0.05);
+        });
+      }
+
+      const spb = 60 / 120 / 2; // corchea a 120 bpm
+      const CHORDS = {
+        C:  { bass: 'C2', arp: ['C4', 'E4', 'G4', 'C5', 'E5', 'G5'], pad: ['C3', 'G3', 'E4'] },
+        Am: { bass: 'A2', arp: ['A3', 'C4', 'E4', 'A4', 'C5', 'E5'], pad: ['A3', 'E4', 'C4'] },
+        F:  { bass: 'F2', arp: ['F3', 'A3', 'C4', 'F4', 'A4', 'C5'], pad: ['F3', 'C4', 'A3'] },
+        G:  { bass: 'G2', arp: ['G3', 'B3', 'D4', 'G4', 'B4', 'D5'], pad: ['G3', 'D4', 'B3'] }
+      };
+      const chordSeq = ['C', 'Am', 'F', 'G', 'C', 'F', 'Am', 'G'];
+      const arpPat = [0, 1, 2, 3, 2, 1, 0, 1];
+      const melody = [
+        // m1 C
+        'E5', 'G5', 'C6', 'G5', 'A5', 'G5', 'E5', 'C5',
+        // m2 Am
+        'A5', 'C6', 'E6', 'C6', 'D6', 'C6', 'A5', 0,
+        // m3 F
+        'F5', 'A5', 'C6', 'E6', 'F6', 'E6', 'C6', 'A5',
+        // m4 G
+        'G5', 'B5', 'D6', 'B5', 'G6', 'D6', 'B5', 'G5',
+        // m5 C
+        'E5', 'G5', 'C6', 'G5', 'A5', 'G5', 'E5', 'C5',
+        // m6 F
+        'A5', 'F5', 'A5', 'C6', 'D6', 'C6', 'A5', 0,
+        // m7 Am
+        'A5', 'C6', 'E6', 'C6', 'A5', 'G5', 'E5', 'C5',
+        // m8 G -> C
+        'B4', 'D5', 'G5', 'D5', 'C6', 'B5', 'G5', 'C6'
+      ];
+
+      function playArp(ch, t0) {
+        const tones = ch.arp.map(x => N[x]);
+        for (let i = 0; i < 8; i++) pluck(tones[arpPat[i]], t0 + i * spb, spb * 1.7, 0.09);
+      }
+      function playBass(ch, t0) {
+        bass(N[ch.bass], t0, spb * 3.4);
+        bass(N[ch.bass], t0 + 4 * spb, spb * 3.4);
+      }
+
+      let step = 0, nextT = 0, started = false, muted = false;
+
+      function schedule() {
+        const horizon = actx.currentTime + 0.4;
+        if (nextT < actx.currentTime) nextT = actx.currentTime + 0.06;
+        while (nextT < horizon) {
+          const sIdx = step % 64;
+          const mIdx = Math.floor(sIdx / 8);
+          const sub = sIdx % 8;
+          const ch = CHORDS[chordSeq[mIdx]];
+          if (sub === 0) {
+            pad(ch.pad.map(x => N[x]), nextT, 8 * spb, 0.05);
+            playArp(ch, nextT);
+            playBass(ch, nextT);
+          }
+          const note = melody[sIdx];
+          if (note) lead(N[note], nextT, spb * 1.8);
+          nextT += spb;
+          step++;
+        }
+      }
+
+      let timer = null;
+      function startLoop() {
+        schedule();
+        timer = setInterval(schedule, 120);
+      }
+      function stopLoop() {
+        if (timer) clearInterval(timer);
+        timer = null;
+      }
+
+      function turn(on) {
+        muted = !on;
+        master.gain.setTargetAtTime(on ? 0.9 : 0, actx.currentTime, 0.05);
+        btn.classList.toggle('is-on', on);
+        btn.classList.toggle('is-off', !on);
+      }
+
+      btn.addEventListener('click', () => {
+        if (actx.state === 'suspended') actx.resume();
+        if (!started) { startLoop(); started = true; }
+        turn(muted);
+      });
+
+      function boot() {
+        if (actx.state === 'suspended') actx.resume();
+        if (!started) { startLoop(); started = true; }
+      }
+
+      // Los navegadores bloquean el audio hasta la 1ª interacción
+      const once = () => { boot(); document.removeEventListener('pointerdown', once); };
+      document.addEventListener('pointerdown', once);
+      window.addEventListener('keydown', once);
+    })();
+  </script>
+
+  <!-- Pantalla completa -->
+  <script>
+    (function () {
+      const btn = document.getElementById('fs-btn');
+      if (!btn) return;
+      function toggle() {
+        if (!document.fullscreenElement) {
+          (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen || function () {}).call(document.documentElement);
+        } else {
+          (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
+        }
+      }
+      btn.addEventListener('click', toggle);
     })();
   </script>
 </body>

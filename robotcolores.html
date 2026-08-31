@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ROBO·COLORES · Duelo de Memoria</title>
+  <link rel="icon" type="image/png" href="assets/cucei_shield.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
@@ -90,5 +91,26 @@
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="game.js"></script>
+
+  <style>
+    #fs-btn{position:fixed;bottom:16px;right:16px;z-index:9999;width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#4caf50,#00b0ff);box-shadow:0 8px 24px rgba(0,0,0,.5);transition:transform .15s}
+    #fs-btn:hover{transform:scale(1.1)}
+  </style>
+  <button id="fs-btn" aria-label="Pantalla completa" title="Pantalla completa">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9 V4 H9 M20 9 V4 H15 M4 15 V20 H9 M20 15 V20 H15"/></svg>
+  </button>
+  <script>
+    (function () {
+      var b = document.getElementById('fs-btn');
+      if (!b) return;
+      b.addEventListener('click', function () {
+        if (!document.fullscreenElement) {
+          (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen || function () {}).call(document.documentElement);
+        } else {
+          (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

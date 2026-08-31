@@ -1,0 +1,2186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ROBO·LANE - Selector de Colores</title>
+  <link rel="icon" type="image/png" href="assets/cucei_shield.png">
+  <meta name="description" content="Guía a tu robot por la autopista de neón y elige las puertas de colores correctas para pintarlo según el objetivo. Evita los obstáculos saltando.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #0b0e1c;
+      --panel-bg: rgba(15, 20, 42, 0.7);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text-color: #ffffff;
+      --accent-cyan: #00e5ff;
+      --accent-magenta: #f50057;
+      --accent-purple: #aa00ff;
+      --accent-green: #00c853;
+      --gray-inactive: #3a3f58;
+      --glass-glow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    #webgl-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    /* UI Overlay */
+    .ui-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .interactive {
+      pointer-events: auto;
+    }
+
+    /* HUD Superior */
+    header {
+      width: 100%;
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, rgba(11, 14, 28, 0.9) 0%, rgba(11, 14, 28, 0) 100%);
+    }
+
+    .brand {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: 24px;
+      letter-spacing: 2px;
+      background: linear-gradient(45deg, var(--accent-cyan), var(--accent-magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+    }
+
+    .blueprints-container {
+      display: flex;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 6px 15px;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--glass-glow);
+    }
+
+    .bp-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 11px;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 1.5px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .bp-card.active-bp {
+      color: var(--accent-cyan);
+    }
+
+    .bp-card h3 {
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .hud-stats {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 12px 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--glass-glow);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 160px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .stat-label {
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-value {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .stat-value.highlight {
+      color: var(--accent-cyan);
+    }
+
+    /* Banner Central de Indicaciones */
+    .game-prompt {
+      position: absolute;
+      top: 155px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(11, 14, 28, 0.85);
+      border: 1.5px solid var(--accent-cyan);
+      border-radius: 30px;
+      padding: 8px 24px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.25);
+      text-align: center;
+      white-space: nowrap;
+      transition: opacity 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .prompt-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--accent-cyan);
+      box-shadow: 0 0 8px var(--accent-cyan);
+      animation: pulse-dot 1s infinite alternate;
+    }
+
+    @keyframes pulse-dot {
+      0% { opacity: 0.4; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* Feedback visual flotante al chocar con puerta u obstáculo */
+    .feedback-toast {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 40px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .feedback-toast.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+
+    .feedback-toast.correct {
+      color: var(--accent-green);
+      text-shadow: 0 0 20px rgba(0, 200, 83, 0.7);
+    }
+
+    .feedback-toast.wrong {
+      color: var(--accent-magenta);
+      text-shadow: 0 0 20px rgba(245, 0, 87, 0.7);
+    }
+
+    /* Barra de Progreso de Puerta / Cuenta atrás de 4s */
+    .timer-container {
+      width: calc(100% - 50px);
+      margin: 0 auto 20px auto;
+      max-width: 600px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      height: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .timer-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, var(--accent-cyan), var(--accent-purple));
+      box-shadow: 0 0 10px var(--accent-cyan);
+      transition: width 0.1s linear;
+    }
+
+    /* Controles Táctiles Laterales + Saltar */
+    .touch-controls {
+      position: absolute;
+      bottom: 40px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 40px;
+      z-index: 15;
+    }
+
+    .ctrl-btn {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      background: rgba(15, 20, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: var(--glass-glow);
+      transition: all 0.2s ease;
+    }
+
+    .ctrl-btn:active {
+      transform: scale(0.9);
+      background: rgba(0, 229, 255, 0.2);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+    }
+
+    /* Overlays de Pantalla */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(7, 9, 20, 0.85);
+      backdrop-filter: blur(15px);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .card {
+      background: rgba(15, 20, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .card h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(45deg, var(--accent-cyan), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 5px;
+    }
+
+    .card h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .card p {
+      font-size: 15px;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .story-box {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 12px;
+      padding: 18px;
+      font-size: 13.5px;
+      text-align: left;
+      border-left: 3px solid var(--accent-cyan);
+      margin: 10px 0;
+    }
+
+    .story-box p {
+      margin-bottom: 8px;
+    }
+    .story-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    .rules-list {
+      text-align: left;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .rules-list li b {
+      color: #fff;
+    }
+
+    .btn-action {
+      background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 14px 40px;
+      font-size: 16px;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.35);
+      margin-top: 15px;
+      outline: none;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
+    }
+
+    .btn-action:active {
+      transform: translateY(1px);
+    }
+
+    /* Pantalla Cuenta atrás */
+    #countdown-overlay {
+      background: rgba(7, 9, 20, 0.9);
+    }
+
+    .countdown-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 120px;
+      font-weight: 900;
+      color: var(--accent-cyan);
+      text-shadow: 0 0 50px rgba(0, 229, 255, 0.6);
+      transform: scale(0.5);
+      opacity: 0;
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.5);
+    }
+
+    .countdown-num.zoom {
+      transform: scale(1.2);
+      opacity: 1;
+    }
+
+    /* Pantalla Resultados */
+    .results-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 100%;
+      margin: 15px 0;
+    }
+
+    .result-stat {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 15px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border: 1px solid var(--panel-border);
+    }
+
+    .res-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .res-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .res-val {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .res-val.victory {
+      color: var(--accent-green);
+      text-shadow: 0 0 10px rgba(0, 200, 83, 0.3);
+    }
+
+    .res-val.failure {
+      color: var(--accent-magenta);
+      text-shadow: 0 0 10px rgba(245, 0, 87, 0.3);
+    }
+
+    /* Tabla de detalle de respuestas */
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      text-align: left;
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .detail-table th, .detail-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .detail-table th {
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 1px;
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .color-pill {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    .badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge.ok {
+      background: rgba(0, 200, 83, 0.2);
+      color: var(--accent-green);
+      border: 1px solid var(--accent-green);
+    }
+
+    .badge.fail {
+      background: rgba(245, 0, 87, 0.2);
+      color: var(--accent-magenta);
+      border: 1px solid var(--accent-magenta);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      header {
+        padding: 10px 15px;
+      }
+      .brand {
+        font-size: 18px;
+      }
+      .blueprints-container {
+        padding: 6px 12px;
+      }
+      .hud-stats {
+        padding: 8px 12px;
+        min-width: 110px;
+      }
+      .stat-row {
+        font-size: 11px;
+      }
+      .game-prompt {
+        top: 115px;
+        font-size: 11px;
+        padding: 6px 16px;
+      }
+      .card {
+        padding: 25px 20px;
+      }
+      .card h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Escena 3D -->
+  <div id="webgl-container"></div>
+
+  <!-- Capa UI -->
+  <div class="ui-layer">
+    
+    <!-- HUD Superior -->
+    <header class="interactive">
+      <div class="brand">ROBO·LANE</div>
+      
+      <div class="blueprints-container" style="padding: 6px 15px;">
+        <div class="bp-card active-bp">
+          <h3 style="margin-bottom: 2px;">Objetivo</h3>
+          <div id="mini-3d-container" style="width: 120px; height: 140px; position: relative;"></div>
+        </div>
+      </div>
+      
+      <div class="hud-stats">
+        <div class="stat-row">
+          <span class="stat-label">Aciertos</span>
+          <span class="stat-value" id="stats-score">0 / 7</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Precisión</span>
+          <span class="stat-value highlight" id="stats-pct">0%</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Fase</span>
+          <span class="stat-value" id="stats-step">1 / 7</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Indicador de color actual -->
+    <div class="game-prompt" id="game-prompt">
+      <div class="prompt-dot"></div>
+      <span id="prompt-text">Espera a que comience la carrera...</span>
+    </div>
+
+    <!-- Toast de Feedback -->
+    <div class="feedback-toast" id="feedback-toast">¡CORRECTO!</div>
+
+    <!-- Controles Táctiles (Bottom) -->
+    <div class="touch-controls interactive">
+      <div class="ctrl-btn" id="btn-left">◀</div>
+      <div class="ctrl-btn" id="btn-jump" style="width: 120px; border-radius: 20px; font-size: 14px; font-weight: bold; font-family: 'Orbitron';">SALTAR</div>
+      <div class="ctrl-btn" id="btn-right">▶</div>
+    </div>
+
+    <!-- Temporizador de Puerta -->
+    <div class="timer-container">
+      <div class="timer-bar" id="timer-bar"></div>
+    </div>
+  </div>
+
+  <!-- Pantalla de Inicio -->
+  <div class="overlay" id="menu-overlay">
+    <div class="card">
+      <h1>ROBO·LANE</h1>
+      <p style="color: var(--accent-cyan); font-family: 'Orbitron'; font-weight: 700; letter-spacing: 1px;">EL TREADMILL DE COLORES</p>
+      
+      <div class="story-box">
+        <p>Tu robot <b>Volt</b> ha sido decolorado y está atrapado en una cinta sin fin en el hiperespacio.</p>
+        <p>Elige las puertas correctas según el objetivo 3D. <b>¡Cuidado con los bloques de advertencia naranja!</b> Debes saltarlos o esquivarlos. ¡Un choque destruye al robot!</p>
+      </div>
+
+      <ul class="rules-list">
+        <li><b>1.</b> Hay <b>7 partes</b> para pintar: Torso, Cabeza, Brazos, Panel, Piernas, Cuello y Antena.</li>
+        <li><b>2.</b> Las puertas de colores y los obstáculos aparecen alternadamente.</li>
+        <li><b>3.</b> Controles: <b>Flechas Izquierda / Derecha</b> o <b>A / D</b> para esquivar.</li>
+        <li><b>4.</b> <b>Barra Espaciadora</b> o botón central <b>SALTAR</b> para saltar obstáculos.</li>
+        <li><b>5.</b> Logra un <b>80% de aciertos</b> (mínimo 6/7) sin chocar para ganar.</li>
+      </ul>
+
+      <button class="btn-action" id="btn-start">INICIAR CARRERA</button>
+      <button class="btn-action" id="btn-exit-hub" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); box-shadow: none;">VOLVER AL MENÚ</button>
+    </div>
+  </div>
+
+  <!-- Pantalla Cuenta Atrás -->
+  <div class="overlay hidden" id="countdown-overlay">
+    <div class="countdown-num" id="countdown-num">3</div>
+  </div>
+
+  <!-- Pantalla Resultados -->
+  <div class="overlay hidden" id="result-overlay">
+    <div class="card" style="max-width: 550px;">
+      <h2 id="result-title">¡VICTORIA!</h2>
+      <p id="result-message">¡Excelente! Has restaurado los colores de Volt con precisión.</p>
+      
+      <div class="results-grid">
+        <div class="result-stat">
+          <div class="res-col">
+            <span class="res-label">Aciertos</span>
+            <span class="res-val" id="res-score">6 / 7</span>
+          </div>
+          <div class="res-col">
+            <span class="res-label">Precisión Final</span>
+            <span class="res-val victory" id="res-pct">85.7%</span>
+          </div>
+          <div class="res-col">
+            <span class="res-label">Resultado</span>
+            <span class="res-val" id="res-verdict" style="font-family: 'Orbitron'; font-weight: 900;">APROBADO</span>
+          </div>
+        </div>
+
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>Parte</th>
+              <th>Objetivo</th>
+              <th>Elegido</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="detail-tbody">
+            <!-- Rellenado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; gap: 15px; width: 100%;">
+        <button class="btn-action" id="btn-replay" style="flex: 1; margin-top: 0;">REPETIR</button>
+        <button class="btn-action" id="btn-main-menu" style="flex: 1; margin-top: 0; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); box-shadow: none;">MENÚ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Three.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+    (() => {
+      'use strict';
+
+      // -------------------------------------------------------------
+      // CONFIGURACIONES Y PALETA DE COLORES
+      // -------------------------------------------------------------
+      const PALETTE = [
+        { nombre: 'Rojo',     hex: 0xff0000, css: '#ff0000', freq: 261.63 }, // C4
+        { nombre: 'Verde',    hex: 0x00ff00, css: '#00ff00', freq: 293.66 }, // D4
+        { nombre: 'Azul',     hex: 0x0000ff, css: '#0000ff', freq: 329.63 }, // E4
+        { nombre: 'Amarillo', hex: 0xffff00, css: '#ffff00', freq: 392.00 }, // G4
+        { nombre: 'Violeta',  hex: 0xaa00ff, css: '#aa00ff', freq: 440.00 }, // A4
+        { nombre: 'Negro',    hex: 0x000000, css: '#000000', freq: 523.25 }, // C5
+        { nombre: 'Blanco',   hex: 0xffffff, css: '#ffffff', freq: 587.33 }  // D5
+      ];
+
+      // Partes del robot a colorear en orden
+      const PARTS_SEQUENCE = [
+        { id: 'torso',  name: 'Torso',    index: 0, svgId: 'torso' },
+        { id: 'cab',    name: 'Cabeza',   index: 1, svgId: 'cab' },
+        { id: 'brz',    name: 'Brazos',   index: 2, svgId: 'brz' },
+        { id: 'panza',  name: 'Panel',    index: 3, svgId: 'panza' },
+        { id: 'patas',  name: 'Piernas',  index: 4, svgId: 'patas' },
+        { id: 'nuc',    name: 'Cuello',   index: 5, svgId: 'nuc' },
+        { id: 'ant',    name: 'Antena',   index: 6, svgId: 'ant' }
+      ];
+
+      const GRAY_COLOR = 0x5a6275;
+      const DARK_METAL = 0x222638;
+
+      // -------------------------------------------------------------
+      // SINTETIZADOR DE AUDIO (Web Audio API)
+      // -------------------------------------------------------------
+      let audioCtx = null;
+      function getAudioContext() {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      function playSound(freq, duration = 0.2, type = 'sine', volume = 0.15, delay = 0) {
+        try {
+          const ctx = getAudioContext();
+          const t = ctx.currentTime + delay;
+          const osc = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+          
+          osc.type = type;
+          osc.frequency.value = freq;
+          
+          gainNode.gain.setValueAtTime(0.001, t);
+          gainNode.gain.exponentialRampToValueAtTime(volume, t + 0.03);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, t + duration);
+          
+          osc.connect(gainNode);
+          gainNode.connect(ctx.destination);
+          
+          osc.start(t);
+          osc.stop(t + duration + 0.05);
+        } catch (e) {
+          console.warn('Audio play failed:', e);
+        }
+      }
+
+      function sndSuccess() {
+        playSound(523.25, 0.12, 'triangle', 0.2); // C5
+        setTimeout(() => playSound(659.25, 0.25, 'triangle', 0.2), 100); // E5
+      }
+
+      function sndFail() {
+        playSound(220.00, 0.15, 'sawtooth', 0.25); // A3
+        setTimeout(() => playSound(146.83, 0.35, 'sawtooth', 0.25), 120); // D3
+      }
+
+      function sndTick() {
+        playSound(880, 0.05, 'square', 0.1);
+      }
+
+      // Sincronizar un thud bajo con las pisadas o aterrizaje del robot
+      function sndThud(vol = 0.05) {
+        playSound(85, 0.08, 'triangle', vol);
+      }
+
+      function sndGo() {
+        playSound(523.25, 0.15, 'square', 0.15);
+        setTimeout(() => playSound(1046.50, 0.35, 'square', 0.15), 100);
+      }
+
+      function sndVictory() {
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((n, i) => {
+          playSound(n, 0.2, 'sine', 0.2, i * 0.12);
+        });
+      }
+
+      function sndDefeat() {
+        const notes = [392.00, 349.23, 311.13, 261.63]; // G4, F4, Eb4, C4
+        notes.forEach((n, i) => {
+          playSound(n, 0.28, 'sawtooth', 0.2, i * 0.18);
+        });
+      }
+
+      // -------------------------------------------------------------
+      // ELEMENTOS DEL DOM
+      // -------------------------------------------------------------
+      const $ = s => document.querySelector(s);
+      const menuOverlay = $('#menu-overlay');
+      const countdownOverlay = $('#countdown-overlay');
+      const countdownNum = $('#countdown-num');
+      const resultOverlay = $('#result-overlay');
+      const timerBar = $('#timer-bar');
+      const statsScore = $('#stats-score');
+      const statsPct = $('#stats-pct');
+      const statsStep = $('#stats-step');
+      const gamePrompt = $('#game-prompt');
+      const promptText = $('#prompt-text');
+      const feedbackToast = $('#feedback-toast');
+
+      // -------------------------------------------------------------
+      // ESTADOS DE JUEGO
+      // -------------------------------------------------------------
+      let gameState = 'menu'; // menu, countdown, playing, gameover
+      let score = 0;
+      let currentStep = 0; // 0 a 6
+      let targetSequence = []; // 7 índices de PALETTE
+      let playerChoices = []; // Guardará objetos: { partId, targetColorIdx, chosenColorIdx, correct }
+      let robotLane = 0; // -1 = Izquierda, 1 = Derecha, 0 = Centro
+      let targetLaneX = 0; // Para animación suave
+
+      // Variables de temporización de puertas y obstáculos
+      const DOOR_CYCLE_TIME = 4; // Segundos por ciclo
+      let nextDoorTimer = 0;
+      let nextObstacleTimer = 0;
+      let activeDoors = []; // Array de puertas activas en 3D
+      let activeObstacles = []; // Array de obstáculos activos en 3D
+      let activeSparks = []; // Partículas de colisión
+
+      // -------------------------------------------------------------
+      // MOTOR GRÁFICO (THREE.JS)
+      // -------------------------------------------------------------
+      let scene, camera, renderer;
+      let gridHelper, treadmillTexture, treadmillMesh;
+      let robot; // Instancia de la clase Robot
+      let environmentItems = []; // Decoración lateral scrolling
+      const clock = new THREE.Clock();
+
+      function init3D() {
+        const container = $('#webgl-container');
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x080a18);
+        scene.fog = new THREE.FogExp2(0x080a18, 0.025);
+
+        // Cámara en tercera persona detrás del robot
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 3.8, 6.2); // Detrás del robot (Z > 0)
+        camera.lookAt(0, 1.6, -4);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        container.appendChild(renderer.domElement);
+
+        // Iluminación
+        scene.add(new THREE.HemisphereLight(0x7c92ff, 0x0a0c16, 0.8));
+        
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(5, 12, 4);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 25;
+        dirLight.shadow.camera.left = -6;
+        dirLight.shadow.camera.right = 6;
+        dirLight.shadow.camera.top = 6;
+        dirLight.shadow.camera.bottom = -6;
+        dirLight.shadow.bias = -0.0005;
+        scene.add(dirLight);
+
+        // Luces puntuales de neón laterales
+        const pointL = new THREE.PointLight(0x00e5ff, 1.2, 10);
+        pointL.position.set(-3.5, 1.5, 0);
+        scene.add(pointL);
+
+        const pointR = new THREE.PointLight(0xf50057, 1.2, 10);
+        pointR.position.set(3.5, 1.5, 0);
+        scene.add(pointR);
+
+        // -------------------------------------------------------------
+        // CONSTRUCCIÓN DEL TREADMILL
+        // -------------------------------------------------------------
+        // Textura de la cinta
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#0f1225';
+        ctx.fillRect(0, 0, 256, 256);
+        // Bordes y cuadrícula de neón
+        ctx.strokeStyle = '#232a54';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(0, 0, 256, 256);
+        
+        // Línea divisoria central
+        ctx.strokeStyle = '#673ab7';
+        ctx.setLineDash([15, 15]);
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(128, 0);
+        ctx.lineTo(128, 256);
+        ctx.stroke();
+
+        treadmillTexture = new THREE.CanvasTexture(canvas);
+        treadmillTexture.wrapS = THREE.RepeatWrapping;
+        treadmillTexture.wrapT = THREE.RepeatWrapping;
+        treadmillTexture.repeat.set(1, 10);
+
+        const treadmillGeo = new THREE.PlaneGeometry(5.2, 45);
+        const treadmillMat = new THREE.MeshStandardMaterial({
+          map: treadmillTexture,
+          roughness: 0.65,
+          metalness: 0.2
+        });
+        treadmillMesh = new THREE.Mesh(treadmillGeo, treadmillMat);
+        treadmillMesh.rotation.x = -Math.PI / 2;
+        treadmillMesh.position.set(0, 0.05, -12);
+        treadmillMesh.receiveShadow = true;
+        scene.add(treadmillMesh);
+
+        // Estructura lateral metálica (rieles)
+        const railGeo = new THREE.BoxGeometry(0.3, 0.25, 45);
+        const railMat = new THREE.MeshStandardMaterial({ color: 0x181c2b, metalness: 0.8, roughness: 0.3 });
+        
+        const leftRail = new THREE.Mesh(railGeo, railMat);
+        leftRail.position.set(-2.75, 0.125, -12);
+        leftRail.receiveShadow = true;
+        scene.add(leftRail);
+
+        const rightRail = new THREE.Mesh(railGeo, railMat);
+        rightRail.position.set(2.75, 0.125, -12);
+        rightRail.receiveShadow = true;
+        scene.add(rightRail);
+
+        // Líneas de neón brillante en los rieles
+        const neonGeo = new THREE.BoxGeometry(0.04, 0.04, 45);
+        const neonLMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+        const neonRMat = new THREE.MeshBasicMaterial({ color: 0xf50057 });
+
+        const neonL = new THREE.Mesh(neonGeo, neonLMat);
+        neonL.position.set(-2.6, 0.26, -12);
+        scene.add(neonL);
+
+        const neonR = new THREE.Mesh(neonGeo, neonRMat);
+        neonR.position.set(2.6, 0.26, -12);
+        scene.add(neonR);
+
+        // Estrellas
+        buildStarfield();
+
+        // Robot
+        robot = new Robot();
+        scene.add(robot.group);
+        robot.group.position.set(0, 0.3, 0);
+
+        // Inicializar mini visualizador 3D objetivo
+        initMini3D();
+
+        window.addEventListener('resize', onWindowResize);
+      }
+
+      // -------------------------------------------------------------
+      // MOTOR GRÁFICO SECUNDARIO (MINI 3D OBJETIVO)
+      // -------------------------------------------------------------
+      let miniScene, miniCamera, miniRenderer, miniRobot;
+
+      function initMini3D() {
+        const container = $('#mini-3d-container');
+        if (!container) return;
+        miniScene = new THREE.Scene();
+        
+        miniRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        miniRenderer.setSize(120, 140);
+        miniRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(miniRenderer.domElement);
+
+        miniCamera = new THREE.PerspectiveCamera(38, 120 / 140, 0.1, 10);
+        miniCamera.position.set(0, 1.7, 4.4);
+        miniCamera.lookAt(0, 1.0, 0);
+
+        // Iluminación mini
+        miniScene.add(new THREE.HemisphereLight(0xffffff, 0x1f2430, 1.3));
+        const miniDirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        miniDirLight.position.set(2, 5, 3);
+        miniScene.add(miniDirLight);
+
+        // Crear robot mini
+        miniRobot = new Robot(true);
+        miniRobot.group.scale.set(0.65, 0.65, 0.65); // Scale down the mini robot to make it tinier
+        miniScene.add(miniRobot.group);
+      }
+
+      function buildStarfield() {
+        const starsGeo = new THREE.BufferGeometry();
+        const count = 400;
+        const pos = new Float32Array(count * 3);
+        for(let i=0; i<count; i++) {
+          pos[i*3] = (Math.random() - 0.5) * 60;
+          pos[i*3+1] = Math.random() * 25 + 2;
+          pos[i*3+2] = -Math.random() * 50 - 5;
+        }
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        const starsMat = new THREE.PointsMaterial({
+          color: 0x889cff,
+          size: 0.12,
+          transparent: true,
+          opacity: 0.8
+        });
+        const stars = new THREE.Points(starsGeo, starsMat);
+        scene.add(stars);
+      }
+
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      // -------------------------------------------------------------
+      // CLASE ROBOT (Volt adaptado)
+      // -------------------------------------------------------------
+      class Robot {
+        constructor(isMini = false) {
+          this.isMini = isMini;
+          this.group = new THREE.Group();
+          this.materials = {};
+          this.flashAnimations = [];
+
+          // Variables de salto
+          this.isJumping = false;
+          this.jumpVelocity = 0.0;
+          this.jumpStrength = 8.5;
+          this.gravity = -26.0;
+          this.baseY = 0.3;
+
+          // Variables de animación de choque
+          this.isCrashing = false;
+          this.crashTime = 0.0;
+
+          this.partIds = ['cab', 'torso', 'brz', 'panza', 'patas', 'nuc', 'ant'];
+          this.partIds.forEach(id => {
+            this.materials[id] = new THREE.MeshPhysicalMaterial({
+              color: GRAY_COLOR,
+              emissive: 0x000000,
+              emissiveIntensity: 0.0,
+              metalness: 0.5,
+              roughness: 0.35,
+              clearcoat: 0.8,
+              clearcoatRoughness: 0.2
+            });
+          });
+
+          this.darkMat = new THREE.MeshStandardMaterial({
+            color: 0x1f2430,
+            metalness: 0.6,
+            roughness: 0.5
+          });
+
+          this.buildVolt();
+          if (this.isMini) {
+            this.group.rotation.y = 0; // Face camera initially
+          } else {
+            this.group.rotation.y = Math.PI; // Face negative Z (run forwards away from camera)
+          }
+        }
+
+        paintStatic(partId, hex) {
+          const mat = this.materials[partId];
+          if (mat) {
+            mat.color.setHex(hex);
+            mat.emissive.setHex(hex);
+            mat.emissiveIntensity = 0.55;
+          }
+        }
+
+        addMesh(geo, mat, x, y, z, parent = null) {
+          const m = new THREE.Mesh(geo, mat);
+          m.position.set(x, y, z);
+          m.castShadow = true;
+          m.receiveShadow = true;
+          if (parent) {
+            parent.add(m);
+          } else {
+            this.group.add(m);
+          }
+          return m;
+        }
+
+        buildVolt() {
+          this.legLGroup = new THREE.Group();
+          this.legLGroup.position.set(-0.35, 0.6, 0);
+          this.group.add(this.legLGroup);
+
+          this.legRGroup = new THREE.Group();
+          this.legRGroup.position.set(0.35, 0.6, 0);
+          this.group.add(this.legRGroup);
+
+          const footGeo = new THREE.SphereGeometry(0.3, 16, 12);
+          const leftFoot = this.addMesh(footGeo, this.materials['patas'], 0, -0.4, 0.05, this.legLGroup);
+          leftFoot.scale.set(1, 0.5, 1.4);
+          
+          const rightFoot = this.addMesh(footGeo, this.materials['patas'], 0, -0.4, 0.05, this.legRGroup);
+          rightFoot.scale.set(1, 0.5, 1.4);
+
+          const toeGeo = new THREE.BoxGeometry(0.26, 0.1, 0.12);
+          this.addMesh(toeGeo, this.darkMat, 0, -0.4, 0.32, this.legLGroup);
+          this.addMesh(toeGeo, this.darkMat, 0, -0.4, 0.32, this.legRGroup);
+
+          const legGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.35, 12);
+          this.addMesh(legGeo, this.materials['patas'], 0, -0.2, 0, this.legLGroup);
+          this.addMesh(legGeo, this.materials['patas'], 0, -0.2, 0, this.legRGroup);
+
+          const torsoGeo = new THREE.BoxGeometry(1.0, 1.15, 0.75);
+          this.torsoMesh = this.addMesh(torsoGeo, this.materials['torso'], 0, 1.1, 0);
+
+          const waistGeo = new THREE.BoxGeometry(1.05, 0.14, 0.78);
+          this.addMesh(waistGeo, this.darkMat, 0, 0.525, 0);
+
+          const exhaustGeo = new THREE.BoxGeometry(0.75, 0.55, 0.06);
+          this.addMesh(exhaustGeo, this.darkMat, 0, 1.1, 0.385);
+
+          const panzaGeo = new THREE.BoxGeometry(0.62, 0.42, 0.08);
+          this.addMesh(panzaGeo, this.materials['panza'], 0, 1.1, 0.41);
+
+          const nucGeo = new THREE.SphereGeometry(0.18, 16, 12);
+          this.addMesh(nucGeo, this.materials['nuc'], 0, 1.74, 0.0);
+          
+          const neckRing = this.addMesh(new THREE.TorusGeometry(0.24, 0.025, 8, 24), this.darkMat, 0, 1.74, 0);
+          neckRing.rotation.x = Math.PI / 2;
+
+          this.headGroup = new THREE.Group();
+          this.headGroup.position.set(0, 1.9, 0);
+          this.group.add(this.headGroup);
+
+          const headGeo = new THREE.BoxGeometry(0.85, 0.65, 0.7);
+          this.addMesh(headGeo, this.materials['cab'], 0, 0.28, 0, this.headGroup);
+
+          const visorGeo = new THREE.BoxGeometry(0.88, 0.15, 0.06);
+          this.addMesh(visorGeo, this.darkMat, 0, 0.38, 0.33, this.headGroup);
+
+          const eyeGeo = new THREE.SphereGeometry(0.09, 12, 10);
+          this.eyeL = this.addMesh(eyeGeo, new THREE.MeshBasicMaterial({ color: 0x00e5ff }), -0.18, 0.38, 0.34, this.headGroup);
+          this.eyeR = this.addMesh(eyeGeo, new THREE.MeshBasicMaterial({ color: 0x00e5ff }), 0.18, 0.38, 0.34, this.headGroup);
+
+          const earGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.12, 12);
+          const earL = this.addMesh(earGeo, this.darkMat, -0.45, 0.3, 0, this.headGroup);
+          earL.rotation.z = Math.PI / 2;
+          const earR = this.addMesh(earGeo, this.darkMat, 0.45, 0.3, 0, this.headGroup);
+          earR.rotation.z = Math.PI / 2;
+
+          const mouthGeo = new THREE.BoxGeometry(0.24, 0.05, 0.04);
+          this.addMesh(mouthGeo, this.darkMat, 0, 0.14, 0.34, this.headGroup);
+
+          const antBaseGeo = new THREE.CylinderGeometry(0.024, 0.024, 0.28, 8);
+          this.addMesh(antBaseGeo, this.darkMat, 0, 0.72, 0, this.headGroup);
+
+          const antGlobeGeo = new THREE.SphereGeometry(0.09, 12, 12);
+          this.addMesh(antGlobeGeo, this.materials['ant'], 0, 0.88, 0, this.headGroup);
+
+          this.armLGroup = new THREE.Group();
+          this.armLGroup.position.set(-0.62, 1.45, 0);
+          this.group.add(this.armLGroup);
+
+          this.armRGroup = new THREE.Group();
+          this.armRGroup.position.set(0.62, 1.45, 0);
+          this.group.add(this.armRGroup);
+
+          const shoulderGeo = new THREE.SphereGeometry(0.14, 16, 12);
+          this.addMesh(shoulderGeo, this.materials['brz'], 0, 0, 0, this.armLGroup);
+          this.addMesh(shoulderGeo, this.materials['brz'], 0, 0, 0, this.armRGroup);
+
+          const limbGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.5, 12);
+          this.addMesh(limbGeo, this.materials['brz'], 0, -0.28, 0, this.armLGroup);
+          this.addMesh(limbGeo, this.materials['brz'], 0, -0.28, 0, this.armRGroup);
+
+          const fistGeo = new THREE.SphereGeometry(0.1, 12, 12);
+          this.addMesh(fistGeo, this.materials['brz'], 0, -0.56, 0, this.armLGroup);
+          this.addMesh(fistGeo, this.materials['brz'], 0, -0.56, 0, this.armRGroup);
+        }
+
+        paintPart(partId, hex) {
+          const mat = this.materials[partId];
+          if (!mat) return;
+
+          mat.color.setHex(hex);
+          mat.emissive.setHex(hex);
+          mat.emissiveIntensity = 1.8;
+
+          this.flashAnimations = this.flashAnimations.filter(anim => anim.partId !== partId);
+          this.flashAnimations.push({
+            partId: partId,
+            material: mat,
+            elapsed: 0,
+            duration: 0.8
+          });
+
+          if (partId === 'cab' || partId === 'ant') {
+            this.eyeL.material.color.setHex(hex);
+            this.eyeR.material.color.setHex(hex);
+          }
+        }
+
+        resetColors() {
+          this.partIds.forEach(id => {
+            const mat = this.materials[id];
+            mat.color.setHex(GRAY_COLOR);
+            mat.emissive.setHex(0x000000);
+            mat.emissiveIntensity = 0.0;
+          });
+          this.eyeL.material.color.setHex(0x00e5ff);
+          this.eyeR.material.color.setHex(0x00e5ff);
+          this.flashAnimations = [];
+
+          // Restablecer choque y rotación
+          this.isCrashing = false;
+          this.crashTime = 0.0;
+          this.group.rotation.x = 0;
+          this.group.rotation.z = 0;
+          if (this.isMini) {
+            this.group.rotation.y = 0;
+          } else {
+            this.group.rotation.y = Math.PI;
+          }
+        }
+
+        update(dt, t) {
+          if (this.isMini) {
+            // Rotating presentation pose
+            this.group.rotation.y = t * 0.8;
+            this.group.position.set(0, 0.05, 0);
+            
+            // Keep head and limbs static and clean
+            this.legLGroup.rotation.x = 0;
+            this.legRGroup.rotation.x = 0;
+            this.legLGroup.position.y = 0.6;
+            this.legRGroup.position.y = 0.6;
+            this.armLGroup.rotation.x = 0.1;
+            this.armRGroup.rotation.x = 0.1;
+            this.armLGroup.rotation.z = -0.15;
+            this.armRGroup.rotation.z = 0.15;
+            this.headGroup.rotation.x = 0.05;
+            this.group.position.y = 0.05;
+
+            // Pulsate the active target part's emissive on the mini-robot as well to highlight it!
+            if (gameState === 'playing' && currentStep < 7) {
+              const activePartId = PARTS_SEQUENCE[currentStep].id;
+              const pulse = 0.5 + 0.5 * Math.sin(t * 8);
+              this.partIds.forEach(id => {
+                const mat = this.materials[id];
+                if (id === activePartId) {
+                  mat.emissiveIntensity = 0.55 + pulse * 1.2;
+                } else {
+                  mat.emissiveIntensity = 0.55;
+                }
+              });
+            } else {
+              // Reset all intensities to default reference level
+              this.partIds.forEach(id => {
+                this.materials[id].emissiveIntensity = 0.55;
+              });
+            }
+            return;
+          }
+
+          // Animación de choque: Caída de cabeza (faceplant / trip forward)
+          if (this.isCrashing) {
+            this.crashTime += dt;
+            const progress = Math.min(1.0, this.crashTime / 0.85); // 0.85 segundos para caer por completo
+            
+            // Trip forward around X axis.
+            // Since it runs in Y = 180 degrees direction (facing negative Z), rotating X positively tilts the robot forward
+            const targetRotX = Math.PI * 0.58; 
+            this.group.rotation.x = progress * targetRotX;
+            
+            // Recoil backwards slightly along Z
+            this.group.position.z = progress * 0.75;
+            
+            // Move Y down so it lands head-first on the track
+            this.group.position.y = 0.3 - progress * 0.28;
+            
+            // Flailing limbs during trip/impact
+            this.legLGroup.rotation.x = -progress * 0.85;
+            this.legRGroup.rotation.x = progress * 0.65;
+            this.armLGroup.rotation.z = -progress * 1.3;
+            this.armRGroup.rotation.z = progress * 1.3;
+            this.headGroup.rotation.x = progress * 0.5;
+            
+            return;
+          }
+
+          // Físicas de salto
+          if (this.isJumping) {
+            this.jumpVelocity += this.gravity * dt;
+            this.group.position.y += this.jumpVelocity * dt;
+            if (this.group.position.y <= this.baseY) {
+              this.group.position.y = this.baseY;
+              this.isJumping = false;
+              this.jumpVelocity = 0.0;
+              if (gameState === 'playing') {
+                sndThud(0.12);
+              }
+            }
+          }
+
+          const runSpeed = 19.0;
+          const angleRange = 0.45;
+
+          const stepCycle = t * runSpeed;
+
+          if (this.isJumping) {
+            // Pose de salto estática en el aire
+            this.legLGroup.rotation.x = -0.4;
+            this.legRGroup.rotation.x = 0.5;
+            this.legLGroup.position.y = 0.5;
+            this.legRGroup.position.y = 0.7;
+            this.armLGroup.rotation.x = -0.5;
+            this.armRGroup.rotation.x = 0.6;
+            this.armLGroup.rotation.z = -0.3;
+            this.armRGroup.rotation.z = 0.3;
+            this.headGroup.rotation.x = 0.12;
+          } else {
+            // Movimiento normal de correr
+            this.legLGroup.rotation.x = Math.sin(stepCycle) * angleRange;
+            this.legRGroup.rotation.x = -Math.sin(stepCycle) * angleRange;
+
+            this.legLGroup.position.y = 0.6 + Math.max(0, -Math.cos(stepCycle)) * 0.12;
+            this.legRGroup.position.y = 0.6 + Math.max(0, Math.cos(stepCycle)) * 0.12;
+
+            this.armLGroup.rotation.x = -Math.sin(stepCycle) * (angleRange * 0.95);
+            this.armRGroup.rotation.x = Math.sin(stepCycle) * (angleRange * 0.95);
+            
+            this.armLGroup.rotation.z = -0.15 - Math.abs(Math.sin(stepCycle)) * 0.08;
+            this.armRGroup.rotation.z = 0.15 + Math.abs(Math.sin(stepCycle)) * 0.08;
+
+            const bob = Math.abs(Math.sin(stepCycle)) * 0.08;
+            this.group.position.y = 0.3 - bob;
+
+            this.headGroup.rotation.x = 0.08 + Math.sin(stepCycle * 2) * 0.04;
+
+            const currentSin = Math.sin(stepCycle);
+            if (!this.lastStepSign) this.lastStepSign = 1;
+            if ((currentSin > 0.95 && this.lastStepSign < 0) || (currentSin < -0.95 && this.lastStepSign > 0)) {
+              if (gameState === 'playing') {
+                sndThud(0.04);
+              }
+              this.lastStepSign = -this.lastStepSign;
+            }
+          }
+
+          for (let i = this.flashAnimations.length - 1; i >= 0; i--) {
+            const anim = this.flashAnimations[i];
+            anim.elapsed += dt;
+            const pct = anim.elapsed / anim.duration;
+
+            if (pct >= 1.0) {
+              anim.material.emissiveIntensity = 0.45;
+              this.flashAnimations.splice(i, 1);
+            } else {
+              anim.material.emissiveIntensity = 1.8 - (1.35 * pct);
+            }
+          }
+
+          // -----------------------------------------------------------
+          // ACTIVE PART GLOW / PULSATION (Indicando la parte objetivo)
+          // -----------------------------------------------------------
+          if (gameState === 'playing' && currentStep < 7) {
+            const activePartId = PARTS_SEQUENCE[currentStep].id;
+            const targetColorHex = PALETTE[targetSequence[currentStep]].hex;
+            const pulse = 0.5 + 0.5 * Math.sin(t * 8); // Pulsación suave de neón [0, 1]
+            
+            this.partIds.forEach(id => {
+              const mat = this.materials[id];
+              if (id === activePartId) {
+                // Hacer que la parte objetivo emita el color objetivo pulsando rítmicamente
+                mat.emissive.setHex(targetColorHex);
+                const isFlashing = this.flashAnimations.some(anim => anim.partId === id);
+                if (!isFlashing) {
+                  mat.emissiveIntensity = pulse * 1.5;
+                }
+              } else {
+                // Desactivar emisión en las partes futuras que aún no han sido pintadas
+                const partDef = PARTS_SEQUENCE.find(p => p.id === id);
+                if (partDef && partDef.index > currentStep) {
+                  const isFlashing = this.flashAnimations.some(anim => anim.partId === id);
+                  if (!isFlashing) {
+                    mat.emissive.setHex(0x000000);
+                    mat.emissiveIntensity = 0.0;
+                  }
+                }
+              }
+            });
+          }
+        }
+      }
+
+      // -------------------------------------------------------------
+      // CLASE OBSTÁCULO (Hazard Barrier)
+      // -------------------------------------------------------------
+      let hazardTexture = null;
+      function getHazardTexture() {
+        if (!hazardTexture) {
+          const canvas = document.createElement('canvas');
+          canvas.width = 64;
+          canvas.height = 64;
+          const ctx = canvas.getContext('2d');
+          
+          ctx.fillStyle = '#ff6d00';
+          ctx.fillRect(0, 0, 64, 64);
+          
+          ctx.fillStyle = '#111424';
+          ctx.beginPath();
+          ctx.moveTo(0, 0); ctx.lineTo(32, 0); ctx.lineTo(0, 32); ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(32, 0); ctx.lineTo(64, 0); ctx.lineTo(0, 64); ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(64, 32); ctx.lineTo(64, 64); ctx.lineTo(32, 64); ctx.fill();
+          
+          hazardTexture = new THREE.CanvasTexture(canvas);
+          hazardTexture.wrapS = THREE.RepeatWrapping;
+          hazardTexture.wrapT = THREE.RepeatWrapping;
+        }
+        return hazardTexture;
+      }
+
+      class Obstacle {
+        constructor(lane, isTall = false) {
+          this.lane = lane;
+          this.isTall = isTall;
+          this.group = new THREE.Group();
+          this.group.position.set(lane * 1.8, 0.05, -35);
+          this.resolved = false;
+          this.width = 1.6;
+          this.height = this.isTall ? 1.8 : 0.65;
+          this.depth = 0.5;
+
+          this.buildVisuals();
+        }
+
+        buildVisuals() {
+          const boxGeo = new THREE.BoxGeometry(this.width, this.height, this.depth);
+          const boxMat = new THREE.MeshStandardMaterial({
+            map: getHazardTexture(),
+            roughness: 0.5,
+            metalness: 0.2
+          });
+          if (this.isTall) {
+            boxMat.color.setHex(0xff3d00); // Red warning tint for unjumpable barriers
+          }
+          const barrier = new THREE.Mesh(boxGeo, boxMat);
+          barrier.position.set(0, this.height / 2, 0);
+          barrier.castShadow = true;
+          barrier.receiveShadow = true;
+          this.group.add(barrier);
+
+          const legGeo = new THREE.BoxGeometry(0.1, this.height - 0.2, 0.4);
+          const legMat = new THREE.MeshStandardMaterial({ color: 0x3a3f58, metalness: 0.8, roughness: 0.3 });
+          
+          const legL = new THREE.Mesh(legGeo, legMat);
+          legL.position.set(-this.width / 2 + 0.05, (this.height - 0.2) / 2, 0);
+          this.group.add(legL);
+
+          const legR = new THREE.Mesh(legGeo, legMat);
+          legR.position.set(this.width / 2 - 0.05, (this.height - 0.2) / 2, 0);
+          this.group.add(legR);
+
+          const lightGeo = new THREE.SphereGeometry(0.08, 8, 8);
+          const lightMat = new THREE.MeshBasicMaterial({ color: this.isTall ? 0xff0055 : 0xff1744 });
+          this.warnLight = new THREE.Mesh(lightGeo, lightMat);
+          this.warnLight.position.set(0, this.height + 0.08, 0);
+          this.group.add(this.warnLight);
+
+          this.pointLight = new THREE.PointLight(this.isTall ? 0xff0055 : 0xff1744, 0.6, 3);
+          this.pointLight.position.set(0, this.height + 0.08, 0.1);
+          this.group.add(this.pointLight);
+        }
+
+        update(dt, speed, t) {
+          this.group.position.z += speed * dt;
+
+          const blink = Math.sin(t * 12) > 0;
+          this.warnLight.material.color.setHex(blink ? (this.isTall ? 0xff0055 : 0xff1744) : 0x220005);
+          this.pointLight.intensity = blink ? 0.6 : 0.0;
+        }
+
+        dispose() {
+          scene.remove(this.group);
+          this.group.traverse(obj => {
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) {
+              if (Array.isArray(obj.material)) {
+                obj.material.forEach(m => m.dispose());
+              } else {
+                obj.material.dispose();
+              }
+            }
+          });
+        }
+      }
+
+      // -------------------------------------------------------------
+      // CLASE PUERTA (Neon Arch Gate)
+      // -------------------------------------------------------------
+      class Gate {
+        constructor(lane, colorData) {
+          this.lane = lane;
+          this.color = colorData;
+          
+          this.group = new THREE.Group();
+          this.group.position.set(lane * 1.8, 0.05, -35);
+          
+          this.resolved = false;
+          this.buildVisuals();
+        }
+
+        buildVisuals() {
+          const postGeo = new THREE.CylinderGeometry(0.08, 0.08, 2.2, 8);
+          const postMat = new THREE.MeshStandardMaterial({ color: 0x222638, metalness: 0.8, roughness: 0.2 });
+          
+          const leftPost = new THREE.Mesh(postGeo, postMat);
+          leftPost.position.set(-0.8, 1.1, 0);
+          leftPost.castShadow = true;
+          this.group.add(leftPost);
+
+          const rightPost = new THREE.Mesh(postGeo, postMat);
+          rightPost.position.set(0.8, 1.1, 0);
+          rightPost.castShadow = true;
+          this.group.add(rightPost);
+
+          const beamGeo = new THREE.BoxGeometry(1.68, 0.1, 0.1);
+          const neonMat = new THREE.MeshBasicMaterial({ color: this.color.hex });
+          
+          const topBeam = new THREE.Mesh(beamGeo, neonMat);
+          topBeam.position.set(0, 2.2, 0);
+          this.group.add(topBeam);
+
+          const panelGeo = new THREE.BoxGeometry(1.5, 2.0, 0.04);
+          const panelMat = new THREE.MeshPhysicalMaterial({
+            color: this.color.hex,
+            emissive: this.color.hex,
+            emissiveIntensity: 0.6,
+            transparent: true,
+            opacity: 0.22,
+            roughness: 0.1,
+            metalness: 0.1,
+            depthWrite: false
+          });
+          const panel = new THREE.Mesh(panelGeo, panelMat);
+          panel.position.set(0, 1.0, 0);
+          this.group.add(panel);
+
+          const orbGeo = new THREE.SphereGeometry(0.24, 16, 12);
+          const orbMat = new THREE.MeshStandardMaterial({
+            color: this.color.hex,
+            emissive: this.color.hex,
+            emissiveIntensity: 1.2,
+            roughness: 0.1
+          });
+          this.orb = new THREE.Mesh(orbGeo, orbMat);
+          this.orb.position.set(0, 1.1, 0);
+          this.group.add(this.orb);
+
+          this.light = new THREE.PointLight(this.color.hex, 0.8, 4);
+          this.light.position.set(0, 1.1, 0.2);
+          this.group.add(this.light);
+        }
+
+        update(dt, speed, t) {
+          this.group.position.z += speed * dt;
+          
+          if (this.orb) {
+            this.orb.position.y = 1.1 + Math.sin(t * 5) * 0.08;
+            this.orb.rotation.y += dt * 1.5;
+          }
+        }
+
+        dispose() {
+          scene.remove(this.group);
+          this.group.traverse(obj => {
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) {
+              if (Array.isArray(obj.material)) {
+                obj.material.forEach(m => m.dispose());
+              } else {
+                obj.material.dispose();
+              }
+            }
+          });
+        }
+      }
+
+      // -------------------------------------------------------------
+      // PARTÍCULAS
+      // -------------------------------------------------------------
+      function spawnSparks(x, y, z, colorHex) {
+        const sparkGeo = new THREE.BoxGeometry(0.08, 0.08, 0.08);
+        const sparkMat = new THREE.MeshBasicMaterial({ color: colorHex });
+        
+        for (let i = 0; i < 25; i++) {
+          const m = new THREE.Mesh(sparkGeo, sparkMat);
+          m.position.set(
+            x + (Math.random() - 0.5) * 0.8,
+            y + (Math.random() - 0.5) * 0.8,
+            z
+          );
+          scene.add(m);
+          activeSparks.push({
+            mesh: m,
+            vel: new THREE.Vector3(
+              (Math.random() - 0.5) * 6,
+              Math.random() * 5 + 2,
+              (Math.random() - 0.5) * 4 + 3
+            ),
+            life: 1.0
+          });
+        }
+      }
+
+      function updateSparks(dt) {
+        for (let i = activeSparks.length - 1; i >= 0; i--) {
+          const s = activeSparks[i];
+          s.life -= dt;
+          
+          if (s.life <= 0) {
+            scene.remove(s.mesh);
+            s.mesh.geometry.dispose();
+            s.mesh.material.dispose();
+            activeSparks.splice(i, 1);
+          } else {
+            s.vel.y -= dt * 9.8;
+            s.mesh.position.addScaledVector(s.vel, dt);
+            s.mesh.rotation.x += dt * 5;
+            s.mesh.rotation.y += dt * 5;
+          }
+        }
+      }
+
+      // -------------------------------------------------------------
+      // FUNCIONES DE SALTO Y COLISIÓN DE OBSTÁCULOS
+      // -------------------------------------------------------------
+      function triggerJump() {
+        if (gameState !== 'playing') return;
+        if (!robot.isJumping) {
+          robot.isJumping = true;
+          robot.jumpVelocity = 8.5;
+          playSound(440, 0.14, 'triangle', 0.2); // Sonido de salto
+          setTimeout(() => playSound(660, 0.18, 'triangle', 0.2), 60);
+        }
+      }
+
+      function spawnObstacle() {
+        if (currentStep >= 7) return;
+        
+        const rand = Math.random();
+        if (rand < 0.28) {
+          // Double jumpable barriers (blocking both left and right lanes)
+          const obsL = new Obstacle(-1, false);
+          const obsR = new Obstacle(1, false);
+          activeObstacles.push(obsL);
+          activeObstacles.push(obsR);
+          scene.add(obsL.group);
+          scene.add(obsR.group);
+        } else {
+          // Single barrier in a random lane
+          const lane = Math.random() < 0.5 ? -1 : 1;
+          const isTall = Math.random() < 0.5; // 50% chance of being unjumpable tall barrier
+          const obs = new Obstacle(lane, isTall);
+          activeObstacles.push(obs);
+          scene.add(obs.group);
+        }
+      }
+
+      function triggerCrash(obs) {
+        obs.resolved = true;
+        gameState = 'gameover';
+        
+        playSound(120, 0.4, 'sawtooth', 0.35);
+        playSound(80, 0.6, 'sine', 0.4);
+        
+        spawnSparks(robot.group.position.x, robot.group.position.y + 0.5, 0, 0xff3d00);
+        
+        // Activar animación de caída de cabeza
+        robot.isCrashing = true;
+        robot.crashTime = 0.0;
+        
+        feedbackToast.textContent = '¡CHOCADO!';
+        feedbackToast.classList.remove('correct', 'wrong', 'show');
+        void feedbackToast.offsetWidth;
+        feedbackToast.classList.add('wrong', 'show');
+        
+        setTimeout(() => {
+          feedbackToast.classList.remove('show');
+          endGameByCrash();
+        }, 1200);
+      }
+
+      function endGameByCrash() {
+        gameState = 'gameover';
+        
+        const titleEl = $('#result-title');
+        const messageEl = $('#result-message');
+        const verdictEl = $('#res-verdict');
+        const scoreEl = $('#res-score');
+        const pctEl = $('#res-pct');
+
+        scoreEl.textContent = `${score} / 7`;
+        const pct = currentStep > 0 ? Math.round((score / currentStep) * 100) : 0;
+        pctEl.textContent = `${pct}%`;
+
+        titleEl.textContent = 'MISIÓN FALLIDA';
+        titleEl.style.color = 'var(--accent-magenta)';
+        messageEl.innerHTML = `¡Chocaste contra un obstáculo! La carrera se interrumpió.<br>Aciertos logrados: <b>${score} de ${currentStep}</b>.`;
+        
+        verdictEl.textContent = 'CHOCADO';
+        verdictEl.className = 'res-val failure';
+        sndDefeat();
+
+        const tbody = $('#detail-tbody');
+        tbody.innerHTML = '';
+
+        playerChoices.forEach((ch) => {
+          const tgtColor = PALETTE[ch.targetColorIdx];
+          const chColor = PALETTE[ch.chosenColorIdx];
+          const badgeCls = ch.correct ? 'ok' : 'fail';
+          const badgeText = ch.correct ? 'Correcto' : 'Error';
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><b>${ch.partName}</b></td>
+            <td><span class="color-pill" style="background-color: ${tgtColor.css};"></span> ${tgtColor.nombre}</td>
+            <td><span class="color-pill" style="background-color: ${chColor.css};"></span> ${chColor.nombre}</td>
+            <td><span class="badge ${badgeCls}">${badgeText}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+        
+        if (currentStep < 7) {
+          const activePart = PARTS_SEQUENCE[currentStep];
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><b>${activePart.name}</b></td>
+            <td colspan="2" style="color: var(--accent-magenta); font-weight: 700;">CHOQUE CONTRA OBSTÁCULO</td>
+            <td><span class="badge fail">FALLO</span></td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        resultOverlay.classList.remove('hidden');
+      }
+
+      // -------------------------------------------------------------
+      // FLUJO DE JUEGO
+      // -------------------------------------------------------------
+      function generateGoalSequence() {
+        const seq = [];
+        for (let i = 0; i < 7; i++) {
+          let randIdx;
+          do {
+            randIdx = Math.floor(Math.random() * PALETTE.length);
+          } while (i > 0 && randIdx === seq[i - 1]);
+          seq.push(randIdx);
+        }
+        return seq;
+      }
+
+      function updateHUDBlueprints() {
+        if (miniRobot) {
+          PARTS_SEQUENCE.forEach(part => {
+            const targetColorIdx = targetSequence[part.index];
+            const colorData = PALETTE[targetColorIdx];
+            miniRobot.paintStatic(part.id, colorData.hex);
+          });
+        }
+      }
+
+      function updateHUDStats() {
+        statsScore.textContent = `${score} / 7`;
+        const pct = currentStep > 0 ? Math.round((score / currentStep) * 100) : 0;
+        statsPct.textContent = `${pct}%`;
+        statsStep.textContent = `${Math.min(currentStep + 1, 7)} / 7`;
+
+        if (currentStep < 7) {
+          const currentPart = PARTS_SEQUENCE[currentStep];
+          const targetColor = PALETTE[targetSequence[currentStep]];
+          promptText.innerHTML = `Pinta la parte: <b>${currentPart.name}</b> en color <b>${targetColor.nombre}</b>`;
+          $('.prompt-dot').style.backgroundColor = targetColor.css;
+          $('.prompt-dot').style.boxShadow = `0 0 10px ${targetColor.css}`;
+        }
+      }
+
+      function startNewGame() {
+        getAudioContext();
+        
+        score = 0;
+        currentStep = 0;
+        playerChoices = [];
+        robotLane = 0;
+        targetLaneX = 0;
+        robot.group.position.x = 0;
+        robot.group.position.y = 0.3;
+        robot.group.position.z = 0.0;
+        robot.isJumping = false;
+        robot.jumpVelocity = 0.0;
+        robot.resetColors();
+        
+        targetSequence = generateGoalSequence();
+        
+        activeDoors.forEach(d => d.dispose());
+        activeDoors = [];
+
+        activeObstacles.forEach(o => o.dispose());
+        activeObstacles = [];
+
+        updateHUDBlueprints();
+        updateHUDStats();
+
+        menuOverlay.classList.add('hidden');
+        resultOverlay.classList.add('hidden');
+        
+        startCountdown();
+      }
+
+      function startCountdown() {
+        gameState = 'countdown';
+        countdownOverlay.classList.remove('hidden');
+        
+        const countValues = ['3', '2', '1', '¡RUN!'];
+        let idx = 0;
+        
+        function tick() {
+          if (idx < countValues.length) {
+            countdownNum.textContent = countValues[idx];
+            countdownNum.classList.remove('zoom');
+            void countdownNum.offsetWidth;
+            countdownNum.classList.add('zoom');
+            
+            if (countValues[idx] === '¡RUN!') {
+              sndGo();
+            } else {
+              sndTick();
+            }
+            
+            idx++;
+            setTimeout(tick, 750);
+          } else {
+            countdownOverlay.classList.add('hidden');
+            gameState = 'playing';
+            nextDoorTimer = 2.5;
+            nextObstacleTimer = 0.5;
+            robotLane = -1;
+            targetLaneX = -1.8;
+          }
+        }
+        
+        tick();
+      }
+
+      function spawnDoorsPair() {
+        if (currentStep >= 7) return;
+
+        const targetPart = PARTS_SEQUENCE[currentStep];
+        const correctColorIdx = targetSequence[currentStep];
+        
+        let wrongColorIdx;
+        do {
+          wrongColorIdx = Math.floor(Math.random() * PALETTE.length);
+        } while (wrongColorIdx === correctColorIdx);
+
+        const correctLane = Math.random() < 0.5 ? -1 : 1;
+        
+        const leftDoorColor = correctLane === -1 ? PALETTE[correctColorIdx] : PALETTE[wrongColorIdx];
+        const rightDoorColor = correctLane === 1 ? PALETTE[correctColorIdx] : PALETTE[wrongColorIdx];
+
+        const leftGate = new Gate(-1, leftDoorColor);
+        const rightGate = new Gate(1, rightDoorColor);
+
+        activeDoors.push(leftGate);
+        activeDoors.push(rightGate);
+
+        scene.add(leftGate.group);
+        scene.add(rightGate.group);
+
+        leftGate.targetColorIdx = correctColorIdx;
+        leftGate.isCorrect = (correctLane === -1);
+        leftGate.chosenColorIdx = PALETTE.indexOf(leftDoorColor);
+        leftGate.partId = targetPart.id;
+
+        rightGate.targetColorIdx = correctColorIdx;
+        rightGate.isCorrect = (correctLane === 1);
+        rightGate.chosenColorIdx = PALETTE.indexOf(rightDoorColor);
+        rightGate.partId = targetPart.id;
+      }
+
+      function evaluateCollision(chosenGate) {
+        chosenGate.resolved = true;
+        
+        activeDoors.forEach(g => g.resolved = true);
+
+        const isCorrect = chosenGate.isCorrect;
+        const partId = chosenGate.partId;
+        const colorHex = chosenGate.color.hex;
+
+        robot.paintPart(partId, colorHex);
+
+        feedbackToast.classList.remove('correct', 'wrong', 'show');
+        void feedbackToast.offsetWidth;
+
+        if (isCorrect) {
+          score++;
+          feedbackToast.textContent = '¡CORRECTO!';
+          feedbackToast.classList.add('correct', 'show');
+          sndSuccess();
+          spawnSparks(chosenGate.group.position.x, 1.1, 0, colorHex);
+        } else {
+          feedbackToast.textContent = '¡FALLO!';
+          feedbackToast.classList.add('wrong', 'show');
+          sndFail();
+          spawnSparks(chosenGate.group.position.x, 1.1, 0, colorHex);
+        }
+
+        setTimeout(() => feedbackToast.classList.remove('show'), 1200);
+
+        playerChoices.push({
+          partName: PARTS_SEQUENCE[currentStep].name,
+          targetColorIdx: chosenGate.targetColorIdx,
+          chosenColorIdx: chosenGate.chosenColorIdx,
+          correct: isCorrect
+        });
+
+        currentStep++;
+        updateHUDBlueprints();
+        updateHUDStats();
+
+        if (currentStep >= 7) {
+          setTimeout(endGame, 1800);
+        }
+      }
+
+      function endGame() {
+        gameState = 'gameover';
+        
+        const pct = Math.round((score / 7) * 100);
+        const victory = pct >= 80;
+
+        const titleEl = $('#result-title');
+        const messageEl = $('#result-message');
+        const verdictEl = $('#res-verdict');
+        const scoreEl = $('#res-score');
+        const pctEl = $('#res-pct');
+
+        scoreEl.textContent = `${score} / 7`;
+        pctEl.textContent = `${pct}%`;
+
+        if (victory) {
+          titleEl.textContent = '¡CARRERA COMPLETADA!';
+          titleEl.style.color = 'var(--accent-green)';
+          messageEl.textContent = `¡Felicidades! Has pintado correctamente al menos el 80% del robot.`;
+          verdictEl.textContent = 'APROBADO';
+          verdictEl.className = 'res-val victory';
+          sndVictory();
+        } else {
+          titleEl.textContent = 'MISIÓN FALLIDA';
+          titleEl.style.color = 'var(--accent-magenta)';
+          messageEl.textContent = `La precisión fue inferior al 80%. Inténtalo de nuevo para calibrar a Volt.`;
+          verdictEl.textContent = 'DESAPROBADO';
+          verdictEl.className = 'res-val failure';
+          sndDefeat();
+        }
+
+        const tbody = $('#detail-tbody');
+        tbody.innerHTML = '';
+
+        playerChoices.forEach((ch, idx) => {
+          const tgtColor = PALETTE[ch.targetColorIdx];
+          const chColor = PALETTE[ch.chosenColorIdx];
+          const badgeCls = ch.correct ? 'ok' : 'fail';
+          const badgeText = ch.correct ? 'Correcto' : 'Error';
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><b>${ch.partName}</b></td>
+            <td><span class="color-pill" style="background-color: ${tgtColor.css};"></span> ${tgtColor.nombre}</td>
+            <td><span class="color-pill" style="background-color: ${chColor.css};"></span> ${chColor.nombre}</td>
+            <td><span class="badge ${badgeCls}">${badgeText}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        resultOverlay.classList.remove('hidden');
+      }
+
+      // -------------------------------------------------------------
+      // MANEJO DE CONTROLES
+      // -------------------------------------------------------------
+      function moveLeft() {
+        if (gameState !== 'playing') return;
+        robotLane = -1;
+        targetLaneX = -1.8;
+      }
+
+      function moveRight() {
+        if (gameState !== 'playing') return;
+        robotLane = 1;
+        targetLaneX = 1.8;
+      }
+
+      window.addEventListener('keydown', e => {
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+          moveLeft();
+        } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+          moveRight();
+        } else if (e.key === ' ' || e.key === 'Spacebar') {
+          e.preventDefault();
+          triggerJump();
+        }
+      });
+
+      $('#btn-left').addEventListener('click', moveLeft);
+      $('#btn-right').addEventListener('click', moveRight);
+      $('#btn-jump').addEventListener('click', triggerJump);
+      
+      $('#btn-start').addEventListener('click', startNewGame);
+      $('#btn-replay').addEventListener('click', startNewGame);
+      
+      $('#btn-main-menu').addEventListener('click', () => { window.location.href = 'menu.html'; });
+      $('#btn-exit-hub').addEventListener('click', () => { window.location.href = 'menu.html'; });
+
+      // -------------------------------------------------------------
+      // LOOP DE JUEGO Y RENDER
+      // -------------------------------------------------------------
+      init3D();
+
+      const RUNNING_SPEED = 25.0;
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        const dt = Math.min(clock.getDelta(), 0.05);
+        const t = clock.elapsedTime;
+
+        // Always scroll treadmill if robot is active/animating
+        treadmillTexture.offset.y = (treadmillTexture.offset.y - (RUNNING_SPEED * 0.015 * dt)) % 1.0;
+
+        if (gameState === 'playing') {
+          nextDoorTimer -= dt;
+          nextObstacleTimer -= dt;
+          
+          const ratio = Math.max(0, Math.min(1, nextDoorTimer / DOOR_CYCLE_TIME));
+          timerBar.style.width = `${(1 - ratio) * 100}%`;
+
+          if (nextDoorTimer <= 0) {
+            spawnDoorsPair();
+            nextDoorTimer = DOOR_CYCLE_TIME;
+          }
+
+          if (nextObstacleTimer <= 0) {
+            spawnObstacle();
+            nextObstacleTimer = DOOR_CYCLE_TIME;
+          }
+
+          for (let i = activeDoors.length - 1; i >= 0; i--) {
+            const door = activeDoors[i];
+            door.update(dt, RUNNING_SPEED, t);
+
+            if (!door.resolved && door.group.position.z >= -0.1 && door.group.position.z <= 1.2) {
+              const distToRobot = Math.abs(robot.group.position.x - door.group.position.x);
+              
+              if (distToRobot < 0.9) {
+                evaluateCollision(door);
+              }
+            }
+
+            if (door.group.position.z > 5) {
+              door.dispose();
+              activeDoors.splice(i, 1);
+            }
+          }
+
+          for (let i = activeObstacles.length - 1; i >= 0; i--) {
+            const obs = activeObstacles[i];
+            obs.update(dt, RUNNING_SPEED, t);
+
+            if (!obs.resolved && obs.group.position.z >= -0.3 && obs.group.position.z <= 0.5) {
+              const distToRobot = Math.abs(robot.group.position.x - obs.group.position.x);
+              if (distToRobot < 0.9) {
+                const jumped = robot.group.position.y > (0.3 + obs.height - 0.1);
+                if (jumped) {
+                  obs.resolved = true;
+                  playSound(600, 0.08, 'triangle', 0.1);
+                } else {
+                  triggerCrash(obs);
+                }
+              }
+            }
+
+            if (obs.group.position.z > 5) {
+              obs.dispose();
+              activeObstacles.splice(i, 1);
+            }
+          }
+
+          const targetZRot = (targetLaneX - robot.group.position.x) * 0.06; // Flipped sign due to Math.PI Y rotation
+          robot.group.position.x += (targetLaneX - robot.group.position.x) * 12 * dt;
+          robot.group.rotation.z += (targetZRot - robot.group.rotation.z) * 10 * dt;
+          
+          robot.update(dt, t);
+        } else {
+          robot.group.position.x += (0 - robot.group.position.x) * 8 * dt;
+          robot.group.rotation.z += (0 - robot.group.rotation.z) * 8 * dt;
+          robot.update(dt, t);
+        }
+
+        updateSparks(dt);
+
+        camera.position.x += ((robot.group.position.x * 0.45) - camera.position.x) * 8 * dt;
+        camera.lookAt(robot.group.position.x * 0.6, 1.35, -4);
+
+        renderer.render(scene, camera);
+
+        // Renderizar mini 3D del objetivo si existe
+        if (miniRobot) {
+          miniRobot.update(dt, t);
+          miniRenderer.render(miniScene, miniCamera);
+        }
+      }
+
+      animate();
+
+    })();
+  </script>
+
+  <!-- Música de fondo (electro alegre) -->
+  <script src="assets/music.js"></script>
+  <script>
+    initGameMusic({
+      tempo: 128,
+      lead: 'square',
+      sparkle: true,
+      volume: 0.5,
+      btnPos: 'bottom:16px;right:16px',
+      btnBg: 'linear-gradient(135deg,#00e5ff,#aa00ff)',
+      btnGlow: 'rgba(0,229,255,.7)',
+      chordSeq: ['C', 'G', 'Am', 'F', 'C', 'G', 'Am', 'F'],
+      melody: [
+        'G5','C5','E5','G5','A5','G5','E5','D5',
+        'B4','D5','G5','D5','B5','G5','D5','B4',
+        'A4','C5','E5','A5','E5','C5','E5','G5',
+        'F5','A5','C6','A5','F5','A5','G5','E5',
+        'C5','E5','G5','C6','G5','E5','D5','C5',
+        'B4','D5','G5','D5','A5','G5','D5','B4',
+        'A4','E5','A5','C6','A5','E5','C5','A4',
+        'F4','C5','F5','A5','C6','A5','F5','G5'
+      ]
+    });
+  </script>
+
+  <!-- Pantalla completa -->
+  <style>
+    #robo-fs-btn{position:fixed;bottom:16px;right:84px;z-index:9999;width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#4caf50,#00b0ff);box-shadow:0 8px 24px rgba(0,0,0,.5);transition:transform .15s}
+    #robo-fs-btn:hover{transform:scale(1.1)}
+  </style>
+  <button id="robo-fs-btn" aria-label="Pantalla completa" title="Pantalla completa">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9 V4 H9 M20 9 V4 H15 M4 15 V20 H9 M20 15 V20 H15"/></svg>
+  </button>
+  <script>
+    (function () {
+      var b = document.getElementById('robo-fs-btn');
+      if (!b) return;
+      b.addEventListener('click', function () {
+        if (!document.fullscreenElement) {
+          (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen || function () {}).call(document.documentElement);
+        } else {
+          (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

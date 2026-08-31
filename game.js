@@ -23,7 +23,10 @@ const ROSTER = [
 const ROUND_LENS = [3, 4, 5, 6, 7];
 
 function stepMs() {
-  return { 3: 1700, 4: 1500, 5: 1350, 6: 1150, 7: 1000 }[seq.length] || 1350;
+  const ramp = [1700, 1450, 1200, 950, 700];
+  const robotMs = ramp[pairIdx % ramp.length] || 1350;
+  const lenFast = Math.max(0, seq.length - 3) * 60;
+  return Math.max(520, robotMs - lenFast);
 }
 
 let actx = null;
