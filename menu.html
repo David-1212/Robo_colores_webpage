@@ -78,17 +78,18 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 18px;
       width: 100%;
-      max-width: 1000px;
+      max-width: 1180px;
+      align-items: stretch;
     }
 
     .game-card {
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      padding: 26px 22px;
+      gap: 12px;
+      padding: 20px 16px;
       border-radius: 22px;
       background: linear-gradient(160deg, rgba(23, 30, 60, .92), rgba(12, 15, 32, .92));
       border: 1px solid rgba(120, 150, 255, .35);
@@ -108,9 +109,9 @@
     }
 
     .game-icon {
-      width: 76px;
-      height: 76px;
-      border-radius: 20px;
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -143,7 +144,7 @@
     }
 
     .game-name {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 800;
       letter-spacing: .04em;
       display: flex;
@@ -301,6 +302,18 @@
     .fs-btn:hover { transform: scale(1.1); }
     .fs-btn:active { transform: scale(.95); }
     .fs-btn svg path { stroke: #071018; }
+
+    @media (min-width: 561px) and (max-width: 900px) {
+      .menu { gap: 22px; padding: 28px 16px 96px; justify-content: flex-start; }
+      .brand h1 { font-size: clamp(30px, 8vw, 46px); }
+      .grid { gap: 12px; max-width: 780px; }
+      .game-card { gap: 9px; padding: 14px 12px; border-radius: 16px; }
+      .game-icon { width: 44px; height: 44px; border-radius: 12px; }
+      .game-name { font-size: 14px; line-height: 1.15; gap: 5px; }
+      .mini-badge { font-size: 8px; padding: 2px 5px; }
+      .game-desc { font-size: 11px; line-height: 1.35; }
+      .game-go { font-size: 11px; padding: 7px 10px; }
+    }
 
     @media (max-width: 560px) {
       .menu {
