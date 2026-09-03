@@ -102,23 +102,23 @@
   <script>
     (function () {
       var b = document.getElementById('fs-btn');
-      var enterFS = function () {
-        if (!document.fullscreenElement) {
-          (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen || function () {}).call(document.documentElement);
+      var lastExit = 0;
+      var REQ = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+      var EXIT = document.exitFullscreen || document.webkitExitFullscreen || function () {};
+      function enterFS() {
+        if (!document.fullscreenElement && Date.now() - lastExit > 2500 && REQ) {
+          try { var p = REQ.call(document.documentElement); if (p && p.catch) p.catch(function () {}); } catch (e) {}
         }
-      };
-      var autoFS = function () {
-        enterFS();
-        window.removeEventListener('pointerdown', autoFS);
-        window.removeEventListener('keydown', autoFS);
-        window.removeEventListener('touchstart', autoFS);
-      };
-      window.addEventListener('pointerdown', autoFS);
-      window.addEventListener('keydown', autoFS);
-      window.addEventListener('touchstart', autoFS);
-      if (b) b.addEventListener('click', function () {
+      }
+      function onFSChange() { if (!document.fullscreenElement) lastExit = Date.now(); }
+      document.addEventListener('fullscreenchange', onFSChange);
+      if (document.webkitfullscreenchange) document.addEventListener('webkitfullscreenchange', onFSChange);
+      window.addEventListener('pointerdown', enterFS);
+      window.addEventListener('touchstart', enterFS);
+      if (b) b.addEventListener('click', function (ev) {
+        ev.stopPropagation();
         if (!document.fullscreenElement) enterFS();
-        else (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
+        else { lastExit = Date.now(); EXIT.call(document); }
       });
     })();
   </script>
