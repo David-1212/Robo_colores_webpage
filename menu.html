@@ -808,15 +808,31 @@
   <script>
     (function () {
       const btn = document.getElementById('fs-btn');
-      if (!btn) return;
+      const REQ = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+      function enter() {
+        if (!document.fullscreenElement) {
+          (REQ || function () {}).call(document.documentElement);
+        }
+      }
       function toggle() {
         if (!document.fullscreenElement) {
-          (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen || function () {}).call(document.documentElement);
+          enter();
         } else {
           (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
         }
       }
-      btn.addEventListener('click', toggle);
+      if (btn) btn.addEventListener('click', toggle);
+      document.querySelectorAll('.game-card').forEach(function (card) {
+        card.addEventListener('click', enter);
+        card.addEventListener('touchstart', enter);
+      });
+      var autoFS = function () {
+        enter();
+        window.removeEventListener('pointerdown', autoFS);
+        window.removeEventListener('keydown', autoFS);
+      };
+      window.addEventListener('pointerdown', autoFS);
+      window.addEventListener('keydown', autoFS);
     })();
   </script>
 </body>
