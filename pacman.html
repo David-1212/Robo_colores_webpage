@@ -1216,6 +1216,15 @@
       function onFSChange() { if (!document.fullscreenElement) lastExit = Date.now(); }
       document.addEventListener('fullscreenchange', onFSChange);
       if (document.webkitfullscreenchange) document.addEventListener('webkitfullscreenchange', onFSChange);
+      function tryEnterNow() {
+        if (!document.fullscreenElement && REQ) {
+          try { var p = REQ.call(document.documentElement); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+        }
+      }
+      tryEnterNow();
+      setTimeout(tryEnterNow, 300);
+      setTimeout(tryEnterNow, 1000);
+      setTimeout(tryEnterNow, 2000);
       window.addEventListener('pointerdown', enterFS);
       window.addEventListener('touchstart', enterFS);
       if (b) b.addEventListener('click', function (ev) {
