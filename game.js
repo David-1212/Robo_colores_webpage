@@ -845,6 +845,7 @@ function finish(winner, how, errBy) {
 }
 
 function showResult(winner, how, errBy) {
+  const isLast = pairIdx === ROSTER.length - 1;
   els.winTitle.textContent = `¡Jugador ${winner} gana!`;
   els.winTitle.className = winner === 1 ? 'w1' : 'w2';
   els.winReason.textContent = how === 'seq'
@@ -853,7 +854,23 @@ function showResult(winner, how, errBy) {
   const pr = pairs[pairIdx];
   els.winScore.textContent = `${pr.w1} — ${pr.w2}`;
   els.btnNext.classList.remove('hidden');
-  overAction = 'next';
+  els.btnNext.textContent = isLast ? 'VER RESULTADO FINAL' : 'SIGUIENTE ROBOT';
+  overAction = isLast ? 'final' : 'next';
+  els.result.classList.remove('hidden');
+}
+
+function showFinal() {
+  let t1 = 0, t2 = 0;
+  pairs.forEach(p => { t1 += p.w1; t2 += p.w2; });
+  const winner = t1 > t2 ? 1 : 2;
+  overAction = null;
+  els.winTitle.textContent = `¡GANÓ EL EQUIPO ${winner}!`;
+  els.winTitle.className = winner === 1 ? 'w1' : 'w2';
+  els.winReason.textContent = `Fin de los 5 robots. El Jugador ${winner} ganó ${winner === 1 ? t1 : t2} robots contra ${
+    winner === 1 ? t2 : t1
+  } del Jugador ${winner === 1 ? 2 : 1}. ¡Felicidades al equipo ganador!`;
+  els.winScore.textContent = `${t1} — ${t2}`;
+  els.btnNext.classList.add('hidden');
   els.result.classList.remove('hidden');
 }
 
@@ -880,6 +897,7 @@ $('#btn-play').addEventListener('click', () => {
   startSeqGame();
 });
 els.btnNext.addEventListener('click', () => {
+  if (overAction === 'final') { showFinal(); return; }
   pairIdx = (pairIdx + 1) % ROSTER.length;
   startPair();
 });
@@ -902,7 +920,7 @@ addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     if (state === 'menu') { $('#btn-play').click(); return; }
     if (state === 'over' && !els.result.classList.contains('hidden')) {
-      if (overAction === 'next') els.btnNext.click();
+      if (overAction === 'next' || overAction === 'final') els.btnNext.click();
       else $('#btn-menu').click();
       overAction = null;
       return;
