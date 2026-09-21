@@ -139,16 +139,27 @@
             text-shadow: 0 0 10px rgba(76, 217, 100, 0.6);
         }
 
-        /* Timer bar wrapper */
-        .timer-container {
+        /* Bottom Area: Timer Bar and Controls */
+        .bottom-hud {
             width: 100%;
             max-width: 600px;
-            margin: 10px auto 0 auto;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .timer-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 4px;
             overflow: hidden;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            pointer-events: auto;
         }
 
         .timer-bar {
@@ -292,12 +303,11 @@
         /* Audio and Instructions controls (Bottom Panel) */
         footer {
             width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 15px;
+            padding: 0 4px;
+            pointer-events: auto;
         }
 
         .control-btn {
@@ -442,6 +452,18 @@
 
         /* Screen size configurations */
         @media (max-width: 480px) {
+            #ui-layer {
+                padding: 12px 14px;
+            }
+
+            .bottom-hud {
+                gap: 8px;
+            }
+
+            .timer-container {
+                height: 7px;
+            }
+
             .game-title {
                 font-size: 2.2rem;
             }
@@ -450,12 +472,50 @@
                 font-size: 1.2rem;
             }
 
-            .screen-overlay {
-                padding: 30px 20px;
+            .hud-label {
+                font-size: 0.65rem;
             }
 
             .status-message {
-                font-size: 1.4rem;
+                font-size: 1.3rem;
+            }
+
+            .control-btn {
+                width: 38px;
+                height: 38px;
+            }
+        }
+
+        @media (max-height: 520px) {
+            #ui-layer {
+                padding: 8px 14px;
+            }
+
+            header {
+                padding: 8px 12px;
+                gap: 8px;
+            }
+
+            .hud-value {
+                font-size: 1.1rem;
+            }
+
+            .hud-label {
+                font-size: 0.6rem;
+                margin-bottom: 2px;
+            }
+
+            .bottom-hud {
+                gap: 6px;
+            }
+
+            .timer-container {
+                height: 6px;
+            }
+
+            .control-btn {
+                width: 36px;
+                height: 36px;
             }
         }
     </style>
@@ -489,31 +549,33 @@
             </div>
         </header>
 
-        <!-- Dynamic Timer Bar -->
-        <div class="timer-container interactive">
-            <div id="timer-bar" class="timer-bar"></div>
-        </div>
-
         <!-- Status Message Indicator (Play / Guess / Correct) -->
         <div id="status-msg" class="status-message">Repite la secuencia</div>
 
-        <!-- BOTTOM CONTROLS -->
-        <footer class="interactive">
-            <button id="info-btn" class="control-btn" title="Cómo Jugar">
-                <!-- Info Icon -->
-                <svg viewBox="0 0 24 24">
-                    <path
-                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-                </svg>
-            </button>
-            <button id="mute-btn" class="control-btn" title="Alternar Sonido">
-                <!-- Speaker Icon -->
-                <svg id="mute-icon" viewBox="0 0 24 24">
-                    <path
-                        d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-                </svg>
-            </button>
-        </footer>
+        <!-- BOTTOM AREA: Dynamic Timer Bar & Controls -->
+        <div class="bottom-hud">
+            <div class="timer-container interactive">
+                <div id="timer-bar" class="timer-bar"></div>
+            </div>
+
+            <!-- BOTTOM CONTROLS -->
+            <footer class="interactive">
+                <button id="info-btn" class="control-btn" title="Cómo Jugar">
+                    <!-- Info Icon -->
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                    </svg>
+                </button>
+                <button id="mute-btn" class="control-btn" title="Alternar Sonido">
+                    <!-- Speaker Icon -->
+                    <svg id="mute-icon" viewBox="0 0 24 24">
+                        <path
+                            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                    </svg>
+                </button>
+            </footer>
+        </div>
     </div>
 
     <!-- SCREENS -->

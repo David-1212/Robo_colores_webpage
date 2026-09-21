@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +20,8 @@
       padding: 0;
     }
 
-    html, body {
+    html,
+    body {
       height: 100%;
     }
 
@@ -78,7 +80,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 18px;
       width: 100%;
       max-width: 1180px;
@@ -183,28 +185,63 @@
     }
 
     @keyframes blink {
-      0%, 100% { opacity: .35; }
-      50% { opacity: 1; }
+
+      0%,
+      100% {
+        opacity: .35;
+      }
+
+      50% {
+        opacity: 1;
+      }
     }
 
     @keyframes walk {
-      0%, 100% { transform: translateX(0); }
-      50% { transform: translateX(4px); }
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      50% {
+        transform: translateX(4px);
+      }
     }
 
     @keyframes chew {
-      0%, 100% { transform: scaleX(1); }
-      50% { transform: scaleX(.82); }
+
+      0%,
+      100% {
+        transform: scaleX(1);
+      }
+
+      50% {
+        transform: scaleX(.82);
+      }
     }
 
     @keyframes floaty {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-3px); }
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-3px);
+      }
     }
 
     @keyframes antWiggle {
-      0%, 100% { transform: rotate(0deg); }
-      50% { transform: rotate(14deg); }
+
+      0%,
+      100% {
+        transform: rotate(0deg);
+      }
+
+      50% {
+        transform: rotate(14deg);
+      }
     }
 
     /* Logos institucionales en las esquinas */
@@ -223,37 +260,58 @@
       opacity: .92;
       transition: transform .2s, opacity .2s, border-color .2s;
     }
+
     .corner-logo:hover {
       transform: translateY(-3px);
       opacity: 1;
       border-color: rgba(0, 229, 255, .6);
     }
+
     .corner-logo img {
       height: 46px;
       width: auto;
       filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .55));
     }
+
     .cl-text {
       display: flex;
       flex-direction: column;
       line-height: 1.15;
     }
+
     .cl-text strong {
       font-size: 16px;
       font-weight: 800;
       letter-spacing: .05em;
       color: #eef2ff;
     }
+
     .cl-text span {
       font-size: 9.5px;
       text-transform: uppercase;
       letter-spacing: .08em;
       opacity: .7;
     }
-    .corner-logo.tl { top: 18px; left: 18px; }
-    .corner-logo.bl { bottom: 18px; left: 18px; }
-    .corner-logo.br { bottom: 18px; right: 18px; }
-    .corner-logo.tr { top: 18px; right: 18px; }
+
+    .corner-logo.tl {
+      top: 18px;
+      left: 18px;
+    }
+
+    .corner-logo.bl {
+      bottom: 18px;
+      left: 18px;
+    }
+
+    .corner-logo.br {
+      bottom: 18px;
+      right: 18px;
+    }
+
+    .corner-logo.tr {
+      top: 18px;
+      right: 18px;
+    }
 
     /* Botón de música */
     .music-btn {
@@ -274,16 +332,42 @@
       box-shadow: 0 10px 28px rgba(0, 229, 255, .45);
       transition: transform .18s, box-shadow .18s;
     }
-    .music-btn:hover { transform: translateX(-50%) scale(1.1); }
-    .music-btn:active { transform: translateX(-50%) scale(.95); }
-    @keyframes musicPulse {
-      0%, 100% { box-shadow: 0 10px 28px rgba(0, 229, 255, .45); }
-      50% { box-shadow: 0 10px 34px rgba(0, 229, 255, .8); }
+
+    .music-btn:hover {
+      transform: translateX(-50%) scale(1.1);
     }
-    .music-btn.is-on { animation: musicPulse 2.2s ease-in-out infinite; }
-    .music-btn .spk-mute { display: none; }
-    .music-btn.is-off .spk-wave { display: none; }
-    .music-btn.is-off .spk-mute { display: block; }
+
+    .music-btn:active {
+      transform: translateX(-50%) scale(.95);
+    }
+
+    @keyframes musicPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 10px 28px rgba(0, 229, 255, .45);
+      }
+
+      50% {
+        box-shadow: 0 10px 34px rgba(0, 229, 255, .8);
+      }
+    }
+
+    .music-btn.is-on {
+      animation: musicPulse 2.2s ease-in-out infinite;
+    }
+
+    .music-btn .spk-mute {
+      display: none;
+    }
+
+    .music-btn.is-off .spk-wave {
+      display: none;
+    }
+
+    .music-btn.is-off .spk-mute {
+      display: block;
+    }
 
     /* Botón de pantalla completa */
     .fs-btn {
@@ -303,20 +387,67 @@
       box-shadow: 0 10px 28px rgba(0, 229, 255, .45);
       transition: transform .18s, box-shadow .18s;
     }
-    .fs-btn:hover { transform: scale(1.1); }
-    .fs-btn:active { transform: scale(.95); }
-    .fs-btn svg path { stroke: #071018; }
+
+    .fs-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .fs-btn:active {
+      transform: scale(.95);
+    }
+
+    .fs-btn svg path {
+      stroke: #071018;
+    }
 
     @media (min-width: 561px) and (max-width: 900px) {
-      .menu { gap: 22px; padding: 28px 16px 96px; justify-content: flex-start; }
-      .brand h1 { font-size: clamp(30px, 8vw, 46px); }
-      .grid { gap: 12px; max-width: 780px; }
-      .game-card { gap: 9px; padding: 14px 12px; border-radius: 16px; }
-      .game-icon { width: 44px; height: 44px; border-radius: 12px; }
-      .game-name { font-size: 14px; line-height: 1.15; gap: 5px; }
-      .mini-badge { font-size: 8px; padding: 2px 5px; }
-      .game-desc { font-size: 11px; line-height: 1.35; }
-      .game-go { font-size: 11px; padding: 7px 10px; }
+      .menu {
+        gap: 22px;
+        padding: 28px 16px 96px;
+        justify-content: flex-start;
+      }
+
+      .brand h1 {
+        font-size: clamp(30px, 8vw, 46px);
+      }
+
+      .grid {
+        gap: 12px;
+        max-width: 780px;
+      }
+
+      .game-card {
+        gap: 9px;
+        padding: 14px 12px;
+        border-radius: 16px;
+      }
+
+      .game-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+      }
+
+      .game-name {
+        font-size: 14px;
+        line-height: 1.15;
+        gap: 5px;
+      }
+
+      .mini-badge {
+        font-size: 8px;
+        padding: 2px 5px;
+      }
+
+      .game-desc {
+        font-size: 11px;
+        line-height: 1.35;
+      }
+
+      .game-go {
+        font-size: 11px;
+        padding: 7px 10px;
+      }
     }
 
     @media (max-width: 560px) {
@@ -325,25 +456,39 @@
         padding: 24px 14px 96px;
         justify-content: flex-start;
       }
-      .brand h1 { font-size: clamp(28px, 8vw, 42px); }
-      .brand p { font-size: 11px; letter-spacing: .18em; }
-      .grid {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 8px;
-        max-width: 640px;
+
+      .brand h1 {
+        font-size: clamp(28px, 8vw, 42px);
       }
+
+      .brand p {
+        font-size: 11px;
+        letter-spacing: .18em;
+      }
+
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        max-width: 520px;
+      }
+
       .game-card {
         gap: 7px;
         padding: 10px 8px;
         border-radius: 14px;
         align-items: center;
       }
-      .game-card:hover { transform: translateY(-3px) scale(1.01); }
+
+      .game-card:hover {
+        transform: translateY(-3px) scale(1.01);
+      }
+
       .game-icon {
         width: 40px;
         height: 40px;
         border-radius: 10px;
       }
+
       .game-name {
         font-size: 12px;
         line-height: 1.1;
@@ -352,20 +497,50 @@
         justify-content: center;
         flex-wrap: wrap;
       }
-      .mini-badge { font-size: 8px; padding: 2px 5px; }
-      .game-desc { font-size: 10px; line-height: 1.3; text-align: center; }
-      .game-go { font-size: 10px; padding: 6px 8px; width: 100%; }
-      .corner-logo { display: none; }
+
+      .mini-badge {
+        font-size: 8px;
+        padding: 2px 5px;
+      }
+
+      .game-desc {
+        font-size: 10px;
+        line-height: 1.3;
+        text-align: center;
+      }
+
+      .game-go {
+        font-size: 10px;
+        padding: 6px 8px;
+        width: 100%;
+      }
+
+      .corner-logo {
+        display: none;
+      }
     }
 
     @media (max-width: 340px) {
-      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .game-card { padding: 12px 10px; }
-      .game-icon { width: 44px; height: 44px; }
-      .game-name { font-size: 13px; }
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .game-card {
+        padding: 12px 10px;
+      }
+
+      .game-icon {
+        width: 44px;
+        height: 44px;
+      }
+
+      .game-name {
+        font-size: 13px;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <!-- Fondo 3D animado -->
@@ -399,22 +574,23 @@
   <!-- Botón de música del menú -->
   <button id="music-btn" class="music-btn is-on" aria-label="Alternar música" title="Música">
     <svg viewBox="0 0 40 40" width="26" height="26" aria-hidden="true">
-      <rect x="7" y="15" width="7" height="10" rx="1.5" fill="#071018"/>
-      <path d="M14 15 L21 9 L21 31 L14 25 Z" fill="#071018"/>
+      <rect x="7" y="15" width="7" height="10" rx="1.5" fill="#071018" />
+      <path d="M14 15 L21 9 L21 31 L14 25 Z" fill="#071018" />
       <g class="spk-wave">
-        <path d="M24 15 a5 5 0 0 1 0 10" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round"/>
-        <path d="M28 12 a9 9 0 0 1 0 16" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M24 15 a5 5 0 0 1 0 10" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round" />
+        <path d="M28 12 a9 9 0 0 1 0 16" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round" />
       </g>
       <g class="spk-mute">
-        <path d="M23 15 L34 26 M34 15 L23 26" stroke="#071018" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M23 15 L34 26 M34 15 L23 26" stroke="#071018" stroke-width="2.6" stroke-linecap="round" />
       </g>
     </svg>
   </button>
 
   <!-- Botón de pantalla completa -->
   <button id="fs-btn" class="fs-btn" aria-label="Pantalla completa" title="Pantalla completa">
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 9 V4 H9 M20 9 V4 H15 M4 15 V20 H9 M20 15 V20 H15"/>
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#071018" stroke-width="2.4"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9 V4 H9 M20 9 V4 H15 M4 15 V20 H9 M20 15 V20 H15" />
     </svg>
   </button>
 
@@ -429,95 +605,82 @@
         <div class="game-icon" style="background:linear-gradient(135deg,#002b3a,#01313f)">
           <svg viewBox="0 0 100 100" aria-hidden="true">
             <g style="transform-origin:50px 8px;animation:antWiggle 2.4s ease-in-out infinite">
-              <line x1="50" y1="22" x2="50" y2="8" stroke="#9ad7ff" stroke-width="3" stroke-linecap="round"/>
-              <circle cx="50" cy="7" r="3.6" fill="#00e5ff"/>
+              <line x1="50" y1="22" x2="50" y2="8" stroke="#9ad7ff" stroke-width="3" stroke-linecap="round" />
+              <circle cx="50" cy="7" r="3.6" fill="#00e5ff" />
             </g>
-            <rect x="28" y="24" width="44" height="34" rx="10" fill="#2b3b5e" stroke="#00e5ff" stroke-width="2.5"/>
-            <circle cx="40" cy="39" r="7" fill="#ffffff"/>
-            <circle cx="60" cy="39" r="7" fill="#ffffff"/>
-            <circle cx="40" cy="39" r="3.4" fill="#00e5ff"/>
-            <circle cx="60" cy="39" r="3.4" fill="#f50057"/>
-            <rect x="46" y="50" width="8" height="5" rx="2.5" fill="#0c1222"/>
-            <rect x="18" y="40" width="8" height="12" rx="3" fill="#00e5ff"/>
-            <rect x="74" y="40" width="8" height="12" rx="3" fill="#00e5ff"/>
-            <rect x="34" y="58" width="32" height="18" rx="6" fill="#3d4f7d" stroke="#00e5ff" stroke-width="2.5"/>
-            <circle cx="34" cy="58" r="3" fill="#00e5ff"/>
-            <circle cx="50" cy="58" r="3" fill="#00e5ff"/>
-            <circle cx="66" cy="58" r="3" fill="#00e5ff"/>
-            <rect x="30" y="76" width="10" height="14" rx="4" fill="#36477a"/>
-            <rect x="60" y="76" width="10" height="14" rx="4" fill="#36477a"/>
-            <rect x="31" y="76" width="3" height="14" fill="#00e5ff"/>
-            <rect x="66" y="76" width="3" height="14" fill="#f50057"/>
+            <rect x="28" y="24" width="44" height="34" rx="10" fill="#2b3b5e" stroke="#00e5ff" stroke-width="2.5" />
+            <circle cx="40" cy="39" r="7" fill="#ffffff" />
+            <circle cx="60" cy="39" r="7" fill="#ffffff" />
+            <circle cx="40" cy="39" r="3.4" fill="#00e5ff" />
+            <circle cx="60" cy="39" r="3.4" fill="#f50057" />
+            <rect x="46" y="50" width="8" height="5" rx="2.5" fill="#0c1222" />
+            <rect x="18" y="40" width="8" height="12" rx="3" fill="#00e5ff" />
+            <rect x="74" y="40" width="8" height="12" rx="3" fill="#00e5ff" />
+            <rect x="34" y="58" width="32" height="18" rx="6" fill="#3d4f7d" stroke="#00e5ff" stroke-width="2.5" />
+            <circle cx="34" cy="58" r="3" fill="#00e5ff" />
+            <circle cx="50" cy="58" r="3" fill="#00e5ff" />
+            <circle cx="66" cy="58" r="3" fill="#00e5ff" />
+            <rect x="30" y="76" width="10" height="14" rx="4" fill="#36477a" />
+            <rect x="60" y="76" width="10" height="14" rx="4" fill="#36477a" />
+            <rect x="31" y="76" width="3" height="14" fill="#00e5ff" />
+            <rect x="66" y="76" width="3" height="14" fill="#f50057" />
           </svg>
         </div>
         <div class="game-name">ROBO·COLORES <span class="mini-badge">2 JUGADORES</span></div>
-        <div class="game-desc">Duelo de memoria para 2 jugadores. Repite la secuencia de colores, pinta los robots y gana.</div>
+        <div class="game-desc">Duelo de memoria para 2 jugadores. Repite la secuencia de colores, pinta los robots y
+          gana.</div>
         <div class="game-go">JUGAR</div>
       </a>
 
       <a class="game-card" href="secuenciador.html">
         <div class="game-icon" style="background:linear-gradient(135deg,#1a0b33,#1d0d3e)">
           <svg viewBox="0 0 100 100" aria-hidden="true">
-            <rect x="14" y="14" width="22" height="22" rx="4" fill="#7c4dff" style="animation:blink 2.2s ease-in-out infinite"/>
-            <rect x="39" y="14" width="22" height="22" rx="4" fill="#00e5ff" style="animation:blink 2.2s .35s ease-in-out infinite"/>
-            <rect x="64" y="14" width="22" height="22" rx="4" fill="#aeea00" style="animation:blink 2.2s .7s ease-in-out infinite"/>
-            <rect x="14" y="39" width="22" height="22" rx="4" fill="#f50057" style="animation:blink 2.2s 1.05s ease-in-out infinite"/>
-            <rect x="39" y="39" width="22" height="22" rx="4" fill="#ffd600" style="animation:blink 2.2s 1.4s ease-in-out infinite"/>
-            <rect x="64" y="39" width="22" height="22" rx="4" fill="#2979ff" style="animation:blink 2.2s 1.75s ease-in-out infinite"/>
-            <rect x="14" y="64" width="22" height="22" rx="4" fill="#00c853" style="animation:blink 2.2s .2s ease-in-out infinite"/>
-            <rect x="39" y="64" width="22" height="22" rx="4" fill="#ff6d00" style="animation:blink 2.2s .55s ease-in-out infinite"/>
-            <rect x="64" y="64" width="22" height="22" rx="4" fill="#aa00ff" style="animation:blink 2.2s .9s ease-in-out infinite"/>
+            <rect x="14" y="14" width="22" height="22" rx="4" fill="#7c4dff"
+              style="animation:blink 2.2s ease-in-out infinite" />
+            <rect x="39" y="14" width="22" height="22" rx="4" fill="#00e5ff"
+              style="animation:blink 2.2s .35s ease-in-out infinite" />
+            <rect x="64" y="14" width="22" height="22" rx="4" fill="#aeea00"
+              style="animation:blink 2.2s .7s ease-in-out infinite" />
+            <rect x="14" y="39" width="22" height="22" rx="4" fill="#f50057"
+              style="animation:blink 2.2s 1.05s ease-in-out infinite" />
+            <rect x="39" y="39" width="22" height="22" rx="4" fill="#ffd600"
+              style="animation:blink 2.2s 1.4s ease-in-out infinite" />
+            <rect x="64" y="39" width="22" height="22" rx="4" fill="#2979ff"
+              style="animation:blink 2.2s 1.75s ease-in-out infinite" />
+            <rect x="14" y="64" width="22" height="22" rx="4" fill="#00c853"
+              style="animation:blink 2.2s .2s ease-in-out infinite" />
+            <rect x="39" y="64" width="22" height="22" rx="4" fill="#ff6d00"
+              style="animation:blink 2.2s .55s ease-in-out infinite" />
+            <rect x="64" y="64" width="22" height="22" rx="4" fill="#aa00ff"
+              style="animation:blink 2.2s .9s ease-in-out infinite" />
           </svg>
         </div>
         <div class="game-name">SECUENCIADOR 3D <span class="mini-badge">INDIVIDUAL</span></div>
-        <div class="game-desc">Observa y repite la secuencia de 9 cubos con tonos musicales antes de que se agote el tiempo.</div>
+        <div class="game-desc">Observa y repite la secuencia de 9 cubos con tonos musicales antes de que se agote el
+          tiempo.</div>
         <div class="game-go">JUGAR</div>
       </a>
 
-      <a class="game-card" href="snake.html">
-        <div class="game-icon" style="background:linear-gradient(135deg,#001a33,#00264d)">
-          <svg viewBox="0 0 100 100" aria-hidden="true">
-            <circle cx="16" cy="70" r="7" fill="#00c853"/>
-            <circle cx="28" cy="60" r="7" fill="#ffd600"/>
-            <circle cx="42" cy="52" r="7" fill="#2979ff"/>
-            <circle cx="58" cy="46" r="7" fill="#f50057"/>
-            <circle cx="74" cy="42" r="7" fill="#aeea00"/>
-            <g style="transform-origin:84px 40px;animation:chew 1.6s ease-in-out infinite">
-              <path d="M74 42 a7 7 0 0 1 14 -6 a7 7 0 0 1 0 12 a7 7 0 0 1 -14 -6z" fill="#009688"/>
-              <circle cx="84" cy="42" r="1.6" fill="#fff"/>
-            </g>
-            <g style="animation:floaty 2s ease-in-out infinite">
-              <circle cx="86" cy="18" r="6" fill="#ff3b30"/>
-              <line x1="86" y1="18" x2="82" y2="22" stroke="#0a5f2a" stroke-width="2" stroke-linecap="round"/>
-              <line x1="85" y1="18" x2="89" y2="12.5" stroke="#0a5f2a" stroke-width="2" stroke-linecap="round"/>
-              <rect x="84.4" y="9.5" width="3.4" height="4" rx="1" fill="#6d8b3a"/>
-            </g>
-          </svg>
-        </div>
-        <div class="game-name">SERPIENTE 3D <span class="mini-badge">INDIVIDUAL</span></div>
-        <div class="game-desc">Serpiente semitridimensional que cambia de color según la mezcla de colores que come.</div>
-        <div class="game-go">JUGAR</div>
-      </a>
 
       <a class="game-card" href="pacman.html">
         <div class="game-icon" style="background:linear-gradient(135deg,#332300,#4d3500)">
           <svg viewBox="0 0 100 100" aria-hidden="true">
             <g style="animation:blink 1.8s ease-in-out infinite">
-              <path d="M22 78 a7 7 0 0 1 14 0z" fill="#ff0000"/>
-              <circle cx="27" cy="70" r="2" fill="#99c2ff"/>
-              <path d="M14 78 l4 -6" stroke="#ff0000" stroke-width="2" stroke-linecap="round"/>
-              <path d="M30 78 l4 -6" stroke="#ff0000" stroke-width="2" stroke-linecap="round"/>
+              <path d="M22 78 a7 7 0 0 1 14 0z" fill="#ff0000" />
+              <circle cx="27" cy="70" r="2" fill="#99c2ff" />
+              <path d="M14 78 l4 -6" stroke="#ff0000" stroke-width="2" stroke-linecap="round" />
+              <path d="M30 78 l4 -6" stroke="#ff0000" stroke-width="2" stroke-linecap="round" />
             </g>
             <g style="animation:blink 1.8s .7s ease-in-out infinite">
-              <path d="M58 74 a7 7 0 0 1 14 0z" fill="#ff8c00"/>
-              <circle cx="63" cy="66" r="2" fill="#fff"/>
-              <path d="M50 74 l4 -6" stroke="#ff8c00" stroke-width="2" stroke-linecap="round"/>
-              <path d="M66 74 l4 -6" stroke="#ff8c00" stroke-width="2" stroke-linecap="round"/>
+              <path d="M58 74 a7 7 0 0 1 14 0z" fill="#ff8c00" />
+              <circle cx="63" cy="66" r="2" fill="#fff" />
+              <path d="M50 74 l4 -6" stroke="#ff8c00" stroke-width="2" stroke-linecap="round" />
+              <path d="M66 74 l4 -6" stroke="#ff8c00" stroke-width="2" stroke-linecap="round" />
             </g>
             <g style="transform-origin:40px 52px;animation:chew 1s steps(2,end) infinite">
-              <path d="M40 28 A20 20 0 1 0 40 76 L40 52 Z" fill="#ffe000"/>
-              <circle cx="46" cy="42" r="2.6" fill="#000"/>
-              <circle cx="46" cy="42" r="1" fill="#fff"/>
+              <path d="M40 28 A20 20 0 1 0 40 76 L40 52 Z" fill="#ffe000" />
+              <circle cx="46" cy="42" r="2.6" fill="#000" />
+              <circle cx="46" cy="42" r="1" fill="#fff" />
             </g>
           </svg>
         </div>
@@ -529,29 +692,34 @@
       <a class="game-card" href="robolane.html">
         <div class="game-icon" style="background:linear-gradient(135deg,#0a1b3a,#0d1020)">
           <svg viewBox="0 0 100 100" aria-hidden="true">
-            <rect x="10" y="72" width="80" height="8" rx="4" fill="#1a2a4a"/>
-            <rect x="14" y="74" width="12" height="4" rx="2" fill="#00e5ff" style="animation:blink 2s ease-in-out infinite"/>
-            <rect x="34" y="74" width="12" height="4" rx="2" fill="#f50057" style="animation:blink 2s .4s ease-in-out infinite"/>
-            <rect x="54" y="74" width="12" height="4" rx="2" fill="#aeea00" style="animation:blink 2s .8s ease-in-out infinite"/>
-            <rect x="74" y="74" width="12" height="4" rx="2" fill="#aa00ff" style="animation:blink 2s 1.2s ease-in-out infinite"/>
+            <rect x="10" y="72" width="80" height="8" rx="4" fill="#1a2a4a" />
+            <rect x="14" y="74" width="12" height="4" rx="2" fill="#00e5ff"
+              style="animation:blink 2s ease-in-out infinite" />
+            <rect x="34" y="74" width="12" height="4" rx="2" fill="#f50057"
+              style="animation:blink 2s .4s ease-in-out infinite" />
+            <rect x="54" y="74" width="12" height="4" rx="2" fill="#aeea00"
+              style="animation:blink 2s .8s ease-in-out infinite" />
+            <rect x="74" y="74" width="12" height="4" rx="2" fill="#aa00ff"
+              style="animation:blink 2s 1.2s ease-in-out infinite" />
             <g>
-              <rect x="34" y="30" width="32" height="26" rx="8" fill="#2b3b5e" stroke="#00e5ff" stroke-width="2.5"/>
-              <circle cx="43" cy="43" r="6.5" fill="#ffffff"/>
-              <circle cx="57" cy="43" r="6.5" fill="#ffffff"/>
-              <circle cx="43" cy="43" r="3" fill="#00e5ff"/>
-              <circle cx="57" cy="43" r="3" fill="#f50057"/>
-              <rect x="44" y="51" width="12" height="4" rx="2" fill="#0c1222"/>
-              <rect x="22" y="40" width="9" height="12" rx="3" fill="#aa00ff"/>
-              <rect x="69" y="40" width="9" height="12" rx="3" fill="#aa00ff"/>
+              <rect x="34" y="30" width="32" height="26" rx="8" fill="#2b3b5e" stroke="#00e5ff" stroke-width="2.5" />
+              <circle cx="43" cy="43" r="6.5" fill="#ffffff" />
+              <circle cx="57" cy="43" r="6.5" fill="#ffffff" />
+              <circle cx="43" cy="43" r="3" fill="#00e5ff" />
+              <circle cx="57" cy="43" r="3" fill="#f50057" />
+              <rect x="44" y="51" width="12" height="4" rx="2" fill="#0c1222" />
+              <rect x="22" y="40" width="9" height="12" rx="3" fill="#aa00ff" />
+              <rect x="69" y="40" width="9" height="12" rx="3" fill="#aa00ff" />
               <g style="animation:walk .7s ease-in-out infinite">
-                <rect x="38" y="56" width="8" height="16" rx="3" fill="#36477a"/>
+                <rect x="38" y="56" width="8" height="16" rx="3" fill="#36477a" />
               </g>
-              <rect x="54" y="56" width="8" height="16" rx="3" fill="#36477a"/>
+              <rect x="54" y="56" width="8" height="16" rx="3" fill="#36477a" />
             </g>
           </svg>
         </div>
         <div class="game-name">ROBO·LANE <span class="mini-badge">INDIVIDUAL</span></div>
-        <div class="game-desc">Guía al robot Volt por la autopista, elige las puertas de colores correctas y píntalo de objetivo.</div>
+        <div class="game-desc">Guía al robot Volt por la autopista, elige las puertas de colores correctas y píntalo de
+          objetivo.</div>
         <div class="game-go">JUGAR</div>
       </a>
     </div>
@@ -712,10 +880,10 @@
 
       const spb = 60 / 120 / 2; // corchea a 120 bpm
       const CHORDS = {
-        C:  { bass: 'C2', arp: ['C4', 'E4', 'G4', 'C5', 'E5', 'G5'], pad: ['C3', 'G3', 'E4'] },
+        C: { bass: 'C2', arp: ['C4', 'E4', 'G4', 'C5', 'E5', 'G5'], pad: ['C3', 'G3', 'E4'] },
         Am: { bass: 'A2', arp: ['A3', 'C4', 'E4', 'A4', 'C5', 'E5'], pad: ['A3', 'E4', 'C4'] },
-        F:  { bass: 'F2', arp: ['F3', 'A3', 'C4', 'F4', 'A4', 'C5'], pad: ['F3', 'C4', 'A3'] },
-        G:  { bass: 'G2', arp: ['G3', 'B3', 'D4', 'G4', 'B4', 'D5'], pad: ['G3', 'D4', 'B3'] }
+        F: { bass: 'F2', arp: ['F3', 'A3', 'C4', 'F4', 'A4', 'C5'], pad: ['F3', 'C4', 'A3'] },
+        G: { bass: 'G2', arp: ['G3', 'B3', 'D4', 'G4', 'B4', 'D5'], pad: ['G3', 'D4', 'B3'] }
       };
       const chordSeq = ['C', 'Am', 'F', 'G', 'C', 'F', 'Am', 'G'];
       const arpPat = [0, 1, 2, 3, 2, 1, 0, 1];
@@ -811,14 +979,14 @@
       const REQ = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
       function enter() {
         if (!document.fullscreenElement) {
-          (REQ || function () {}).call(document.documentElement);
+          (REQ || function () { }).call(document.documentElement);
         }
       }
       function toggle() {
         if (!document.fullscreenElement) {
           enter();
         } else {
-          (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
+          (document.exitFullscreen || document.webkitExitFullscreen || function () { }).call(document);
         }
       }
       if (btn) btn.addEventListener('click', toggle);
@@ -836,4 +1004,5 @@
     })();
   </script>
 </body>
+
 </html>

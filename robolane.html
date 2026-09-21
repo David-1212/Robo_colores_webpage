@@ -159,6 +159,7 @@
 
     /* Banner Central de Indicaciones */
     .game-prompt {
+      display: none !important;
       position: absolute;
       top: 155px;
       left: 50%;
@@ -569,7 +570,6 @@
       
       <div class="blueprints-container" style="padding: 6px 15px;">
         <div class="bp-card active-bp">
-          <h3 style="margin-bottom: 2px;">Objetivo</h3>
           <div id="mini-3d-container" style="width: 120px; height: 140px; position: relative;"></div>
         </div>
       </div>
@@ -590,11 +590,7 @@
       </div>
     </header>
 
-    <!-- Indicador de color actual -->
-    <div class="game-prompt" id="game-prompt">
-      <div class="prompt-dot"></div>
-      <span id="prompt-text">Espera a que comience la carrera...</span>
-    </div>
+
 
     <!-- Toast de Feedback -->
     <div class="feedback-toast" id="feedback-toast">¡CORRECTO!</div>
@@ -1249,23 +1245,75 @@
             this.headGroup.rotation.x = 0.05;
             this.group.position.y = 0.05;
 
-            // Pulsate the active target part's emissive on the mini-robot as well to highlight it!
-            if (gameState === 'playing' && currentStep < 7) {
-              const activePartId = PARTS_SEQUENCE[currentStep].id;
-              const pulse = 0.5 + 0.5 * Math.sin(t * 8);
-              this.partIds.forEach(id => {
-                const mat = this.materials[id];
-                if (id === activePartId) {
-                  mat.emissiveIntensity = 0.55 + pulse * 1.2;
+            // Esquema progresivo en el robot objetivo:
+            // Solo muestra el color de la parte actual y las ya pintadas.
+            // La parte actual parpadea con el color objetivo que se debe tomar.
+            if ((gameState === 'playing' || gameState === 'countdown') && typeof targetSequence !== 'undefined' && targetSequence && targetSequence.length >= 7) {
+              const isBlinkOn = (Math.sin(t * 10) > -0.2); // Parpadeo rítmico
+
+              PARTS_SEQUENCE.forEach(part => {
+                const mat = this.materials[part.id];
+                if (!mat) return;
+
+                if (part.index < currentStep) {
+                  // Parte ya pintada: deja de parpadear y permanece con su color objetivo fijo
+                  const colorHex = PALETTE[targetSequence[part.index]].hex;
+                  mat.color.setHex(colorHex);
+                  mat.emissive.setHex(colorHex);
+                  mat.emissiveIntensity = 0.5;
+                  if (part.id === 'cab' || part.id === 'ant') {
+                    this.eyeL.material.color.setHex(colorHex);
+                    this.eyeR.material.color.setHex(colorHex);
+                  }
+                } else if (part.index === currentStep && currentStep < 7) {
+                  // Parte actual que se debe pintar: parpadea en el color objetivo a tomar
+                  const targetColorHex = PALETTE[targetSequence[currentStep]].hex;
+                  if (isBlinkOn) {
+                    mat.color.setHex(targetColorHex);
+                    mat.emissive.setHex(targetColorHex);
+                    mat.emissiveIntensity = 1.6;
+                    if (part.id === 'cab' || part.id === 'ant') {
+                      this.eyeL.material.color.setHex(targetColorHex);
+                      this.eyeR.material.color.setHex(targetColorHex);
+                    }
+                  } else {
+                    mat.color.setHex(GRAY_COLOR);
+                    mat.emissive.setHex(0x000000);
+                    mat.emissiveIntensity = 0.0;
+                    if (part.id === 'cab' || part.id === 'ant') {
+                      this.eyeL.material.color.setHex(0x00e5ff);
+                      this.eyeR.material.color.setHex(0x00e5ff);
+                    }
+                  }
                 } else {
-                  mat.emissiveIntensity = 0.55;
+                  // Partes futuras: permanecen en gris neutro sin colorear
+                  mat.color.setHex(GRAY_COLOR);
+                  mat.emissive.setHex(0x000000);
+                  mat.emissiveIntensity = 0.0;
                 }
               });
-            } else {
-              // Reset all intensities to default reference level
-              this.partIds.forEach(id => {
-                this.materials[id].emissiveIntensity = 0.55;
+            } else if (gameState === 'gameover' && typeof targetSequence !== 'undefined' && targetSequence && targetSequence.length >= 7) {
+              // Fin de juego: mostrar el robot completo con sus colores objetivo
+              PARTS_SEQUENCE.forEach(part => {
+                const mat = this.materials[part.id];
+                if (!mat) return;
+                const colorHex = PALETTE[targetSequence[part.index]].hex;
+                mat.color.setHex(colorHex);
+                mat.emissive.setHex(colorHex);
+                mat.emissiveIntensity = 0.5;
               });
+            } else {
+              // Estado inicial o menú: robot en gris neutro
+              this.partIds.forEach(id => {
+                const mat = this.materials[id];
+                if (mat) {
+                  mat.color.setHex(GRAY_COLOR);
+                  mat.emissive.setHex(0x000000);
+                  mat.emissiveIntensity = 0.0;
+                }
+              });
+              this.eyeL.material.color.setHex(0x00e5ff);
+              this.eyeR.material.color.setHex(0x00e5ff);
             }
             return;
           }
@@ -1771,13 +1819,7 @@
       }
 
       function updateHUDBlueprints() {
-        if (miniRobot) {
-          PARTS_SEQUENCE.forEach(part => {
-            const targetColorIdx = targetSequence[part.index];
-            const colorData = PALETTE[targetColorIdx];
-            miniRobot.paintStatic(part.id, colorData.hex);
-          });
-        }
+        // El esquema 3D miniRobot actualiza sus colores progresivos y parpadeo en miniRobot.update()
       }
 
       function updateHUDStats() {
@@ -1789,9 +1831,12 @@
         if (currentStep < 7) {
           const currentPart = PARTS_SEQUENCE[currentStep];
           const targetColor = PALETTE[targetSequence[currentStep]];
-          promptText.innerHTML = `Pinta la parte: <b>${currentPart.name}</b> en color <b>${targetColor.nombre}</b>`;
-          $('.prompt-dot').style.backgroundColor = targetColor.css;
-          $('.prompt-dot').style.boxShadow = `0 0 10px ${targetColor.css}`;
+          if (promptText) promptText.innerHTML = `Pinta la parte: <b>${currentPart.name}</b> en color <b>${targetColor.nombre}</b>`;
+          const dot = $('.prompt-dot');
+          if (dot) {
+            dot.style.backgroundColor = targetColor.css;
+            dot.style.boxShadow = `0 0 10px ${targetColor.css}`;
+          }
         }
       }
 
@@ -1809,6 +1854,7 @@
         robot.isJumping = false;
         robot.jumpVelocity = 0.0;
         robot.resetColors();
+        if (miniRobot) miniRobot.resetColors();
         
         targetSequence = generateGoalSequence();
         
