@@ -29,14 +29,14 @@ En la fábrica de colores de *Pixelópolis*, el malvado *Dr. Gris* dejó apagado
 
 | Jugador | Acción | Teclas |
 |---|---|---|
-| Jugador 1 | Seleccionar color | `1` `2` `3` `4` `5` `6` `7` |
-| Jugador 2 | Seleccionar color | `A` `S` `D` `F` `G` `H` `J` |
+| Jugador 1 | Seleccionar color | `1` `2` `3` `4` `5` `6` |
+| Jugador 2 | Seleccionar color | `A` `S` `D` `J` `G` `H` |
 
 También es posible jugar tocando los botones en pantalla (ideal para tablet).
 
 ### Colores del juego
 
-Verde · Naranja · Violeta · Cian · Magenta · Amarillo · Azul
+Verde (1 / A) · Naranja (2 / S) · Morado (3 / D) · Azul (4 / J) · Rojo (5 / G) · Amarillo (6 / H)
 
 ### Dificultad por robot
 

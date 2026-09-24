@@ -4,14 +4,13 @@
 const PALETTE = [
   { nombre: 'Verde',    hex: 0x00c853, css: '#00c853', nota: 261.63 },
   { nombre: 'Naranja',  hex: 0xff6d00, css: '#ff6d00', nota: 293.66 },
-  { nombre: 'Violeta',  hex: 0xaa00ff, css: '#aa00ff', nota: 329.63 },
-  { nombre: 'Cian',     hex: 0x00e5ff, css: '#00e5ff', nota: 392.00 },
-  { nombre: 'Magenta',  hex: 0xf50057, css: '#f50057', nota: 440.00 },
-  { nombre: 'Amarillo', hex: 0xffd600, css: '#ffd600', nota: 523.25 },
-  { nombre: 'Azul',     hex: 0x2979ff, css: '#2979ff', nota: 587.33 }
+  { nombre: 'Morado',   hex: 0xaa00ff, css: '#aa00ff', nota: 329.63 },
+  { nombre: 'Azul',     hex: 0x2979ff, css: '#2979ff', nota: 392.00 },
+  { nombre: 'Rojo',     hex: 0xff1744, css: '#ff1744', nota: 440.00 },
+  { nombre: 'Amarillo', hex: 0xffd600, css: '#ffd600', nota: 523.25 }
 ];
-const KEYS_P1 = ['1','2','3','4','5','6','7'];
-const KEYS_P2 = ['A','S','D','F','G','H','J'];
+const KEYS_P1 = ['1','2','3','4','5','6'];
+const KEYS_P2 = ['A','S','D','J','G','H'];
 const GRAY = 0xdde3ea;
 const ROSTER = [
   { id: 'volt',  name: 'VOLT',  css: '#00e5ff' },
@@ -308,7 +307,7 @@ class Robot {
 
 function bVolt(R) {
   const dm = darkMatNew();
-  const cab = R.zone(), torso = R.zone(), brz = R.zone(), panza = R.zone(), patas = R.zone(), nuc = R.zone(), ant = R.zone();
+  const cab = R.zone(), torso = R.zone(), brz = R.zone(), panza = R.zone(), patas = R.zone(), nuc = R.zone(), ant = cab;
   const footGeo = new THREE.SphereGeometry(0.32, 20, 16);
   [-0.3, 0.3].forEach(x => {
     const f = R.add(footGeo, patas, x, 0.17, 0.05);
@@ -354,7 +353,7 @@ const HG = hg0;
 
 function bNova(R) {
   const dm = darkMatNew();
-  const cab = R.zone(), torso = R.zone(), brz = R.zone(), panza = R.zone(), patas = R.zone(), nuc = R.zone(), ant = R.zone();
+  const cab = R.zone(), torso = R.zone(), brz = R.zone(), panza = R.zone(), patas = R.zone(), nuc = R.zone(), ant = cab;
   const footGeo = new THREE.SphereGeometry(0.29, 20, 16);
   [-0.27, 0.27].forEach(x => {
     const f = R.add(footGeo, patas, x, 0.16, 0.04);
@@ -387,7 +386,7 @@ function bNova(R) {
 
 function bTurbo(R) {
   const bm = shinyNew(), dm = darkMatNew();
-  const cab = R.zone(), torso = R.zone(), brz = R.zone(), panza = R.zone(), patas = R.zone(), nuc = R.zone(), ant = R.zone();
+  const cab = R.zone(), torso = R.zone(), brz = R.zone(), panza = R.zone(), patas = R.zone(), nuc = R.zone(), ant = cab;
   const wg = new THREE.CylinderGeometry(0.24, 0.24, 0.17, 22);
   [-0.27, 0.27].forEach(x => {
     const w = R.add(wg, patas, x, 0.21, 0.06);
@@ -419,7 +418,7 @@ function bTurbo(R) {
 
 function bPixel(R) {
   const dm = darkMatNew();
-  const cab = R.zone(), torso = R.zone(), brz = R.zone(), panza = R.zone(), patas = R.zone(), nuc = R.zone(), ant = R.zone();
+  const cab = R.zone(), torso = R.zone(), brz = R.zone(), panza = R.zone(), patas = R.zone(), nuc = R.zone(), ant = cab;
   const fg = new THREE.BoxGeometry(0.36, 0.24, 0.52);
   [-0.33, 0.33].forEach(x => {
     R.add(fg, patas, x, 0.12, 0.02);
@@ -449,7 +448,7 @@ function bPixel(R) {
 
 function bLuna(R) {
   const dm = darkMatNew();
-  const cab = R.zone(), torso = R.zone(), brz = R.zone(), panza = R.zone(), patas = R.zone(), nuc = R.zone(), ant = R.zone();
+  const cab = R.zone(), torso = R.zone(), brz = R.zone(), panza = R.zone(), patas = R.zone(), nuc = R.zone(), ant = cab;
   const thr = R.add(new THREE.TorusGeometry(0.45, 0.08, 14, 34), patas, 0, 0.42, 0);
   thr.rotation.x = Math.PI / 2;
   const flame = new THREE.Mesh(
@@ -673,8 +672,8 @@ function hideBanner() { els.banner.classList.add('hidden'); }
 function applyMatchUI() {
   const pr = pairs[pairIdx];
   els.roundinfo.textContent = `ROBOT ${pairIdx + 1}/5 · ${curRobo.name} · ${seq.length} COLORES`;
-  els.ctag[1].textContent = `${curRobo.name} · JUGADOR 1 · TECLAS 1-7`;
-  els.ctag[2].textContent = `${curRobo.name} · JUGADOR 2 · TECLAS A S D F G H J`;
+  els.ctag[1].textContent = `${curRobo.name} · JUGADOR 1 · TECLAS 1-6`;
+  els.ctag[2].textContent = `${curRobo.name} · JUGADOR 2 · TECLAS A S D J G H`;
   els.score[1].textContent = pr.w1;
   els.score[2].textContent = pr.w2;
   els.roundinfo.classList.remove('hidden');
@@ -928,7 +927,11 @@ addEventListener('keydown', e => {
   }
   if (state !== 'input') return;
   const k = e.key.toUpperCase();
-  const i1 = KEYS_P1.indexOf(e.key);
+  let i1 = KEYS_P1.indexOf(e.key);
+  if (i1 < 0 && e.code && e.code.startsWith('Numpad')) {
+    const num = e.code.replace('Numpad', '');
+    i1 = KEYS_P1.indexOf(num);
+  }
   const i2 = KEYS_P2.indexOf(k);
   if (i1 >= 0) press(1, i1);
   else if (i2 >= 0) press(2, i2);
