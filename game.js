@@ -9,7 +9,7 @@ const PALETTE = [
   { nombre: 'Rojo',     hex: 0xff1744, css: '#ff1744', nota: 440.00 },
   { nombre: 'Amarillo', hex: 0xffd600, css: '#ffd600', nota: 523.25 }
 ];
-const KEYS_P1 = ['1','2','3','4','5','6'];
+const KEYS_P1 = ['1','2','3','7','5','6'];
 const KEYS_P2 = ['A','S','D','J','G','H'];
 const GRAY = 0xdde3ea;
 const ROSTER = [
@@ -672,7 +672,7 @@ function hideBanner() { els.banner.classList.add('hidden'); }
 function applyMatchUI() {
   const pr = pairs[pairIdx];
   els.roundinfo.textContent = `ROBOT ${pairIdx + 1}/5 · ${curRobo.name} · ${seq.length} COLORES`;
-  els.ctag[1].textContent = `${curRobo.name} · JUGADOR 1 · TECLAS 1-6`;
+  els.ctag[1].textContent = `${curRobo.name} · JUGADOR 1 · TECLAS 1, 2, 3, 7, 5, 6`;
   els.ctag[2].textContent = `${curRobo.name} · JUGADOR 2 · TECLAS A S D J G H`;
   els.score[1].textContent = pr.w1;
   els.score[2].textContent = pr.w2;
