@@ -3,32 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Papirolas - Secuenciador 3D de 9 Cubos</title>
+    <title>Papirolas - Secuenciador 3D & Taller de Volt</title>
     <link rel="icon" type="image/png" href="assets/cucei_shield.png">
-    <meta name="description" content="Un juego inmersivo en 3D para emparejar secuencias construido con Three.js y audio sintetizado. ¡Empareja la secuencia antes de que se agote el tiempo!">
+    <meta name="description" content="Desafío 3D de secuencias y taller de ensamblado: ¡Pinta al robot Volt pieza por pieza con cada acierto sin fallar!">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
             --primary: #8a2be2;
-            --accent-red: #ff3b30;
-            --accent-orange: #ff9500;
-            --accent-yellow: #ffcc00;
-            --accent-green: #4cd964;
-            --accent-cyan: #5ac8fa;
-            --accent-blue: #007aff;
-            --accent-indigo: #5856d6;
-            --accent-purple: #af52de;
-            --accent-pink: #ff2d55;
-            --gray-cube: #4a4a4a;
-            --bg-gradient: radial-gradient(circle at center, #1b1035 0%, #080315 100%);
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glass-shadow: rgba(0, 0, 0, 0.5);
-            --text-glow: 0 0 10px rgba(138, 43, 226, 0.8), 0 0 20px rgba(138, 43, 226, 0.4);
+            --accent-cyan: #00e5ff;
+            --accent-purple: #aa00ff;
+            --accent-green: #00c853;
+            --accent-yellow: #ffd600;
+            --accent-orange: #ff6d00;
+            --accent-red: #ff1744;
+            --accent-magenta: #f50057;
+            --rust-dark: #4d1c0a;
+            --rust-mid: #8b3a16;
+            --rust-bright: #b85420;
+            --rust-light: #ff7043;
+            --dark-metal: #242a3e;
+            --bg-gradient: radial-gradient(circle at 40% 50%, #150f2e 0%, #070312 100%);
+            --glass-bg: rgba(15, 20, 42, 0.72);
+            --glass-border: rgba(0, 229, 255, 0.2);
+            --glass-shadow: rgba(0, 0, 0, 0.55);
+            --text-glow: 0 0 10px rgba(0, 229, 255, 0.8), 0 0 20px rgba(170, 0, 255, 0.4);
         }
 
         * {
@@ -51,7 +53,7 @@
 
         /* Ambient background star dust effect */
         #stars-canvas {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -60,7 +62,28 @@
             pointer-events: none;
         }
 
-        /* Main Game Canvas (Three.js) */
+        /* Main Split App Layout */
+        #app-layout {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: row;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        /* Main Game Section (Left) */
+        #game-section {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Main Game Canvas (Three.js 9 Cubes) */
         #game-canvas {
             position: absolute;
             top: 0;
@@ -70,7 +93,7 @@
             z-index: 1;
         }
 
-        /* CSS UI Layer Overlay */
+        /* CSS UI Layer Overlay for Game Section */
         #ui-layer {
             position: absolute;
             top: 0;
@@ -93,22 +116,22 @@
         /* Glassmorphism utility */
         .glass-panel {
             background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px 0 var(--glass-shadow);
+            border-radius: 18px;
+            box-shadow: 0 10px 32px 0 var(--glass-shadow);
         }
 
         /* HUD top bar */
         header {
             width: 100%;
-            max-width: 600px;
+            max-width: 580px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 15px;
-            padding: 15px 20px;
+            padding: 12px 20px;
             text-align: center;
         }
 
@@ -119,16 +142,16 @@
         }
 
         .hud-label {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             text-transform: uppercase;
             letter-spacing: 2px;
             color: #8c88a5;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .hud-value {
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
+            font-size: 1.45rem;
             font-weight: 700;
             color: #ffffff;
             text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
@@ -136,13 +159,23 @@
 
         .hud-value.glow-green {
             color: var(--accent-green);
-            text-shadow: 0 0 10px rgba(76, 217, 100, 0.6);
+            text-shadow: 0 0 10px rgba(0, 200, 83, 0.6);
+        }
+
+        .hud-value.glow-cyan {
+            color: var(--accent-cyan);
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+        }
+
+        .hud-value.glow-rust {
+            color: var(--rust-light);
+            text-shadow: 0 0 12px rgba(255, 112, 67, 0.7);
         }
 
         /* Bottom Area: Timer Bar and Controls */
         .bottom-hud {
             width: 100%;
-            max-width: 600px;
+            max-width: 580px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
@@ -153,151 +186,81 @@
 
         .timer-container {
             width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.12);
-            border-radius: 4px;
+            height: 9px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
             overflow: hidden;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.16);
             pointer-events: auto;
         }
 
         .timer-bar {
             width: 100%;
             height: 100%;
-            background: var(--accent-cyan);
-            box-shadow: 0 0 8px var(--accent-cyan);
-            transition: width 0.1s linear, background-color 0.5s ease, box-shadow 0.5s ease;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            box-shadow: 0 0 10px var(--accent-cyan);
+            transition: width 0.08s linear, background-color 0.4s ease, box-shadow 0.4s ease;
         }
 
         .timer-low {
-            background: var(--accent-red);
-            box-shadow: 0 0 12px var(--accent-red);
+            background: var(--accent-red) !important;
+            box-shadow: 0 0 14px var(--accent-red) !important;
         }
 
-        /* Main Menu / Screen overlay cards */
-        .screen-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: calc(100% - 40px);
-            max-width: 450px;
-            padding: 40px 30px;
-            text-align: center;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            opacity: 1;
-            transition: opacity 0.4s ease, transform 0.4s ease;
-        }
-
-        .screen-overlay.hidden {
-            opacity: 0;
-            transform: translate(-50%, -45%);
-            pointer-events: none;
-        }
-
-        .game-title {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
-            font-size: 3rem;
-            letter-spacing: 6px;
-            color: #ffffff;
-            margin-bottom: 10px;
-            text-shadow: var(--text-glow);
-            background: linear-gradient(135deg, #ffffff 30%, #b886fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .game-subtitle {
-            font-size: 0.95rem;
-            color: #9d9aa7;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-
-        .btn {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            letter-spacing: 2px;
-            color: #ffffff;
-            background: linear-gradient(135deg, #8a2be2 0%, #4b0082 100%);
-            border: none;
-            padding: 15px 40px;
-            border-radius: 30px;
-            cursor: pointer;
-            outline: none;
-            box-shadow: 0 0 15px rgba(138, 43, 226, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 25px rgba(138, 43, 226, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.4);
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        /* Info box */
-        .info-box {
-            font-size: 0.8rem;
-            color: #7b7891;
-            margin-top: 25px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            padding-top: 20px;
-            width: 100%;
-        }
-
-        .info-box p {
-            margin-bottom: 5px;
-        }
-
-        /* Game State messages (e.g. "Match Sequence", "Success!") */
+        /* Status Message Indicator */
         .status-message {
             position: absolute;
-            top: 25%;
+            top: 24%;
             left: 50%;
             transform: translateX(-50%);
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.8rem;
-            font-weight: 700;
-            letter-spacing: 3px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: 2px;
             text-transform: uppercase;
             text-align: center;
             pointer-events: none;
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 5;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            text-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
+            white-space: nowrap;
         }
 
         .status-message.visible {
             opacity: 1;
-            top: 18%; /* slightly higher to fit the 3x3 grid nicely */
+            top: 17%;
         }
 
         .status-play {
             color: var(--accent-yellow);
-            text-shadow: 0 0 15px rgba(255, 204, 51, 0.6);
+            text-shadow: 0 0 15px rgba(255, 214, 0, 0.7);
         }
 
         .status-input {
             color: var(--accent-cyan);
-            text-shadow: 0 0 15px rgba(90, 200, 250, 0.6);
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.7);
         }
 
         .status-success {
             color: var(--accent-green);
-            text-shadow: 0 0 15px rgba(76, 217, 100, 0.6);
-            font-size: 2.2rem;
+            text-shadow: 0 0 20px rgba(0, 200, 83, 0.8);
+            font-size: 1.9rem;
             animation: pulse-grow 0.5s ease alternate infinite;
+        }
+
+        .status-fail {
+            color: var(--rust-light);
+            text-shadow: 0 0 20px rgba(255, 112, 67, 0.9);
+            font-size: 1.8rem;
+            animation: shake-head 0.4s ease;
+        }
+
+        @keyframes shake-head {
+            0%, 100% { transform: translateX(-50%); }
+            20%, 60% { transform: translateX(-54%); }
+            40%, 80% { transform: translateX(-46%); }
         }
 
         /* Audio and Instructions controls (Bottom Panel) */
@@ -322,12 +285,14 @@
             color: #ffffff;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
 
         .control-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(0, 229, 255, 0.2);
+            border-color: var(--accent-cyan);
             transform: translateY(-2px);
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
         }
 
         .control-btn svg {
@@ -336,16 +301,289 @@
             fill: currentColor;
         }
 
+        /* ------------------------------------------------------------- */
+        /* SIDEBAR: ROBOT VOLT PREVIEW & RESTORATION TRACKER (Right)     */
+        /* ------------------------------------------------------------- */
+        #robot-sidebar {
+            width: 360px;
+            max-width: 380px;
+            min-width: 320px;
+            height: 100%;
+            background: rgba(10, 14, 28, 0.88);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-left: 1.5px solid rgba(0, 229, 255, 0.25);
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.7), inset 1px 0 0 rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 18px 18px 20px 18px;
+            gap: 14px;
+            z-index: 10;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .sidebar-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 4px;
+        }
+
+        .sidebar-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 229, 255, 0.12);
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            border-radius: 20px;
+            padding: 3px 12px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--accent-cyan);
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 8px var(--accent-cyan);
+            animation: pulse-dot-anim 1s infinite alternate;
+        }
+
+        @keyframes pulse-dot-anim {
+            0% { opacity: 0.4; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .sidebar-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffffff 10%, var(--accent-cyan) 60%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-top: 4px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 0.78rem;
+            color: #8c88a5;
+            letter-spacing: 0.5px;
+        }
+
+        /* 3D Robot Container */
+        #robot-3d-viewport {
+            width: 100%;
+            height: 220px;
+            min-height: 200px;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at center, rgba(0, 229, 255, 0.12) 0%, rgba(9, 12, 24, 0.75) 85%);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 229, 255, 0.12);
+        }
+
+        .viewport-tag {
+            position: absolute;
+            bottom: 8px;
+            right: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.62rem;
+            font-weight: 700;
+            color: rgba(0, 229, 255, 0.75);
+            background: rgba(10, 14, 28, 0.75);
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            pointer-events: none;
+            letter-spacing: 1px;
+        }
+
+        /* Progress Card */
+        .progress-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .progress-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-lbl {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #8c88a5;
+            font-weight: 600;
+        }
+
+        .progress-val {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+            transition: width 0.4s ease;
+        }
+
+        .target-desc {
+            font-size: 0.75rem;
+            color: #d1cfe2;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
+        }
+
+        .target-desc b {
+            color: #ffffff;
+        }
+
+        /* 7-Parts Checklist */
+        .parts-checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            flex: 1;
+        }
+
+        .part-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            transition: all 0.25s ease;
+        }
+
+        .part-item.active-level {
+            background: rgba(0, 229, 255, 0.09);
+            border-color: rgba(0, 229, 255, 0.45);
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
+            transform: translateX(2px);
+        }
+
+        .part-item.is-painted {
+            background: rgba(0, 200, 83, 0.07);
+            border-color: rgba(0, 200, 83, 0.35);
+        }
+
+        .part-item.is-failed {
+            background: rgba(184, 84, 32, 0.14);
+            border-color: rgba(255, 112, 67, 0.45);
+            box-shadow: 0 0 10px rgba(255, 112, 67, 0.25);
+        }
+
+        .part-left {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .part-swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #444a5e;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .part-name {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #d1cfe2;
+        }
+
+        .part-item.active-level .part-name {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .part-badge {
+            font-size: 0.66rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .part-badge.badge-pending {
+            color: #7b7891;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .part-badge.badge-active {
+            color: #00e5ff;
+            background: rgba(0, 229, 255, 0.15);
+            border: 1px solid rgba(0, 229, 255, 0.4);
+            animation: pulse-badge 1s infinite alternate;
+        }
+
+        @keyframes pulse-badge {
+            0% { box-shadow: 0 0 5px rgba(0, 229, 255, 0.3); }
+            100% { box-shadow: 0 0 12px rgba(0, 229, 255, 0.7); }
+        }
+
+        .part-badge.badge-painted {
+            color: #ffffff;
+            background: rgba(0, 200, 83, 0.25);
+            border: 1px solid var(--accent-green);
+            text-shadow: 0 0 6px var(--accent-green);
+        }
+
+        /* Badge de FALLO con textura/tono de óxido metálico */
+        .part-badge.badge-failed {
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--rust-dark), var(--rust-bright));
+            border: 1px solid var(--rust-light);
+            box-shadow: 0 0 10px rgba(255, 112, 67, 0.5);
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+        }
+
         /* Red Overlay Flash for Failure */
         #flash-overlay {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             z-index: 100;
             pointer-events: none;
-            background: rgba(255, 59, 48, 0.4);
+            background: rgba(255, 23, 68, 0.4);
             opacity: 0;
             transition: opacity 0.15s ease;
         }
@@ -355,20 +593,110 @@
         }
 
         #flash-overlay.success-flash-active {
-            background: rgba(76, 217, 100, 0.2);
+            background: rgba(0, 200, 83, 0.25);
             opacity: 1;
+        }
+
+        /* Screen overlay cards (Start / Game Over / Modals) */
+        .screen-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% - 40px);
+            max-width: 480px;
+            padding: 35px 28px;
+            text-align: center;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .screen-overlay.hidden {
+            opacity: 0;
+            transform: translate(-50%, -45%);
+            pointer-events: none;
+        }
+
+        .game-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 2.3rem;
+            letter-spacing: 4px;
+            color: #ffffff;
+            margin-bottom: 12px;
+            text-shadow: var(--text-glow);
+            background: linear-gradient(135deg, #ffffff 20%, var(--accent-cyan) 60%, #b886fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .game-subtitle {
+            font-size: 0.92rem;
+            color: #9d9aa7;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            color: #ffffff;
+            background: linear-gradient(135deg, #00e5ff 0%, #aa00ff 100%);
+            border: none;
+            padding: 14px 38px;
+            border-radius: 30px;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.4);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #ff1744 0%, #b85420 100%);
+            box-shadow: 0 0 20px rgba(255, 23, 68, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-restart:hover {
+            box-shadow: 0 0 30px rgba(255, 23, 68, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #444 0%, #222 100%);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            margin-top: 12px;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #555 0%, #333 100%);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
         }
 
         /* Instructions Modal */
         .modal {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(8, 3, 21, 0.85);
-            backdrop-filter: blur(8px);
-            z-index: 200;
+            background: rgba(8, 3, 21, 0.88);
+            backdrop-filter: blur(10px);
+            z-index: 300;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -384,8 +712,8 @@
 
         .modal-content {
             width: 90%;
-            max-width: 450px;
-            padding: 35px;
+            max-width: 460px;
+            padding: 32px 28px;
             border-radius: 20px;
             position: relative;
         }
@@ -408,17 +736,18 @@
 
         .modal-title {
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
+            font-size: 1.45rem;
             margin-bottom: 20px;
             text-align: center;
             color: var(--accent-cyan);
+            letter-spacing: 1.5px;
         }
 
         .instruction-step {
             display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            font-size: 0.95rem;
+            align-items: flex-start;
+            margin-bottom: 14px;
+            font-size: 0.92rem;
             line-height: 1.5;
             color: #d1cfe2;
         }
@@ -426,96 +755,88 @@
         .step-num {
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
-            background: var(--primary);
-            width: 28px;
-            height: 28px;
-            min-width: 28px;
+            background: var(--accent-cyan);
+            color: #071018;
+            width: 26px;
+            height: 26px;
+            min-width: 26px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 15px;
-            font-size: 0.8rem;
-            box-shadow: 0 0 8px var(--primary);
+            margin-right: 14px;
+            font-size: 0.78rem;
+            box-shadow: 0 0 10px var(--accent-cyan);
+            margin-top: 2px;
         }
 
         /* Animations */
         @keyframes pulse-grow {
-            from {
-                transform: translateX(-50%) scale(1);
-            }
-
-            to {
-                transform: translateX(-50%) scale(1.08);
-            }
+            from { transform: translateX(-50%) scale(1); }
+            to { transform: translateX(-50%) scale(1.08); }
         }
 
-        /* Screen size configurations */
-        @media (max-width: 480px) {
-            #ui-layer {
+        /* Responsive Breakpoints */
+        @media (max-width: 920px) {
+            #app-layout {
+                flex-direction: column;
+            }
+            #game-section {
+                flex: 1;
+                min-height: 55%;
+            }
+            #robot-sidebar {
+                width: 100%;
+                max-width: 100%;
+                min-width: 100%;
+                height: 260px;
+                border-left: none;
+                border-top: 1.5px solid rgba(0, 229, 255, 0.25);
+                flex-direction: row;
+                gap: 14px;
                 padding: 12px 14px;
             }
-
-            .bottom-hud {
+            #robot-3d-viewport {
+                width: 170px;
+                height: 100%;
+                min-height: unset;
+                flex-shrink: 0;
+            }
+            .sidebar-details {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
                 gap: 8px;
+                overflow-y: auto;
             }
-
-            .timer-container {
-                height: 7px;
-            }
-
-            .game-title {
-                font-size: 2.2rem;
-            }
-
-            .hud-value {
-                font-size: 1.2rem;
-            }
-
-            .hud-label {
-                font-size: 0.65rem;
-            }
-
             .status-message {
                 font-size: 1.3rem;
             }
-
-            .control-btn {
-                width: 38px;
-                height: 38px;
-            }
         }
 
-        @media (max-height: 520px) {
+        @media (max-width: 540px) {
             #ui-layer {
-                padding: 8px 14px;
+                padding: 10px 12px;
             }
-
             header {
                 padding: 8px 12px;
                 gap: 8px;
             }
-
             .hud-value {
-                font-size: 1.1rem;
+                font-size: 1.15rem;
             }
-
             .hud-label {
-                font-size: 0.6rem;
-                margin-bottom: 2px;
+                font-size: 0.62rem;
             }
-
-            .bottom-hud {
-                gap: 6px;
+            #robot-sidebar {
+                height: 220px;
             }
-
-            .timer-container {
-                height: 6px;
+            #robot-3d-viewport {
+                width: 130px;
             }
-
             .control-btn {
-                width: 36px;
-                height: 36px;
+                width: 38px;
+                height: 38px;
             }
         }
     </style>
@@ -525,94 +846,139 @@
     <!-- Starfield Backdrop Canvas -->
     <canvas id="stars-canvas"></canvas>
 
-    <!-- 3D Scene Canvas -->
-    <div id="game-canvas"></div>
-
     <!-- Red/Green flash wrapper -->
     <div id="flash-overlay"></div>
 
-    <!-- UI Overlay Layer -->
-    <div id="ui-layer">
-        <!-- TOP HUD -->
-        <header class="glass-panel interactive">
-            <div class="hud-item">
-                <div class="hud-label" id="hud-level-lbl">Nivel</div>
-                <div id="level-display" class="hud-value">1</div>
-            </div>
-            <div class="hud-item">
-                <div class="hud-label" id="hud-score-lbl">Puntaje</div>
-                <div id="score-display" class="hud-value">0</div>
-            </div>
-            <div class="hud-item">
-                <div class="hud-label" id="hud-highscore-lbl">Récord</div>
-                <div id="highscore-display" class="hud-value glow-green">0</div>
-            </div>
-        </header>
+    <!-- MAIN APP SPLIT LAYOUT -->
+    <div id="app-layout">
 
-        <!-- Status Message Indicator (Play / Guess / Correct) -->
-        <div id="status-msg" class="status-message">Repite la secuencia</div>
+        <!-- LEFT PANE: 9-Cubes Sequence Game -->
+        <main id="game-section">
+            <div id="game-canvas"></div>
 
-        <!-- BOTTOM AREA: Dynamic Timer Bar & Controls -->
-        <div class="bottom-hud">
-            <div class="timer-container interactive">
-                <div id="timer-bar" class="timer-bar"></div>
+            <div id="ui-layer">
+                <!-- TOP HUD -->
+                <header class="glass-panel interactive">
+                    <div class="hud-item">
+                        <div class="hud-label" id="hud-level-lbl">Pieza / Ronda</div>
+                        <div id="level-display" class="hud-value glow-cyan">1 / 7</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-label" id="hud-score-lbl">Puntaje</div>
+                        <div id="score-display" class="hud-value">0</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-label" id="hud-highscore-lbl">Récord</div>
+                        <div id="highscore-display" class="hud-value glow-green">0</div>
+                    </div>
+                </header>
+
+                <!-- Status Message Indicator (Play / Guess / Correct / Fail) -->
+                <div id="status-msg" class="status-message">Atento a la secuencia</div>
+
+                <!-- BOTTOM AREA: Dynamic Timer Bar & Controls -->
+                <div class="bottom-hud">
+                    <div class="timer-container interactive">
+                        <div id="timer-bar" class="timer-bar"></div>
+                    </div>
+
+                    <!-- BOTTOM CONTROLS -->
+                    <footer class="interactive">
+                        <button id="info-btn" class="control-btn" title="Cómo Jugar">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                            </svg>
+                        </button>
+                        <button id="mute-btn" class="control-btn" title="Alternar Sonido">
+                            <svg id="mute-icon" viewBox="0 0 24 24">
+                                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                            </svg>
+                        </button>
+                    </footer>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT PANE: 3D Robot Volt Preview & Restoration Sidebar -->
+        <aside id="robot-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-badge">
+                    <span class="pulse-dot"></span>
+                    <span>TALLER 3D</span>
+                </div>
+                <h2 class="sidebar-title">ROBOT VOLT</h2>
+                <div class="sidebar-subtitle">Restauración de Piezas en Vivo</div>
             </div>
 
-            <!-- BOTTOM CONTROLS -->
-            <footer class="interactive">
-                <button id="info-btn" class="control-btn" title="Cómo Jugar">
-                    <!-- Info Icon -->
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-                    </svg>
-                </button>
-                <button id="mute-btn" class="control-btn" title="Alternar Sonido">
-                    <!-- Speaker Icon -->
-                    <svg id="mute-icon" viewBox="0 0 24 24">
-                        <path
-                            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-                    </svg>
-                </button>
-            </footer>
-        </div>
+            <!-- 3D Robot Viewport -->
+            <div id="robot-3d-viewport">
+                <div class="viewport-tag">VISTA 360°</div>
+            </div>
+
+            <div class="sidebar-details" style="display: flex; flex-direction: column; gap: 12px; flex: 1;">
+                <!-- Progress Card -->
+                <div class="progress-card">
+                    <div class="progress-info-row">
+                        <span class="progress-lbl">Restauradas</span>
+                        <span id="sidebar-progress-num" class="progress-val">0 / 7</span>
+                    </div>
+                    <div class="progress-track">
+                        <div id="sidebar-progress-bar" class="progress-fill"></div>
+                    </div>
+                    <div id="sidebar-target-desc" class="target-desc">
+                        Pieza actual: <b id="target-part-name">Torso</b>
+                    </div>
+                </div>
+
+                <!-- 7 Parts Checklist -->
+                <div class="parts-checklist" id="parts-checklist">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+        </aside>
+
     </div>
 
-    <!-- SCREENS -->
+    <!-- SCREENS & OVERLAYS -->
     <!-- Start Screen Overlay -->
     <div id="start-screen" class="screen-overlay glass-panel interactive">
-        <h1 class="game-title" id="start-title">SECUENCIADOR 3D</h1>
-        <p class="game-subtitle" id="start-subtitle" style="max-width: 460px; text-align: left;">
-            <b>REGLAS</b><br><br>
-            • Observa 9 cubos iluminarse en una secuencia con tonos musicales.<br>
-            • Cuando terminen, todos se vuelven grises: es tu turno.<br>
-            • Repite la secuencia tocando los cubos en el orden exacto.<br>
-            • La secuencia crece en uno en cada nivel.<br>
-            • Tienes <b>10 segundos</b> para recrearla; si fallas o se acaba el tiempo, fin del juego.
+        <h1 class="game-title" id="start-title">RESTAURA A VOLT</h1>
+        <p class="game-subtitle" id="start-subtitle" style="max-width: 450px; text-align: left;">
+            <b>MODO INFALIBLE: ¡SIN SEGUNDAS OPORTUNIDADES!</b><br><br>
+            • Observa los 9 cubos iluminarse con tonos musicales en cada ronda.<br>
+            • Cuando terminen, repite la secuencia tocando los cubos exactos.<br>
+            • <b>Acierto:</b> La pieza del robot se pinta en su color vibrante y avanzas a la siguiente.<br>
+            • <b>FALLO:</b> Si te equivocas o se agota el tiempo, la pieza se oxida en <b>metal oxidado</b>, Volt colapsa al suelo y <b>el juego termina</b> inmediatamente.<br>
+            • ¡Debes completar las 7 piezas seguidas desde cero para triunfar!
         </p>
-        <button id="start-btn" class="btn">JUGAR</button>
-        <div class="info-box">
-            <p id="start-info">Creado con Three.js y Sintetizador de Web Audio</p>
-        </div>
+        <button id="start-btn" class="btn">INICIAR CALIBRACIÓN</button>
     </div>
 
-    <!-- Game Over Screen Overlay -->
+    <!-- Game Over / Victory Summary Overlay -->
     <div id="game-over-screen" class="screen-overlay glass-panel interactive hidden">
         <h1 class="game-title" id="game-over-title"
-            style="background: linear-gradient(135deg, #ff3b30 30%, #ff5e55 100%); -webkit-background-clip: text;">JUEGO TERMINADO</h1>
-        <p class="game-subtitle" id="game-over-reason">¡Te equivocaste en la secuencia!</p>
-        <div style="display: flex; gap: 40px; margin-bottom: 30px;">
+            style="background: linear-gradient(135deg, #ff1744 20%, #ff7043 100%); -webkit-background-clip: text;">
+            CALIBRACIÓN FALLIDA
+        </h1>
+        <p class="game-subtitle" id="game-over-reason">¡Volt colapsó por una pieza oxidada! Debes empezar desde cero.</p>
+        
+        <div style="display: flex; gap: 30px; margin-bottom: 24px; justify-content: center;">
             <div style="text-align: center;">
-                <div class="hud-label" id="go-level-lbl">Nivel Final</div>
-                <div id="final-level" class="hud-value" style="font-size: 2rem;">1</div>
+                <div class="hud-label">Piezas Logradas</div>
+                <div id="final-painted" class="hud-value glow-green" style="font-size: 1.8rem;">0 / 7</div>
             </div>
             <div style="text-align: center;">
-                <div class="hud-label" id="go-score-lbl">Puntaje Final</div>
-                <div id="final-score" class="hud-value" style="font-size: 2rem; color: var(--accent-yellow);">0</div>
+                <div class="hud-label">Estado</div>
+                <div id="final-status" class="hud-value glow-rust" style="font-size: 1.8rem;">FALLO</div>
+            </div>
+            <div style="text-align: center;">
+                <div class="hud-label">Puntaje</div>
+                <div id="final-score" class="hud-value glow-cyan" style="font-size: 1.8rem;">0</div>
             </div>
         </div>
-        <button id="restart-btn" class="btn">JUGAR DE NUEVO</button>
-        <button id="gameover-menu-btn" class="btn" style="margin-top: 15px; background: linear-gradient(135deg, #555 0%, #222 100%); box-shadow: none;">VOLVER AL MENÚ</button>
+
+        <button id="restart-btn" class="btn btn-restart">REINICIAR DESDE CERO</button>
+        <button id="gameover-menu-btn" class="btn btn-secondary">VOLVER AL MENÚ</button>
     </div>
 
     <!-- Instructions Modal -->
@@ -623,114 +989,154 @@
 
             <div class="instruction-step">
                 <span class="step-num">1</span>
-                <div id="step-1-text">Los cubos se iluminarán en una secuencia aleatoria acompañados de tonos musicales únicos.</div>
+                <div>Los 9 cubos se iluminarán en una secuencia con tonos musicales únicos.</div>
             </div>
 
             <div class="instruction-step">
                 <span class="step-num">2</span>
-                <div id="step-2-text">Una vez que termine la secuencia, todos los cubos se volverán grises, indicando tu turno.</div>
+                <div>Cuando los cubos vuelvan al gris neutro, es tu turno de recrear la secuencia.</div>
             </div>
 
             <div class="instruction-step">
                 <span class="step-num">3</span>
-                <div id="step-3-text">Haz clic en los cubos en el orden exacto mostrado. La secuencia crece en uno cada nivel.</div>
+                <div><b>Si tienes éxito:</b> La pieza del robot asignada a esa ronda se pinta en su color brillante y pasas a la siguiente.</div>
             </div>
 
             <div class="instruction-step">
                 <span class="step-num">4</span>
-                <div id="step-4-text">¡Tienes un límite estricto de 10 segundos para recrear la secuencia en tu turno!</div>
+                <div><b>¡CUIDADO CON EL FALLO!:</b> Si tocas un cubo incorrecto o se acaba el tiempo, la pieza sufre un <b>FALLO</b> por óxido metálico, Volt colapsa al suelo y <b>el juego termina</b> inmediatamente sin segundas oportunidades.</div>
+            </div>
+
+            <div class="instruction-step">
+                <span class="step-num">5</span>
+                <div>¡Tienes 10 segundos por turno a lo largo de las 7 piezas para restaurar a Volt al 100%!</div>
             </div>
         </div>
     </div>
 
+    <!-- Fullscreen Button positioned top-left -->
+    <style>
+        #fs-btn {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 9999;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #00e5ff, #8a2be2);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        #fs-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.7);
+        }
+    </style>
+    <button id="fs-btn" aria-label="Pantalla completa" title="Pantalla completa">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 9 V4 H9 M20 9 V4 H15 M4 15 V20 H9 M20 15 V20 H15"/>
+        </svg>
+    </button>
+    <script>
+        (function () {
+            var b = document.getElementById('fs-btn');
+            var lastExit = 0;
+            var REQ = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+            var EXIT = document.exitFullscreen || document.webkitExitFullscreen || function () {};
+            function enterFS() {
+                if (!document.fullscreenElement && Date.now() - lastExit > 2500 && REQ) {
+                    try { var p = REQ.call(document.documentElement); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+                }
+            }
+            function onFSChange() { if (!document.fullscreenElement) lastExit = Date.now(); }
+            document.addEventListener('fullscreenchange', onFSChange);
+            if (document.webkitfullscreenchange) document.addEventListener('webkitfullscreenchange', onFSChange);
+            window.addEventListener('pointerdown', enterFS);
+            window.addEventListener('touchstart', enterFS);
+            if (b) b.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                if (!document.fullscreenElement) enterFS();
+                else { lastExit = Date.now(); EXIT.call(document); }
+            });
+        })();
+    </script>
+
     <!-- Three.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <!-- Game Script -->
+    <!-- Game & 3D Robot Script -->
     <script>
-        // --- TEXTOS DEL JUEGO (HARDCODED PARA FÁCIL EDICIÓN MANUAL) ---
-        const GAME_TEXTS = {
-            // Documento y metadatos
-            docTitle: "Papirolas - Secuenciador 3D de 9 Cubos",
-            
-            // HUD Superior
-            hudLevel: "Nivel",
-            hudScore: "Puntaje",
-            hudHighScore: "Récord",
-            
-            // Pantalla de Inicio
-            startTitle: "PAPIROLAS",
-            startSubtitle: "Un espectacular desafío 3D en cuadrícula de 3x3. ¡Escucha los tonos musicales, observa los cubos de colores brillantes y repite el patrón antes de que se agote el tiempo!",
-            startBtn: "INICIAR JUEGO",
-            startFooter: "Creado con Three.js y Sintetizador de Web Audio",
-            
-            // Pantalla de Juego Terminado
-            gameOverTitle: "JUEGO TERMINADO",
-            gameOverReasonMissed: "¡Te equivocaste en la secuencia!",
-            gameOverReasonTimeout: "¡Se acabó el tiempo!",
-            gameOverFinalLevel: "Nivel Final",
-            gameOverFinalScore: "Puntaje Final",
-            gameOverRestartBtn: "JUGAR DE NUEVO",
-            
-            // Modal de Instrucciones
-            instructionsTitle: "CÓMO JUGAR",
-            instructionStep1: "Los cubos se iluminarán en una secuencia aleatoria acompañados de tonos musicales únicos.",
-            instructionStep2: "Una vez que termine la secuencia, todos los cubos se volverán grises, indicando tu turno.",
-            instructionStep3: "Haz clic en los cubos en el orden exacto mostrado. La secuencia crece en uno cada nivel.",
-            instructionStep4: "¡Tienes un límite estricto de 10 segundos para recrear la secuencia en tu turno!",
-            
-            // Mensajes de Estado en Pantalla
-            statusWatch: "Escucha y Observa",
-            statusYourTurn: "¡Tu Turno!",
-            statusPerfect: "¡Perfecto!",
-            statusReady: "Repite la secuencia",
-            
-            // Tooltips / Ayudas
-            tooltipHowToPlay: "Cómo Jugar",
-            tooltipToggleSound: "Alternar Sonido"
-        };
+        // -------------------------------------------------------------
+        // DEFINICIÓN DE PIEZAS DE VOLT
+        // -------------------------------------------------------------
+        const VOLT_PARTS = [
+            { id: 'torso', name: 'Torso Central', color: 0x00e5ff, css: '#00e5ff', icon: '🛡️' },
+            { id: 'cab',   name: 'Cabeza / Ojos',  color: 0x00c853, css: '#00c853', icon: '🧠' },
+            { id: 'brz',   name: 'Brazos Biónicos', color: 0xaa00ff, css: '#aa00ff', icon: '💪' },
+            { id: 'panza', name: 'Panel de Poder', color: 0xffd600, css: '#ffd600', icon: '⚡' },
+            { id: 'patas', name: 'Módulos Marcha', color: 0xff6d00, css: '#ff6d00', icon: '🦵' },
+            { id: 'nuc',   name: 'Núcleo / Cuello', color: 0xff1744, css: '#ff1744', icon: '🔴' },
+            { id: 'ant',   name: 'Antena Radar',   color: 0xf50057, css: '#f50057', icon: '📡' }
+        ];
 
-        // Función para aplicar los textos a los elementos de la interfaz
-        function applyGameTexts() {
-            document.title = GAME_TEXTS.docTitle;
-            
-            // HUD
-            document.getElementById('hud-level-lbl').textContent = GAME_TEXTS.hudLevel;
-            document.getElementById('hud-score-lbl').textContent = GAME_TEXTS.hudScore;
-            document.getElementById('hud-highscore-lbl').textContent = GAME_TEXTS.hudHighScore;
-            
-            // Pantalla de inicio
-            document.getElementById('start-title').textContent = GAME_TEXTS.startTitle;
-            document.getElementById('start-subtitle').textContent = GAME_TEXTS.startSubtitle;
-            document.getElementById('start-btn').textContent = GAME_TEXTS.startBtn;
-            document.getElementById('start-info').textContent = GAME_TEXTS.startFooter;
-            
-            // Pantalla de juego terminado
-            document.getElementById('game-over-title').textContent = GAME_TEXTS.gameOverTitle;
-            document.getElementById('go-level-lbl').textContent = GAME_TEXTS.gameOverFinalLevel;
-            document.getElementById('go-score-lbl').textContent = GAME_TEXTS.gameOverFinalScore;
-            document.getElementById('restart-btn').textContent = GAME_TEXTS.gameOverRestartBtn;
-            
-            // Modal de Instrucciones
-            document.getElementById('modal-title').textContent = GAME_TEXTS.instructionsTitle;
-            document.getElementById('step-1-text').textContent = GAME_TEXTS.instructionStep1;
-            document.getElementById('step-2-text').textContent = GAME_TEXTS.instructionStep2;
-            document.getElementById('step-3-text').textContent = GAME_TEXTS.instructionStep3;
-            document.getElementById('step-4-text').textContent = GAME_TEXTS.instructionStep4;
-            
-            // Botones de ayuda y volumen
-            document.getElementById('info-btn').setAttribute('title', GAME_TEXTS.tooltipHowToPlay);
-            document.getElementById('mute-btn').setAttribute('title', GAME_TEXTS.tooltipToggleSound);
-            
-            // Estado inicial
-            document.getElementById('status-msg').textContent = GAME_TEXTS.statusReady;
+        const BASE_METAL_COLOR = 0x242a3e; // Gris oscuro metalizado inicial
+
+        // Generador de textura procedural de metal oxidado (Rust Metal Texture)
+        let rustTexture = null;
+        function getRustTexture() {
+            if (!rustTexture) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+
+                // Fondo base de hierro oxidado
+                ctx.fillStyle = '#5c2410';
+                ctx.fillRect(0, 0, 256, 256);
+
+                // Moteado de corrosión y picaduras de óxido
+                const rustColors = ['#8d3d19', '#4d200e', '#a35022', '#361507', '#9e461b', '#572711', '#c0632b', '#240d04'];
+                for (let i = 0; i < 550; i++) {
+                    const x = Math.random() * 256;
+                    const y = Math.random() * 256;
+                    const r = Math.random() * 10 + 2;
+                    ctx.fillStyle = rustColors[Math.floor(Math.random() * rustColors.length)];
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Ruido áspero de oxidación metálica
+                const imgData = ctx.getImageData(0, 0, 256, 256);
+                const data = imgData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    const noise = (Math.random() - 0.5) * 40;
+                    data[i] = Math.min(255, Math.max(0, data[i] + noise));
+                    data[i+1] = Math.min(255, Math.max(0, data[i+1] + noise * 0.5));
+                    data[i+2] = Math.min(255, Math.max(0, data[i+2] + noise * 0.25));
+                }
+                ctx.putImageData(imgData, 0, 0);
+
+                rustTexture = new THREE.CanvasTexture(canvas);
+                rustTexture.wrapS = THREE.RepeatWrapping;
+                rustTexture.wrapT = THREE.RepeatWrapping;
+            }
+            return rustTexture;
         }
 
-        // Ejecutar la aplicación de textos inmediatamente
-        applyGameTexts();
+        // Estados por pieza: 'pending' | 'painted' | 'failed'
+        let partsState = ['pending', 'pending', 'pending', 'pending', 'pending', 'pending', 'pending'];
 
 
-        // --- STARFIELD BACKGROUND ---
+        // -------------------------------------------------------------
+        // STARFIELD BACKGROUND
+        // -------------------------------------------------------------
         const starCanvas = document.getElementById('stars-canvas');
         const starCtx = starCanvas.getContext('2d');
         let stars = [];
@@ -743,14 +1149,14 @@
 
         function initStars() {
             stars = [];
-            const count = Math.floor((starCanvas.width * starCanvas.height) / 8000);
+            const count = Math.floor((starCanvas.width * starCanvas.height) / 7500);
             for (let i = 0; i < count; i++) {
                 stars.push({
                     x: Math.random() * starCanvas.width,
                     y: Math.random() * starCanvas.height,
                     radius: Math.random() * 1.5,
                     alpha: Math.random(),
-                    speed: 0.02 + Math.random() * 0.05
+                    speed: 0.02 + Math.random() * 0.04
                 });
             }
         }
@@ -764,7 +1170,6 @@
                 starCtx.globalAlpha = star.alpha;
                 starCtx.fill();
 
-                // Twinkle effect
                 star.alpha += star.speed;
                 if (star.alpha > 1 || star.alpha < 0.2) {
                     star.speed = -star.speed;
@@ -779,13 +1184,15 @@
         animateStars();
 
 
-        // --- AUDIO SYNTHESIZER ---
+        // -------------------------------------------------------------
+        // AUDIO SYNTHESIZER
+        // -------------------------------------------------------------
         class GameAudio {
             constructor() {
                 this.ctx = null;
                 this.muted = false;
 
-                // Define 9 distinct musical frequencies (C Major scale: C4 to D5)
+                // 9 frecuencias musicales armoniosas
                 this.cubeFreqs = [
                     261.63, // C4
                     293.66, // D4
@@ -805,7 +1212,7 @@
                 }
             }
 
-            playTone(cubeIndex, duration = 0.4) {
+            playTone(cubeIndex, duration = 0.35) {
                 if (this.muted) return;
                 this.init();
 
@@ -813,14 +1220,12 @@
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
 
-                // Kid-friendly game vibe: triangle waves sound soft, clean, and retro
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(this.cubeFreqs[cubeIndex], time);
 
-                // ADSR envelope
                 gain.gain.setValueAtTime(0, time);
-                gain.gain.linearRampToValueAtTime(0.4, time + 0.05); // Attack
-                gain.gain.exponentialRampToValueAtTime(0.001, time + duration); // Decay/Release
+                gain.gain.linearRampToValueAtTime(0.35, time + 0.04);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
 
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
@@ -833,25 +1238,23 @@
                 if (this.muted) return;
                 this.init();
                 const time = this.ctx.currentTime;
-
-                // Beautiful ascending chime arpeggio
-                const freqs = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                const freqs = [329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
                 freqs.forEach((freq, index) => {
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
 
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(freq, time + index * 0.08);
+                    osc.frequency.setValueAtTime(freq, time + index * 0.07);
 
-                    gain.gain.setValueAtTime(0, time + index * 0.08);
-                    gain.gain.linearRampToValueAtTime(0.2, time + index * 0.08 + 0.02);
-                    gain.gain.exponentialRampToValueAtTime(0.001, time + index * 0.08 + 0.25);
+                    gain.gain.setValueAtTime(0, time + index * 0.07);
+                    gain.gain.linearRampToValueAtTime(0.25, time + index * 0.07 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, time + index * 0.07 + 0.28);
 
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
 
-                    osc.start(time + index * 0.08);
-                    osc.stop(time + index * 0.08 + 0.3);
+                    osc.start(time + index * 0.07);
+                    osc.stop(time + index * 0.07 + 0.32);
                 });
             }
 
@@ -867,17 +1270,16 @@
                 osc1.type = 'sawtooth';
                 osc2.type = 'sawtooth';
 
-                // Declining sweep buzzer
-                osc1.frequency.setValueAtTime(150, time);
-                osc1.frequency.linearRampToValueAtTime(80, time + 0.6);
+                osc1.frequency.setValueAtTime(140, time);
+                osc1.frequency.linearRampToValueAtTime(65, time + 0.65);
 
-                osc2.frequency.setValueAtTime(153, time);
-                osc2.frequency.linearRampToValueAtTime(81, time + 0.6);
+                osc2.frequency.setValueAtTime(144, time);
+                osc2.frequency.linearRampToValueAtTime(67, time + 0.65);
 
                 gain.gain.setValueAtTime(0, time);
-                gain.gain.linearRampToValueAtTime(0.3, time + 0.05);
-                gain.gain.linearRampToValueAtTime(0.3, time + 0.4);
-                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.6);
+                gain.gain.linearRampToValueAtTime(0.35, time + 0.04);
+                gain.gain.linearRampToValueAtTime(0.35, time + 0.45);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.65);
 
                 osc1.connect(gain);
                 osc2.connect(gain);
@@ -886,8 +1288,8 @@
                 osc1.start(time);
                 osc2.start(time);
 
-                osc1.stop(time + 0.6);
-                osc2.stop(time + 0.6);
+                osc1.stop(time + 0.65);
+                osc2.stop(time + 0.65);
             }
 
             toggleMute() {
@@ -904,34 +1306,414 @@
         const audio = new GameAudio();
 
 
-        // --- THREE.JS GAME ENVIRONMENT ---
-        const container = document.getElementById('game-canvas');
+        // -------------------------------------------------------------
+        // CLASE ROBOT VOLT (Modelo y caída de choque idénticos a RoboLane)
+        // -------------------------------------------------------------
+        class RobotVolt {
+            constructor() {
+                this.group = new THREE.Group();
+                this.materials = {};
+                this.flashAnimations = [];
+
+                // Variables de caída / choque idénticas a RoboLane
+                this.isCrashing = false;
+                this.crashTime = 0.0;
+
+                this.partIds = ['cab', 'torso', 'brz', 'panza', 'patas', 'nuc', 'ant'];
+                this.partIds.forEach(id => {
+                    this.materials[id] = new THREE.MeshPhysicalMaterial({
+                        color: BASE_METAL_COLOR,
+                        emissive: 0x000000,
+                        emissiveIntensity: 0.0,
+                        metalness: 0.5,
+                        roughness: 0.35,
+                        clearcoat: 0.8,
+                        clearcoatRoughness: 0.2
+                    });
+                });
+
+                this.darkMat = new THREE.MeshStandardMaterial({
+                    color: 0x161924,
+                    metalness: 0.65,
+                    roughness: 0.45
+                });
+
+                this.buildVolt();
+            }
+
+            addMesh(geo, mat, x, y, z, parent = null) {
+                const m = new THREE.Mesh(geo, mat);
+                m.position.set(x, y, z);
+                m.castShadow = true;
+                m.receiveShadow = true;
+                if (parent) {
+                    parent.add(m);
+                } else {
+                    this.group.add(m);
+                }
+                return m;
+            }
+
+            buildVolt() {
+                // Piernas
+                this.legLGroup = new THREE.Group();
+                this.legLGroup.position.set(-0.35, 0.6, 0);
+                this.group.add(this.legLGroup);
+
+                this.legRGroup = new THREE.Group();
+                this.legRGroup.position.set(0.35, 0.6, 0);
+                this.group.add(this.legRGroup);
+
+                const footGeo = new THREE.SphereGeometry(0.3, 16, 12);
+                const leftFoot = this.addMesh(footGeo, this.materials['patas'], 0, -0.4, 0.05, this.legLGroup);
+                leftFoot.scale.set(1, 0.5, 1.4);
+
+                const rightFoot = this.addMesh(footGeo, this.materials['patas'], 0, -0.4, 0.05, this.legRGroup);
+                rightFoot.scale.set(1, 0.5, 1.4);
+
+                const toeGeo = new THREE.BoxGeometry(0.26, 0.1, 0.12);
+                this.addMesh(toeGeo, this.darkMat, 0, -0.4, 0.32, this.legLGroup);
+                this.addMesh(toeGeo, this.darkMat, 0, -0.4, 0.32, this.legRGroup);
+
+                const legGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.35, 12);
+                this.addMesh(legGeo, this.materials['patas'], 0, -0.2, 0, this.legLGroup);
+                this.addMesh(legGeo, this.materials['patas'], 0, -0.2, 0, this.legRGroup);
+
+                // Torso
+                const torsoGeo = new THREE.BoxGeometry(1.0, 1.15, 0.75);
+                this.torsoMesh = this.addMesh(torsoGeo, this.materials['torso'], 0, 1.1, 0);
+
+                const waistGeo = new THREE.BoxGeometry(1.05, 0.14, 0.78);
+                this.addMesh(waistGeo, this.darkMat, 0, 0.525, 0);
+
+                const exhaustGeo = new THREE.BoxGeometry(0.75, 0.55, 0.06);
+                this.addMesh(exhaustGeo, this.darkMat, 0, 1.1, 0.385);
+
+                // Panza / Panel
+                const panzaGeo = new THREE.BoxGeometry(0.62, 0.42, 0.08);
+                this.addMesh(panzaGeo, this.materials['panza'], 0, 1.1, 0.41);
+
+                // Cuello / Núcleo
+                const nucGeo = new THREE.SphereGeometry(0.18, 16, 12);
+                this.addMesh(nucGeo, this.materials['nuc'], 0, 1.74, 0.0);
+
+                const neckRing = this.addMesh(new THREE.TorusGeometry(0.24, 0.025, 8, 24), this.darkMat, 0, 1.74, 0);
+                neckRing.rotation.x = Math.PI / 2;
+
+                // Cabeza
+                this.headGroup = new THREE.Group();
+                this.headGroup.position.set(0, 1.9, 0);
+                this.group.add(this.headGroup);
+
+                const headGeo = new THREE.BoxGeometry(0.85, 0.65, 0.7);
+                this.addMesh(headGeo, this.materials['cab'], 0, 0.28, 0, this.headGroup);
+
+                const visorGeo = new THREE.BoxGeometry(0.88, 0.15, 0.06);
+                this.addMesh(visorGeo, this.darkMat, 0, 0.38, 0.33, this.headGroup);
+
+                const eyeGeo = new THREE.SphereGeometry(0.09, 12, 10);
+                this.eyeL = this.addMesh(eyeGeo, new THREE.MeshBasicMaterial({ color: 0x00e5ff }), -0.18, 0.38, 0.34, this.headGroup);
+                this.eyeR = this.addMesh(eyeGeo, new THREE.MeshBasicMaterial({ color: 0x00e5ff }), 0.18, 0.38, 0.34, this.headGroup);
+
+                const earGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.12, 12);
+                const earL = this.addMesh(earGeo, this.darkMat, -0.45, 0.3, 0, this.headGroup);
+                earL.rotation.z = Math.PI / 2;
+                const earR = this.addMesh(earGeo, this.darkMat, 0.45, 0.3, 0, this.headGroup);
+                earR.rotation.z = Math.PI / 2;
+
+                const mouthGeo = new THREE.BoxGeometry(0.24, 0.05, 0.04);
+                this.addMesh(mouthGeo, this.darkMat, 0, 0.14, 0.34, this.headGroup);
+
+                // Antena
+                const antBaseGeo = new THREE.CylinderGeometry(0.024, 0.024, 0.28, 8);
+                this.addMesh(antBaseGeo, this.darkMat, 0, 0.72, 0, this.headGroup);
+
+                const antGlobeGeo = new THREE.SphereGeometry(0.09, 12, 12);
+                this.addMesh(antGlobeGeo, this.materials['ant'], 0, 0.88, 0, this.headGroup);
+
+                // Brazos
+                this.armLGroup = new THREE.Group();
+                this.armLGroup.position.set(-0.62, 1.45, 0);
+                this.group.add(this.armLGroup);
+
+                this.armRGroup = new THREE.Group();
+                this.armRGroup.position.set(0.62, 1.45, 0);
+                this.group.add(this.armRGroup);
+
+                const shoulderGeo = new THREE.SphereGeometry(0.14, 16, 12);
+                this.addMesh(shoulderGeo, this.materials['brz'], 0, 0, 0, this.armLGroup);
+                this.addMesh(shoulderGeo, this.materials['brz'], 0, 0, 0, this.armRGroup);
+
+                const limbGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.5, 12);
+                this.addMesh(limbGeo, this.materials['brz'], 0, -0.28, 0, this.armLGroup);
+                this.addMesh(limbGeo, this.materials['brz'], 0, -0.28, 0, this.armRGroup);
+
+                const fistGeo = new THREE.SphereGeometry(0.1, 12, 12);
+                this.addMesh(fistGeo, this.materials['brz'], 0, -0.56, 0, this.armLGroup);
+                this.addMesh(fistGeo, this.materials['brz'], 0, -0.56, 0, this.armRGroup);
+            }
+
+            // Pinta una pieza con brillo neón al acertar
+            paintPart(partId, hex) {
+                const mat = this.materials[partId];
+                if (!mat) return;
+
+                mat.map = null;
+                mat.color.setHex(hex);
+                mat.emissive.setHex(hex);
+                mat.emissiveIntensity = 2.0;
+                mat.roughness = 0.35;
+                mat.metalness = 0.5;
+                mat.clearcoat = 0.8;
+                mat.needsUpdate = true;
+
+                this.flashAnimations = this.flashAnimations.filter(anim => anim.partId !== partId);
+                this.flashAnimations.push({
+                    partId: partId,
+                    material: mat,
+                    elapsed: 0,
+                    duration: 0.9,
+                    targetIntensity: 0.55
+                });
+
+                if (partId === 'cab' || partId === 'ant') {
+                    this.eyeL.material.color.setHex(hex);
+                    this.eyeR.material.color.setHex(hex);
+                }
+            }
+
+            // Aplica textura de metal oxidado a la pieza fallada
+            setPartRust(partId) {
+                const mat = this.materials[partId];
+                if (!mat) return;
+
+                mat.map = getRustTexture();
+                mat.color.setHex(0xb85724); // Tono óxido vivo sobre textura
+                mat.emissive.setHex(0x3d1205);
+                mat.emissiveIntensity = 0.25;
+                mat.roughness = 0.95; // Rugosidad mate sin brillo
+                mat.metalness = 0.2;
+                mat.clearcoat = 0.0;
+                mat.needsUpdate = true;
+
+                this.flashAnimations = this.flashAnimations.filter(anim => anim.partId !== partId);
+            }
+
+            // Dispara la animación de colapso y caída de cabeza (faceplant) de RoboLane
+            triggerCrash() {
+                this.isCrashing = true;
+                this.crashTime = 0.0;
+                // Posicionar ángulo frontal con leve perspectiva dramática
+                this.group.rotation.y = 0.2;
+            }
+
+            resetColors() {
+                this.partIds.forEach(id => {
+                    const mat = this.materials[id];
+                    mat.map = null;
+                    mat.color.setHex(BASE_METAL_COLOR);
+                    mat.emissive.setHex(0x000000);
+                    mat.emissiveIntensity = 0.0;
+                    mat.roughness = 0.35;
+                    mat.metalness = 0.5;
+                    mat.clearcoat = 0.8;
+                    mat.needsUpdate = true;
+                });
+                this.eyeL.material.color.setHex(0x00e5ff);
+                this.eyeR.material.color.setHex(0x00e5ff);
+                this.flashAnimations = [];
+
+                // Restablecer posición y rotación del robot erguido
+                this.isCrashing = false;
+                this.crashTime = 0.0;
+                this.group.rotation.set(0, 0, 0);
+                this.group.position.set(0, 0.02, 0);
+
+                this.legLGroup.rotation.set(0, 0, 0);
+                this.legRGroup.rotation.set(0, 0, 0);
+                this.armLGroup.rotation.set(0, 0, 0);
+                this.armRGroup.rotation.set(0, 0, 0);
+                this.headGroup.rotation.set(0, 0, 0);
+
+                if (robotCamera) {
+                    robotCamera.lookAt(0, 1.25, 0);
+                }
+            }
+
+            update(dt, t) {
+                // Si el robot está colapsando (caída de RoboLane)
+                if (this.isCrashing) {
+                    this.crashTime += dt;
+                    const progress = Math.min(1.0, this.crashTime / 0.85); // 0.85 segundos para caer por completo
+
+                    // Caída frontal alrededor del eje X (faceplant)
+                    const targetRotX = Math.PI * 0.46;
+                    this.group.rotation.x = progress * targetRotX;
+
+                    // Reposicionar para que el robot caído quede perfectamente centrado en el viewport
+                    this.group.position.y = 0.02 + progress * 0.42;
+                    this.group.position.z = -progress * 0.35;
+
+                    // Extremidades agitándose en el impacto
+                    this.legLGroup.rotation.x = -progress * 0.85;
+                    this.legRGroup.rotation.x = progress * 0.65;
+                    this.armLGroup.rotation.z = -progress * 1.3;
+                    this.armRGroup.rotation.z = progress * 1.3;
+                    this.armLGroup.rotation.x = progress * 0.5;
+                    this.armRGroup.rotation.x = -progress * 0.5;
+                    this.headGroup.rotation.x = progress * 0.4;
+
+                    // Seguimiento de cámara
+                    if (robotCamera) {
+                        robotCamera.lookAt(0, 1.25 - progress * 0.45, 0);
+                    }
+                    return;
+                }
+
+                // Rotación suave tipo expositor giratorio cuando está activo
+                this.group.rotation.y = t * 0.75;
+                this.group.position.set(0, 0.02, 0);
+
+                // Microanimación sutil de respiración en brazos y cabeza
+                this.armLGroup.rotation.x = 0.1 + Math.sin(t * 2) * 0.04;
+                this.armRGroup.rotation.x = 0.1 - Math.sin(t * 2) * 0.04;
+                this.armLGroup.rotation.z = -0.15;
+                this.armRGroup.rotation.z = 0.15;
+                this.headGroup.rotation.x = 0.05 + Math.sin(t * 1.5) * 0.02;
+
+                // Suavizado del resplandor de pintura
+                for (let i = this.flashAnimations.length - 1; i >= 0; i--) {
+                    const anim = this.flashAnimations[i];
+                    anim.elapsed += dt;
+                    const progress = Math.min(1.0, anim.elapsed / anim.duration);
+                    if (progress >= 1.0) {
+                        anim.material.emissiveIntensity = anim.targetIntensity || 0.55;
+                        this.flashAnimations.splice(i, 1);
+                    } else {
+                        anim.material.emissiveIntensity = 2.0 - progress * (2.0 - (anim.targetIntensity || 0.55));
+                    }
+                }
+            }
+        }
+
+
+        // -------------------------------------------------------------
+        // SIDEBAR 3D RENDERER (Para el Robot Volt + Chispas de Choque)
+        // -------------------------------------------------------------
+        let robotScene, robotCamera, robotRenderer, voltRobot;
+        const robotContainer = document.getElementById('robot-3d-viewport');
+        let robotSparks = [];
+
+        function initRobotSidebar3D() {
+            if (!robotContainer) return;
+            robotScene = new THREE.Scene();
+
+            const w = robotContainer.clientWidth || 320;
+            const h = robotContainer.clientHeight || 220;
+
+            robotRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            robotRenderer.setSize(w, h);
+            robotRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            robotContainer.appendChild(robotRenderer.domElement);
+
+            robotCamera = new THREE.PerspectiveCamera(36, w / h, 0.1, 15);
+            robotCamera.position.set(0, 1.35, 4.4);
+            robotCamera.lookAt(0, 1.25, 0);
+
+            // Iluminación
+            robotScene.add(new THREE.HemisphereLight(0xffffff, 0x1f2430, 1.3));
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
+            dirLight.position.set(2, 5, 3);
+            robotScene.add(dirLight);
+
+            const rimLight = new THREE.DirectionalLight(0x00e5ff, 0.7);
+            rimLight.position.set(-3, 3, -3);
+            robotScene.add(rimLight);
+
+            const accentLight = new THREE.DirectionalLight(0xaa00ff, 0.5);
+            accentLight.position.set(3, -1, 2);
+            robotScene.add(accentLight);
+
+            // Instancia de Volt
+            voltRobot = new RobotVolt();
+            voltRobot.group.scale.set(0.85, 0.85, 0.85);
+            robotScene.add(voltRobot.group);
+        }
+
+        // Chispas del choque del robot
+        function spawnRobotSparks(x, y, z, colorHex = 0xff5722) {
+            if (!robotScene) return;
+            const sparkGeo = new THREE.BoxGeometry(0.06, 0.06, 0.06);
+            const sparkMat = new THREE.MeshBasicMaterial({ color: colorHex });
+
+            for (let i = 0; i < 22; i++) {
+                const m = new THREE.Mesh(sparkGeo, sparkMat);
+                m.position.set(
+                    x + (Math.random() - 0.5) * 0.6,
+                    y + (Math.random() - 0.5) * 0.6,
+                    z + (Math.random() - 0.5) * 0.4
+                );
+                robotScene.add(m);
+                robotSparks.push({
+                    mesh: m,
+                    vel: new THREE.Vector3(
+                        (Math.random() - 0.5) * 4.0,
+                        Math.random() * 3.5 + 1.2,
+                        (Math.random() - 0.5) * 3.0 + 1.0
+                    ),
+                    life: 0.95
+                });
+            }
+        }
+
+        function updateRobotSparks(dt) {
+            for (let i = robotSparks.length - 1; i >= 0; i--) {
+                const s = robotSparks[i];
+                s.life -= dt;
+                if (s.life <= 0) {
+                    robotScene.remove(s.mesh);
+                    s.mesh.geometry.dispose();
+                    s.mesh.material.dispose();
+                    robotSparks.splice(i, 1);
+                } else {
+                    s.vel.y -= dt * 9.8;
+                    s.mesh.position.addScaledVector(s.vel, dt);
+                    s.mesh.rotation.x += dt * 6;
+                    s.mesh.rotation.y += dt * 6;
+                }
+            }
+        }
+
+
+        // -------------------------------------------------------------
+        // MAIN 3D GAME ENVIRONMENT (9 Cubos)
+        // -------------------------------------------------------------
+        const mainContainer = document.getElementById('game-canvas');
         let scene, camera, renderer, raycaster, mouse;
         let cubes = [];
         let lights = [];
         let currentHoveredCube = null;
 
-        // Kid-like dynamic bright colors: green, yellow, red, blue, orange, pink, cyan, purple, lime
         const CUBE_COLORS = {
             active: [
-                0xff3b30, // Red
-                0xff9500, // Orange
-                0xffcc00, // Yellow
-                0x4cd964, // Green
-                0x00c7be, // Mint/Teal
-                0x5ac8fa, // Cyan
-                0x007aff, // Blue
-                0xaf52de, // Purple
-                0xff2d55  // Pink
+                0xff3b30, // 0: Rojo
+                0xff9500, // 1: Naranja
+                0xffcc00, // 2: Amarillo
+                0x4cd964, // 3: Verde
+                0x00c7be, // 4: Turquesa
+                0x5ac8fa, // 5: Cian
+                0x007aff, // 6: Azul
+                0xaf52de, // 7: Morado
+                0xff2d55  // 8: Rosa
             ],
-            inactive: 0x3a3a44 // gray metallic
+            inactive: 0x383a48
         };
 
-        // Positions for a 3x3 grid centered in 3D space
         const cubePositions = [];
-        const spacing = 1.6; // slightly adjusted to fit camera perfectly
-        for (let r = 0; r < 3; r++) {       // Rows: Top to Bottom
-            for (let c = 0; c < 3; c++) {   // Cols: Left to Right
+        const spacing = 1.6;
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
                 cubePositions.push({
                     x: (c - 1) * spacing,
                     y: (1 - r) * spacing,
@@ -940,49 +1722,47 @@
             }
         }
 
-        function init3D() {
+        function initMain3D() {
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x080315, 0.07);
+            scene.fog = new THREE.FogExp2(0x080315, 0.06);
 
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(0, 0, 9.5); // Pulled back slightly from 8 to 9.5 to fit all 9 cubes
+            const w = mainContainer.clientWidth || window.innerWidth;
+            const h = mainContainer.clientHeight || window.innerHeight;
+
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+            camera.position.set(0, 0, 9.5);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(w, h);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            container.appendChild(renderer.domElement);
+            mainContainer.appendChild(renderer.domElement);
 
             raycaster = new THREE.Raycaster();
-            mouse = new THREE.Vector2();
+            mouse = new THREE.Vector2(-999, -999);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
             scene.add(ambientLight);
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.65);
             dirLight.position.set(5, 7, 10);
             scene.add(dirLight);
 
-            // Group container for visual angle tilting
             const boardGroup = new THREE.Group();
-            boardGroup.rotation.set(0.12, -0.18, 0.02);
+            boardGroup.rotation.set(0.12, -0.16, 0.02);
             scene.add(boardGroup);
 
-            // Generate 9 Cubes
             cubePositions.forEach((pos, index) => {
-                // Glow light helper
                 const pointLight = new THREE.PointLight(CUBE_COLORS.active[index], 0, 4);
                 pointLight.position.set(pos.x, pos.y, pos.z + 0.6);
                 boardGroup.add(pointLight);
                 lights.push(pointLight);
 
-                // Grid Cube Shape (scaled to 1.1 so it spacing looks balanced)
                 const geometry = new THREE.BoxGeometry(1.1, 1.1, 1.1);
-
                 const material = new THREE.MeshStandardMaterial({
                     color: CUBE_COLORS.inactive,
-                    roughness: 0.15,
+                    roughness: 0.18,
                     metalness: 0.8,
                     emissive: 0x000000,
                     emissiveIntensity: 0
@@ -1007,36 +1787,55 @@
             });
 
             window.addEventListener('resize', onWindowResize);
-            window.addEventListener('pointermove', onPointerMove);
-            window.addEventListener('pointerdown', onPointerDown);
+            mainContainer.addEventListener('pointermove', onPointerMove);
+            mainContainer.addEventListener('pointerdown', onPointerDown);
         }
 
         function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            if (renderer && camera && mainContainer) {
+                const w = mainContainer.clientWidth;
+                const h = mainContainer.clientHeight;
+                if (w > 0 && h > 0) {
+                    camera.aspect = w / h;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(w, h);
+                }
+            }
+
+            if (robotRenderer && robotCamera && robotContainer) {
+                const rw = robotContainer.clientWidth;
+                const rh = robotContainer.clientHeight;
+                if (rw > 0 && rh > 0) {
+                    robotCamera.aspect = rw / rh;
+                    robotCamera.updateProjectionMatrix();
+                    robotRenderer.setSize(rw, rh);
+                }
+            }
+        }
+
+        // Raycasting con coordenadas NDC relativas al canvas
+        function updateRaycastCoords(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
         }
 
         function onPointerMove(event) {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            updateRaycastCoords(event);
         }
 
         function onPointerDown(event) {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            updateRaycastCoords(event);
             checkClickInteraction();
         }
 
-        // --- CUBE ANIMATIONS ---
-
-        function triggerCubeFlash(index, duration = 400) {
+        function triggerCubeFlash(index, duration = 380) {
             const cube = cubes[index];
             const light = lights[index];
             if (!cube) return;
 
             cube.userData.isGlowing = true;
-            cube.userData.scaleTarget = 1.2;
+            cube.userData.scaleTarget = 1.22;
 
             cube.material.color.setHex(cube.userData.activeColor);
             cube.material.emissive.setHex(cube.userData.activeColor);
@@ -1084,7 +1883,7 @@
                     currentHoveredCube = hovered;
                     if (!currentHoveredCube.userData.isGlowing) {
                         currentHoveredCube.material.emissive.setHex(currentHoveredCube.userData.activeColor);
-                        currentHoveredCube.material.emissiveIntensity = 0.3;
+                        currentHoveredCube.material.emissiveIntensity = 0.35;
                     }
                 }
             } else {
@@ -1111,12 +1910,17 @@
             }
         }
 
-        function animate3D(time) {
+        let clock = new THREE.Clock();
+
+        function animate3D() {
             requestAnimationFrame(animate3D);
+
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const t = clock.elapsedTime;
 
             updateHoverState();
 
-            // Bobbing & scaling
+            // Bobbing & scaling de los cubos
             cubes.forEach((cube) => {
                 cube.userData.phase += 0.015;
                 const bobOffset = Math.sin(cube.userData.phase) * 0.08;
@@ -1130,29 +1934,119 @@
                 cube.scale.z += (cube.userData.scaleTarget - cube.scale.z) * 0.15;
             });
 
-            // Camera drift
+            // Deriva sutil de cámara
             const speed = 0.0005;
-            camera.position.x = Math.sin(time * speed) * 0.5;
-            camera.position.y = Math.cos(time * speed) * 0.5;
+            camera.position.x = Math.sin(t * 0.5) * 0.4;
+            camera.position.y = Math.cos(t * 0.5) * 0.4;
             camera.lookAt(0, 0, 0);
 
             renderer.render(scene, camera);
+
+            // Renderizar Robot Volt en el Sidebar
+            if (voltRobot && robotRenderer && robotScene && robotCamera) {
+                voltRobot.update(dt, t);
+                updateRobotSparks(dt);
+                robotRenderer.render(robotScene, robotCamera);
+            }
         }
 
 
-        // --- CORE GAME STATE CONTROLLER ---
+        // -------------------------------------------------------------
+        // UI & CHECKLIST CONTROLLER
+        // -------------------------------------------------------------
+        const checklistContainer = document.getElementById('parts-checklist');
+        const progressNumEl = document.getElementById('sidebar-progress-num');
+        const progressBarEl = document.getElementById('sidebar-progress-bar');
+        const targetPartNameEl = document.getElementById('target-part-name');
+
+        function buildChecklistUI() {
+            checklistContainer.innerHTML = '';
+            VOLT_PARTS.forEach((part, idx) => {
+                const item = document.createElement('div');
+                item.className = 'part-item';
+                item.id = `part-item-${idx}`;
+
+                item.innerHTML = `
+                    <div class="part-left">
+                        <span class="part-swatch" id="part-swatch-${idx}"></span>
+                        <span class="part-name">${part.icon} ${part.name}</span>
+                    </div>
+                    <span class="part-badge badge-pending" id="part-badge-${idx}">Pendiente</span>
+                `;
+                checklistContainer.appendChild(item);
+            });
+        }
+
+        function updateChecklistUI(currentIdx) {
+            let paintedCount = 0;
+            VOLT_PARTS.forEach((part, idx) => {
+                const item = document.getElementById(`part-item-${idx}`);
+                const badge = document.getElementById(`part-badge-${idx}`);
+                const swatch = document.getElementById(`part-swatch-${idx}`);
+                if (!item || !badge || !swatch) return;
+
+                item.classList.remove('active-level', 'is-painted', 'is-failed');
+                badge.className = 'part-badge';
+
+                const state = partsState[idx];
+                if (state === 'painted') {
+                    paintedCount++;
+                    item.classList.add('is-painted');
+                    badge.classList.add('badge-painted');
+                    badge.textContent = 'Pintado';
+                    swatch.style.background = part.css;
+                    swatch.style.borderColor = part.css;
+                    swatch.style.boxShadow = `0 0 8px ${part.css}`;
+                } else if (state === 'failed') {
+                    item.classList.add('is-failed');
+                    badge.classList.add('badge-failed');
+                    badge.textContent = 'FALLO';
+                    swatch.style.background = 'radial-gradient(circle, #b85420 0%, #4d1c0a 100%)';
+                    swatch.style.borderColor = '#ff7043';
+                    swatch.style.boxShadow = '0 0 8px rgba(255, 112, 67, 0.6)';
+                } else if (idx === currentIdx && gameState !== 'START_MENU' && gameState !== 'GAME_OVER') {
+                    item.classList.add('active-level');
+                    badge.classList.add('badge-active');
+                    badge.textContent = 'Calibrando';
+                    swatch.style.background = part.css;
+                    swatch.style.borderColor = '#ffffff';
+                    swatch.style.boxShadow = `0 0 6px ${part.css}`;
+                } else {
+                    badge.classList.add('badge-pending');
+                    badge.textContent = 'Pendiente';
+                    swatch.style.background = '#444a5e';
+                    swatch.style.borderColor = 'rgba(255,255,255,0.2)';
+                    swatch.style.boxShadow = 'none';
+                }
+            });
+
+            progressNumEl.textContent = `${paintedCount} / 7`;
+            progressBarEl.style.width = `${(paintedCount / 7) * 100}%`;
+
+            if (currentIdx < 7 && gameState !== 'GAME_OVER') {
+                targetPartNameEl.textContent = VOLT_PARTS[currentIdx].name;
+            } else if (gameState === 'GAME_OVER') {
+                targetPartNameEl.textContent = '¡FALLO TOTAL!';
+            } else {
+                targetPartNameEl.textContent = '¡Completado!';
+            }
+        }
+
+
+        // -------------------------------------------------------------
+        // CORE GAME STATE CONTROLLER (Sin segundas oportunidades)
+        // -------------------------------------------------------------
         let gameState = 'START_MENU';
-        let level = 1;
+        let currentPartIndex = 0; // 0 to 6
         let score = 0;
-        let highScore = localStorage.getItem('papirolas_highscore') || 0;
+        let highScore = localStorage.getItem('papirolas_volt_highscore') || 0;
         let sequence = [];
         let playerSequenceIndex = 0;
         let inputTimer = null;
         let timeLeft = 10.0;
         let totalTurnTime = 10.0;
-        let sequenceSpeed = 700; // ms per step
+        let sequenceSpeed = 650;
 
-        // HUD Elements
         const levelDisplay = document.getElementById('level-display');
         const scoreDisplay = document.getElementById('score-display');
         const highscoreDisplay = document.getElementById('highscore-display');
@@ -1162,11 +2056,12 @@
         const startScreen = document.getElementById('start-screen');
         const gameOverScreen = document.getElementById('game-over-screen');
         const flashOverlay = document.getElementById('flash-overlay');
-        const gameReason = document.getElementById('game-over-reason');
 
         highscoreDisplay.textContent = highScore;
+        buildChecklistUI();
+        updateChecklistUI(0);
 
-        // Button events
+        // Buttons
         document.getElementById('start-btn').addEventListener('click', startGame);
         document.getElementById('restart-btn').addEventListener('click', startGame);
         document.getElementById('gameover-menu-btn').addEventListener('click', () => {
@@ -1174,7 +2069,7 @@
         });
         document.getElementById('mute-btn').addEventListener('click', () => audio.toggleMute());
 
-        // Modal events
+        // Modals
         const infoBtn = document.getElementById('info-btn');
         const instructionsModal = document.getElementById('instructions-modal');
         const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -1185,35 +2080,48 @@
             if (e.target === instructionsModal) instructionsModal.classList.remove('visible');
         });
 
-        init3D();
-        animate3D(0);
+        initMain3D();
+        initRobotSidebar3D();
+        animate3D();
 
         function startGame() {
             audio.init();
 
-            level = 1;
+            currentPartIndex = 0;
             score = 0;
-            sequence = [];
-            levelDisplay.textContent = level;
-            scoreDisplay.textContent = score;
+            partsState = ['pending', 'pending', 'pending', 'pending', 'pending', 'pending', 'pending'];
+            
+            if (voltRobot) {
+                voltRobot.resetColors();
+            }
 
+            scoreDisplay.textContent = score;
             startScreen.classList.add('hidden');
             gameOverScreen.classList.add('hidden');
 
-            nextLevel();
+            startPartRound();
         }
 
-        function nextLevel() {
-            // Speed increases slightly at higher levels
-            sequenceSpeed = Math.max(250, 750 - (level * 30));
-
-            // Random index from 0 to 8
-            sequence.push(Math.floor(Math.random() * 9));
-
-            playerSequenceIndex = 0;
+        function startPartRound() {
             gameState = 'PLAY_SEQUENCE';
+            levelDisplay.textContent = `${currentPartIndex + 1} / 7`;
+            updateChecklistUI(currentPartIndex);
 
-            statusMsg.textContent = GAME_TEXTS.statusWatch;
+            // Longitud de secuencia escala: 2, 3, 3, 4, 4, 5, 6
+            const sequenceLengths = [2, 3, 3, 4, 4, 5, 6];
+            const targetLen = sequenceLengths[currentPartIndex];
+
+            // Generar nueva secuencia para esta pieza
+            sequence = [];
+            for (let i = 0; i < targetLen; i++) {
+                sequence.push(Math.floor(Math.random() * 9));
+            }
+
+            sequenceSpeed = Math.max(380, 680 - (currentPartIndex * 35));
+            playerSequenceIndex = 0;
+
+            const activePart = VOLT_PARTS[currentPartIndex];
+            statusMsg.textContent = `Escucha y observa: ${activePart.name}`;
             statusMsg.className = "status-message visible status-play";
 
             timerBar.style.width = '100%';
@@ -1221,7 +2129,7 @@
 
             setTimeout(() => {
                 playSequence(0);
-            }, 800);
+            }, 850);
         }
 
         function playSequence(index) {
@@ -1239,7 +2147,7 @@
 
         function startPlayerTurn() {
             gameState = 'PLAYER_INPUT';
-            statusMsg.textContent = GAME_TEXTS.statusYourTurn;
+            statusMsg.textContent = "¡Tu Turno! Repite la secuencia";
             statusMsg.className = "status-message visible status-input";
 
             timeLeft = 10.0;
@@ -1261,7 +2169,7 @@
 
                 if (timeLeft <= 0) {
                     clearInterval(inputTimer);
-                    endGame(GAME_TEXTS.gameOverReasonTimeout);
+                    handleFailure("¡Se agotó el tiempo!");
                 }
             }, intervalMs);
         }
@@ -1274,103 +2182,138 @@
                 scoreDisplay.textContent = score;
                 playerSequenceIndex++;
 
+                // Si completó toda la secuencia con éxito
                 if (playerSequenceIndex >= sequence.length) {
                     clearInterval(inputTimer);
-                    gameState = 'LEVEL_COMPLETE';
-
-                    statusMsg.textContent = GAME_TEXTS.statusPerfect;
-                    statusMsg.className = "status-message visible status-success";
-
-                    flashOverlay.className = "success-flash-active";
-                    setTimeout(() => {
-                        flashOverlay.className = "";
-                    }, 200);
-
-                    audio.playLevelUp();
-
-                    level++;
-                    levelDisplay.textContent = level;
-
-                    if (score > highScore) {
-                        highScore = score;
-                        localStorage.setItem('papirolas_highscore', highScore);
-                        highscoreDisplay.textContent = highScore;
-                    }
-
-                    setTimeout(() => {
-                        nextLevel();
-                    }, 1200);
+                    handleSuccess();
                 }
             } else {
+                // Falló en un cubo de la secuencia -> ¡Fin del juego inmediato!
                 clearInterval(inputTimer);
-                endGame(GAME_TEXTS.gameOverReasonMissed);
+                handleFailure("¡Secuencia incorrecta!");
             }
         }
 
-        function endGame(reason) {
-            gameState = 'GAME_OVER';
+        function handleSuccess() {
+            gameState = 'ROUND_RESOLVED';
+            const part = VOLT_PARTS[currentPartIndex];
+            partsState[currentPartIndex] = 'painted';
+
+            score += 25; // Bonus por pieza restaurada
+            scoreDisplay.textContent = score;
+
+            // Pintar la pieza en 3D
+            if (voltRobot) {
+                voltRobot.paintPart(part.id, part.color);
+            }
+
+            audio.playLevelUp();
+
+            flashOverlay.className = "success-flash-active";
+            setTimeout(() => { flashOverlay.className = ""; }, 220);
+
+            statusMsg.textContent = `¡Excelente! ${part.name} pintado`;
+            statusMsg.className = "status-message visible status-success";
+
+            updateChecklistUI(currentPartIndex);
+
+            setTimeout(() => {
+                currentPartIndex++;
+                if (currentPartIndex < 7) {
+                    startPartRound();
+                } else {
+                    finishVictory();
+                }
+            }, 1300);
+        }
+
+        // Manejo de fallo: ¡Sin segundas oportunidades!
+        // La pieza se oxida con textura de óxido metálico, Volt colapsa al suelo y el juego termina.
+        function handleFailure(reason) {
+            gameState = 'ROUND_RESOLVED';
+            const part = VOLT_PARTS[currentPartIndex];
+            partsState[currentPartIndex] = 'failed';
+
+            // 1. Textura de metal oxidado en la pieza
+            if (voltRobot) {
+                voltRobot.setPartRust(part.id);
+                // 2. Disparar animación de caída de cabeza (faceplant) de RoboLane
+                voltRobot.triggerCrash();
+            }
+
+            // 3. Chispas de impacto en el robot
+            spawnRobotSparks(0, 1.0, 0.2, 0xff5722);
+
+            // 4. Sonido de buzzer y destello de fallo
             audio.playBuzzer();
 
             flashOverlay.className = "flash-active";
+            setTimeout(() => { flashOverlay.className = ""; }, 450);
+
+            statusMsg.textContent = `¡FALLO! ${part.name.toUpperCase()} SE OXIDÓ`;
+            statusMsg.className = "status-message visible status-fail";
+
+            updateChecklistUI(currentPartIndex);
+
+            // 5. Terminar el juego de inmediato (tras ver la caída del robot)
             setTimeout(() => {
-                flashOverlay.className = "";
-            }, 500);
+                finishGameOverByFailure(reason, part);
+            }, 1250);
+        }
 
+        function finishGameOverByFailure(reason, failedPart) {
+            gameState = 'GAME_OVER';
             statusMsg.classList.remove('visible');
-
-            document.getElementById('final-level').textContent = level;
-            document.getElementById('final-score').textContent = score;
-            gameReason.textContent = reason;
 
             if (score > highScore) {
                 highScore = score;
-                localStorage.setItem('papirolas_highscore', highScore);
+                localStorage.setItem('papirolas_volt_highscore', highScore);
                 highscoreDisplay.textContent = highScore;
             }
 
-            setTimeout(() => {
-                gameOverScreen.classList.remove('hidden');
-            }, 600);
+            const paintedCount = partsState.filter(s => s === 'painted').length;
+
+            document.getElementById('final-painted').textContent = `${paintedCount} / 7`;
+            document.getElementById('final-status').textContent = 'FALLO';
+            document.getElementById('final-status').style.color = 'var(--rust-light)';
+            document.getElementById('final-score').textContent = score;
+
+            const titleEl = document.getElementById('game-over-title');
+            const reasonEl = document.getElementById('game-over-reason');
+
+            titleEl.textContent = "CALIBRACIÓN FALLIDA";
+            titleEl.style.background = "linear-gradient(135deg, #ff1744 20%, #ff7043 100%)";
+            titleEl.style.webkitBackgroundClip = "text";
+            reasonEl.innerHTML = `¡Fallaste en <b>${failedPart.name}</b> (${reason})!<br>La pieza se oxidó y Volt colapsó. <b>No hay segundas oportunidades: debes empezar desde cero.</b>`;
+
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        function finishVictory() {
+            gameState = 'GAME_OVER';
+            statusMsg.classList.remove('visible');
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('papirolas_volt_highscore', highScore);
+                highscoreDisplay.textContent = highScore;
+            }
+
+            document.getElementById('final-painted').textContent = `7 / 7`;
+            document.getElementById('final-status').textContent = '100% OK';
+            document.getElementById('final-status').style.color = 'var(--accent-green)';
+            document.getElementById('final-score').textContent = score;
+
+            const titleEl = document.getElementById('game-over-title');
+            const reasonEl = document.getElementById('game-over-reason');
+
+            titleEl.textContent = "¡VOLT 100% RESTAURADO!";
+            titleEl.style.background = "linear-gradient(135deg, #00e5ff 20%, #00c853 100%)";
+            titleEl.style.webkitBackgroundClip = "text";
+            reasonEl.innerHTML = "¡Proeza insuperable! Completaste las 7 secuencias sin cometer un solo error. ¡Volt está reluciente y listo para la carrera!";
+
+            gameOverScreen.classList.remove('hidden');
         }
     </script>
-  <style>
-    #fs-btn{position:fixed;top:16px;right:16px;z-index:9999;width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#4caf50,#00b0ff);box-shadow:0 8px 24px rgba(0,0,0,.5);transition:transform .15s}
-    #fs-btn:hover{transform:scale(1.1)}
-  </style>
-  <button id="fs-btn" aria-label="Pantalla completa" title="Pantalla completa">
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9 V4 H9 M20 9 V4 H15 M4 15 V20 H9 M20 15 V20 H15"/></svg>
-  </button>
-  <script>
-    (function () {
-      var b = document.getElementById('fs-btn');
-      var lastExit = 0;
-      var REQ = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
-      var EXIT = document.exitFullscreen || document.webkitExitFullscreen || function () {};
-      function enterFS() {
-        if (!document.fullscreenElement && Date.now() - lastExit > 2500 && REQ) {
-          try { var p = REQ.call(document.documentElement); if (p && p.catch) p.catch(function () {}); } catch (e) {}
-        }
-      }
-      function onFSChange() { if (!document.fullscreenElement) lastExit = Date.now(); }
-      document.addEventListener('fullscreenchange', onFSChange);
-      if (document.webkitfullscreenchange) document.addEventListener('webkitfullscreenchange', onFSChange);
-      function tryEnterNow() {
-        if (!document.fullscreenElement && REQ) {
-          try { var p = REQ.call(document.documentElement); if (p && p.catch) p.catch(function () {}); } catch (e) {}
-        }
-      }
-      tryEnterNow();
-      setTimeout(tryEnterNow, 300);
-      setTimeout(tryEnterNow, 1000);
-      setTimeout(tryEnterNow, 2000);
-      window.addEventListener('pointerdown', enterFS);
-      window.addEventListener('touchstart', enterFS);
-      if (b) b.addEventListener('click', function (ev) {
-        ev.stopPropagation();
-        if (!document.fullscreenElement) enterFS();
-        else { lastExit = Date.now(); EXIT.call(document); }
-      });
-    })();
-  </script>
 </body>
 </html>
