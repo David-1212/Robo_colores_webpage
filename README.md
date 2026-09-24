@@ -84,7 +84,7 @@ juego_papirolas/
 ├── styles.css        # Estilos de ROBO·COLORES
 ├── secuenciador.html # Secuenciador 3D de 9 cubos
 ├── snake.html        # Serpiente 3D con mezcla de colores
-├── pacman.html       # Pac-Man clásico con mezcla cromática
+├── botman.html       # BOTMAN (Laberinto 3D con Volt, engranajes y robots oxidados)
 └── assets/video/     # (opcional) Videos de introducción
     ├── volt.mp4      # Video explicativo antes de cada ronda
     ├── nova.mp4
@@ -96,7 +96,7 @@ juego_papirolas/
 ### Menú principal
 
 - `index.html` redirige al **`menu.html`**, que es el único menú de toda la colección.
-- El menú muestra una tarjeta por juego (**ROBO·COLORES**, **SECUENCIADOR 3D**, **SERPIENTE 3D** y **PACMAN**) sobre un **fondo 3D animado de Three.js** (figuras de colores flotando en órbita).
+- El menú muestra una tarjeta por juego (**ROBO·COLORES**, **SECUENCIADOR 3D**, **ROBO·LANE**, y **BOTMAN**) sobre un **fondo 3D animado de Three.js** (figuras de colores flotando en órbita).
 - Los menús internos que traían los juegos del git fueron eliminados.
 - Antes de empezar cada juego se muestra una **ventana de reglas** (como en ROBO·COLORES); se inicia con el botón **JUGAR**.
 - Todos los juegos tienen un control (botón de casita en el HUD y/o un botón "VOLVER AL MENÚ") que regresa al `menu.html`.

@@ -1,0 +1,2149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BOTMAN - Fábrica de Engranajes</title>
+    <link rel="icon" type="image/png" href="assets/cucei_shield.png">
+    <meta name="description" content="Controla al robot Volt en un laberinto cibernético 3D: recoge engranajes, activa la sobrecarga y desmantela a los robots oxidados.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #00e5ff;
+            --accent-purple: #aa00ff;
+            --accent-green: #00c853;
+            --accent-gold: #ffd700;
+            --accent-orange: #ff6d00;
+            --accent-red: #ff1744;
+            --rust-color: #b85420;
+            --bg-gradient: radial-gradient(circle at center, #10152b 0%, #04060d 100%);
+            --glass-bg: rgba(14, 18, 38, 0.75);
+            --glass-border: rgba(0, 229, 255, 0.22);
+            --glass-shadow: rgba(0, 0, 0, 0.6);
+            --text-glow: 0 0 10px rgba(0, 229, 255, 0.8), 0 0 20px rgba(170, 0, 255, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: #ffffff;
+        }
+
+        #stars-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #flash-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+            pointer-events: none;
+            background: rgba(255, 23, 68, 0.38);
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        #flash-overlay.flash-active {
+            opacity: 1;
+        }
+
+        #flash-overlay.power-flash {
+            background: rgba(0, 229, 255, 0.25);
+            opacity: 1;
+        }
+
+        #ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 14px 18px;
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 var(--glass-shadow);
+        }
+
+        header {
+            width: 100%;
+            max-width: 860px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, auto);
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 22px;
+            gap: 16px;
+        }
+
+        .hud-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hud-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #8c90b0;
+            margin-bottom: 2px;
+            font-weight: 600;
+        }
+
+        .hud-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+        }
+
+        .glow-gold {
+            color: var(--accent-gold);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+        }
+
+        .glow-cyan {
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+        }
+
+        /* Power-up Meter */
+        .power-meter-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 150px;
+        }
+
+        .power-track {
+            width: 100%;
+            height: 7px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 3px;
+        }
+
+        .power-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--accent-purple));
+            box-shadow: 0 0 8px var(--primary);
+            transition: width 0.1s linear;
+        }
+
+        /* Lives container */
+        .lives-container {
+            display: flex;
+            gap: 7px;
+            margin-top: 3px;
+        }
+
+        .life-badge {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #00e5ff, #00c853);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .life-badge svg {
+            width: 14px;
+            height: 14px;
+            fill: #060914;
+        }
+
+        .life-badge.lost {
+            background: #2a2e40;
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+            opacity: 0.35;
+        }
+
+        /* Virtual D-Pad for Mobile */
+        .dpad-container {
+            position: absolute;
+            bottom: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 150px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 5px;
+            pointer-events: none;
+            z-index: 6;
+        }
+
+        .dpad-btn {
+            background: rgba(14, 18, 38, 0.65);
+            border: 1px solid rgba(0, 229, 255, 0.25);
+            border-radius: 12px;
+            color: var(--primary);
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.15s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        .dpad-btn:active {
+            background: rgba(0, 229, 255, 0.35);
+            border-color: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 0 14px rgba(0, 229, 255, 0.6);
+            transform: scale(0.92);
+        }
+
+        .dpad-up { grid-column: 2; grid-row: 1; }
+        .dpad-left { grid-column: 1; grid-row: 2; }
+        .dpad-right { grid-column: 3; grid-row: 2; }
+        .dpad-down { grid-column: 2; grid-row: 3; }
+
+        footer {
+            width: 100%;
+            max-width: 860px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+        }
+
+        .control-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 229, 255, 0.2);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 0 14px rgba(0, 229, 255, 0.5);
+        }
+
+        .control-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Screen Overlays */
+        .screen-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% - 40px);
+            max-width: 490px;
+            padding: 34px 28px;
+            text-align: center;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .screen-overlay.hidden {
+            opacity: 0;
+            transform: translate(-50%, -45%);
+            pointer-events: none;
+            display: none !important;
+        }
+
+        .game-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 2.8rem;
+            letter-spacing: 5px;
+            color: #ffffff;
+            margin-bottom: 8px;
+            text-shadow: var(--text-glow);
+            background: linear-gradient(135deg, #ffffff 20%, var(--primary) 65%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .game-subtitle {
+            font-size: 0.92rem;
+            color: #a4a8c5;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
+            border: none;
+            padding: 14px 38px;
+            border-radius: 30px;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: scale(1.04);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.8), inset 0 0 12px rgba(255, 255, 255, 0.4);
+        }
+
+        .btn:active { transform: scale(0.98); }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #ff1744 0%, #b85420 100%);
+            box-shadow: 0 0 20px rgba(255, 23, 68, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3d4257 0%, #1a1e2b 100%);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            margin-top: 4px;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #4f5570 0%, #252b3d 100%);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .glow-orange {
+            color: var(--accent-orange);
+            text-shadow: 0 0 10px rgba(255, 109, 0, 0.6);
+        }
+
+        /* Selector de Dificultades */
+        .diff-selector {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .diff-btn {
+            flex: 1;
+            padding: 10px 6px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            background: rgba(14, 18, 38, 0.7);
+            color: #ffffff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .diff-btn:hover {
+            border-color: var(--primary);
+            background: rgba(0, 229, 255, 0.18);
+        }
+
+        .diff-btn.active {
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.35), rgba(170, 0, 255, 0.35));
+            border-color: var(--primary);
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.5);
+            color: #00e5ff;
+        }
+
+        /* Floating Toast notifications */
+        .toast-msg {
+            position: absolute;
+            top: 22%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 50;
+            text-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
+            white-space: nowrap;
+        }
+
+        .toast-msg.show {
+            opacity: 1;
+            top: 16%;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 650px) {
+            header {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                padding: 10px 14px;
+            }
+            .power-meter-container {
+                width: 100%;
+            }
+            .hud-value { font-size: 1.15rem; }
+            .game-title { font-size: 2.2rem; }
+        }
+
+        /* Fullscreen button top-left */
+        #fs-btn {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 9999;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #00e5ff, #8a2be2);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        #fs-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.7);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="stars-canvas"></canvas>
+    <div id="game-canvas"></div>
+    <div id="flash-overlay"></div>
+
+    <div id="ui-container">
+        <!-- TOP HUD -->
+        <header class="glass-panel interactive">
+            <div class="hud-item">
+                <div class="hud-label">ENGRANAJES</div>
+                <div id="gears-display" class="hud-value glow-gold">0 / 0</div>
+            </div>
+
+            <div class="hud-item">
+                <div class="hud-label">PUNTAJE</div>
+                <div id="score-display" class="hud-value glow-cyan">0</div>
+            </div>
+
+            <div class="hud-item power-meter-container">
+                <div class="hud-label" id="power-lbl">SOBRECARGA</div>
+                <div class="power-track">
+                    <div id="power-bar" class="power-bar"></div>
+                </div>
+            </div>
+
+            <div class="hud-item">
+                <div class="hud-label">OBJETIVO</div>
+                <div id="mode-display" class="hud-value glow-orange" style="font-size: 1.05rem;">NORMAL (50)</div>
+            </div>
+        </header>
+
+        <!-- Dynamic Event Toast -->
+        <div id="toast-msg" class="toast-msg">¡SOBRECARGA ACTIVADA!</div>
+
+        <!-- Virtual D-Pad for Mobile (Tank Controls) -->
+        <div id="touch-dpad" class="dpad-container">
+            <button class="dpad-btn dpad-up" id="dpad-u" title="Avanzar (W / ▲)">▲</button>
+            <button class="dpad-btn dpad-left" id="dpad-l" title="Girar Izquierda (A / ↶)">↶</button>
+            <button class="dpad-btn dpad-right" id="dpad-r" title="Girar Derecha (D / ↷)">↷</button>
+            <button class="dpad-btn dpad-down" id="dpad-d" title="Reversa 180° (S / ▼)">▼</button>
+        </div>
+
+        <!-- Bottom Controls -->
+        <footer class="interactive">
+            <div style="display: flex; gap: 12px;">
+                <button id="cam-btn" class="control-btn" title="Alternar Vista de Cámara (Tecla C / V)">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3.2"/>
+                        <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+                    </svg>
+                </button>
+                <button id="mute-btn" class="control-btn" title="Alternar Sonido">
+                    <svg id="mute-icon" viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                    </svg>
+                </button>
+            </div>
+            <button id="menu-back-btn" class="control-btn" title="Volver al Menú Principal">
+                <svg viewBox="0 0 24 24">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+                </svg>
+            </button>
+        </footer>
+    </div>
+
+    <!-- SCREENS -->
+    <!-- Start Screen Overlay -->
+    <div id="start-screen" class="screen-overlay glass-panel interactive">
+        <h1 class="game-title">BOTMAN</h1>
+        <p class="game-subtitle" style="max-width: 440px; text-align: left;">
+            <b>FÁBRICA CIBERNÉTICA: SECTOR ALFA</b><br><br>
+            • Guía a <b>Volt</b> en 3ª persona para recolectar los engranajes dorados requeridos.<br>
+            • <b>¡Sin segundas oportunidades!</b> Un solo choque con un robot oxidado desactiva a Volt (¡ganar o morir!).<br>
+            • Toma los <b>Super Engranajes</b> de las esquinas para activar la <b>Sobrecarga</b> y desmantelar a los robots por <b>+200 pts</b>.<br>
+            • Alterna la vista de cámara con la tecla <b>C</b> o el botón de cámara.<br><br>
+            <b>SELECCIONA LA DIFICULTAD:</b>
+        </p>
+        
+        <div class="diff-selector">
+            <button type="button" class="diff-btn" data-diff="easy">FÁCIL<br><span style="font-size:0.75rem; opacity:0.85;">(30 ENG)</span></button>
+            <button type="button" class="diff-btn active" data-diff="normal">NORMAL<br><span style="font-size:0.75rem; opacity:0.85;">(50 ENG)</span></button>
+            <button type="button" class="diff-btn" data-diff="hard">DIFÍCIL<br><span style="font-size:0.75rem; opacity:0.85;">(FULL)</span></button>
+        </div>
+
+        <button id="start-btn" class="btn">INICIAR MISIÓN</button>
+    </div>
+
+    <!-- Game Over Screen Overlay -->
+    <div id="game-over-screen" class="screen-overlay glass-panel interactive hidden">
+        <h1 class="game-title" style="background: linear-gradient(135deg, #ff1744 20%, #ff7043 100%); -webkit-background-clip: text;">
+            VOLT DESACTIVADO
+        </h1>
+        <p class="game-subtitle" id="game-over-reason">¡Un robot oxidado ha destruido a Volt! Sin segundas oportunidades.</p>
+        
+        <div style="display: flex; gap: 30px; margin-bottom: 20px; justify-content: center;">
+            <div style="text-align: center;">
+                <div class="hud-label">Engranajes</div>
+                <div id="final-gears" class="hud-value glow-gold" style="font-size: 1.8rem;">0</div>
+            </div>
+            <div style="text-align: center;">
+                <div class="hud-label">Robots Desmantelados</div>
+                <div id="final-dismantled" class="hud-value" style="font-size: 1.8rem; color: #ff7043;">0</div>
+            </div>
+            <div style="text-align: center;">
+                <div class="hud-label">Puntaje</div>
+                <div id="final-score" class="hud-value glow-cyan" style="font-size: 1.8rem;">0</div>
+            </div>
+        </div>
+
+        <div class="diff-selector" style="margin-bottom: 14px;">
+            <button type="button" class="diff-btn" data-diff="easy">FÁCIL (30)</button>
+            <button type="button" class="diff-btn active" data-diff="normal">NORMAL (50)</button>
+            <button type="button" class="diff-btn" data-diff="hard">DIFÍCIL (FULL)</button>
+        </div>
+
+        <button id="restart-btn" class="btn btn-restart">REINTENTAR SECTOR</button>
+        <button id="exit-menu-btn" class="btn btn-secondary">VOLVER AL MENÚ</button>
+    </div>
+
+    <!-- Victory Screen Overlay -->
+    <div id="victory-screen" class="screen-overlay glass-panel interactive hidden">
+        <h1 class="game-title" style="background: linear-gradient(135deg, #00e5ff 20%, #00c853 100%); -webkit-background-clip: text;">
+            ¡SECTOR DESPEJADO!
+        </h1>
+        <p class="game-subtitle" id="victory-reason">¡Misión cumplida! Volt completó la cuota de engranajes y sobrevivió sin un solo rasguño.</p>
+        
+        <div style="display: flex; gap: 30px; margin-bottom: 20px; justify-content: center;">
+            <div style="text-align: center;">
+                <div class="hud-label">Engranajes Recolectados</div>
+                <div id="victory-gears" class="hud-value glow-gold" style="font-size: 1.8rem;">0</div>
+            </div>
+            <div style="text-align: center;">
+                <div class="hud-label">Puntaje Final</div>
+                <div id="victory-score" class="hud-value glow-cyan" style="font-size: 1.8rem;">0</div>
+            </div>
+        </div>
+
+        <div class="diff-selector" style="margin-bottom: 14px;">
+            <button type="button" class="diff-btn" data-diff="easy">FÁCIL (30)</button>
+            <button type="button" class="diff-btn active" data-diff="normal">NORMAL (50)</button>
+            <button type="button" class="diff-btn" data-diff="hard">DIFÍCIL (FULL)</button>
+        </div>
+
+        <button id="victory-replay-btn" class="btn">JUGAR DE NUEVO</button>
+        <button id="victory-menu-btn" class="btn btn-secondary">VOLVER AL MENÚ</button>
+    </div>
+
+    <!-- Fullscreen Button -->
+    <button id="fs-btn" aria-label="Pantalla completa" title="Pantalla completa">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#071018" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 9 V4 H9 M20 9 V4 H15 M4 15 V20 H9 M20 15 V20 H15"/>
+        </svg>
+    </button>
+    <script>
+        (function () {
+            var b = document.getElementById('fs-btn');
+            var lastExit = 0;
+            var REQ = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+            var EXIT = document.exitFullscreen || document.webkitExitFullscreen || function () {};
+            function enterFS() {
+                if (!document.fullscreenElement && Date.now() - lastExit > 2500 && REQ) {
+                    try { var p = REQ.call(document.documentElement); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+                }
+            }
+            function onFSChange() { if (!document.fullscreenElement) lastExit = Date.now(); }
+            document.addEventListener('fullscreenchange', onFSChange);
+            if (document.webkitfullscreenchange) document.addEventListener('webkitfullscreenchange', onFSChange);
+            window.addEventListener('pointerdown', enterFS);
+            window.addEventListener('touchstart', enterFS);
+            if (b) b.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                if (!document.fullscreenElement) enterFS();
+                else { lastExit = Date.now(); EXIT.call(document); }
+            });
+        })();
+    </script>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Game Engine Script -->
+    <script>
+        // -------------------------------------------------------------
+        // NAVEGACIÓN
+        // -------------------------------------------------------------
+        document.getElementById('menu-back-btn').addEventListener('click', () => { window.location.href = 'menu.html'; });
+        document.getElementById('exit-menu-btn').addEventListener('click', () => { window.location.href = 'menu.html'; });
+        document.getElementById('victory-menu-btn').addEventListener('click', () => { window.location.href = 'menu.html'; });
+
+        // -------------------------------------------------------------
+        // STARFIELD BACKGROUND
+        // -------------------------------------------------------------
+        const starCanvas = document.getElementById('stars-canvas');
+        const starCtx = starCanvas.getContext('2d');
+        let stars = [];
+
+        function resizeStarsCanvas() {
+            starCanvas.width = window.innerWidth;
+            starCanvas.height = window.innerHeight;
+            initStars();
+        }
+
+        function initStars() {
+            stars = [];
+            const count = Math.floor((starCanvas.width * starCanvas.height) / 7000);
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * starCanvas.width,
+                    y: Math.random() * starCanvas.height,
+                    radius: Math.random() * 1.5,
+                    alpha: Math.random(),
+                    speed: 0.02 + Math.random() * 0.04
+                });
+            }
+        }
+
+        function animateStars() {
+            starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+            starCtx.fillStyle = '#ffffff';
+            stars.forEach(star => {
+                starCtx.beginPath();
+                starCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                starCtx.globalAlpha = star.alpha;
+                starCtx.fill();
+
+                star.alpha += star.speed;
+                if (star.alpha > 1 || star.alpha < 0.2) {
+                    star.speed = -star.speed;
+                }
+            });
+            starCtx.globalAlpha = 1;
+            requestAnimationFrame(animateStars);
+        }
+
+        window.addEventListener('resize', resizeStarsCanvas);
+        resizeStarsCanvas();
+        animateStars();
+
+
+        // -------------------------------------------------------------
+        // AUDIO SYNTHESIZER
+        // -------------------------------------------------------------
+        class BotmanAudio {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            playGearClink() {
+                if (this.muted) return; this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                // Tono metálico de engranaje
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(650, now);
+                osc.frequency.exponentialRampToValueAtTime(1400, now + 0.07);
+
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.07);
+            }
+
+            playSuperGear() {
+                if (this.muted) return; this.init();
+                const now = this.ctx.currentTime;
+                [440, 554, 659, 880, 1108].forEach((f, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(f, now + i * 0.05);
+
+                    gain.gain.setValueAtTime(0.16, now + i * 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 0.15);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now + i * 0.05);
+                    osc.stop(now + i * 0.05 + 0.16);
+                });
+            }
+
+            playDismantle() {
+                if (this.muted) return; this.init();
+                const now = this.ctx.currentTime;
+                // Impacto de choque metálico
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(240, now);
+                osc.frequency.exponentialRampToValueAtTime(60, now + 0.35);
+
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.35);
+            }
+
+            playVoltHit() {
+                if (this.muted) return; this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.linearRampToValueAtTime(50, now + 0.55);
+
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.55);
+            }
+
+            playVictory() {
+                if (this.muted) return; this.init();
+                const now = this.ctx.currentTime;
+                const melody = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                melody.forEach((f, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(f, now + i * 0.1);
+
+                    gain.gain.setValueAtTime(0.25, now + i * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now + i * 0.1);
+                    osc.stop(now + i * 0.1 + 0.32);
+                });
+            }
+
+            toggleMute() {
+                this.muted = !this.muted;
+                const icon = document.getElementById('mute-icon');
+                if (this.muted) {
+                    icon.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.21.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+                } else {
+                    icon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+                }
+            }
+        }
+
+        const audio = new BotmanAudio();
+        document.getElementById('mute-btn').addEventListener('click', () => audio.toggleMute());
+
+
+        // -------------------------------------------------------------
+        // TEXTURA PROCEDURAL DE ÓXIDO METÁLICO (Rusty Metal Texture)
+        // -------------------------------------------------------------
+        let rustTexture = null;
+        function getRustTexture() {
+            if (!rustTexture) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+
+                ctx.fillStyle = '#5c2410';
+                ctx.fillRect(0, 0, 128, 128);
+
+                const colors = ['#8d3d19', '#4d200e', '#a35022', '#361507', '#9e461b', '#572711', '#c0632b', '#240d04'];
+                for (let i = 0; i < 280; i++) {
+                    const x = Math.random() * 128;
+                    const y = Math.random() * 128;
+                    const r = Math.random() * 8 + 2;
+                    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                const imgData = ctx.getImageData(0, 0, 128, 128);
+                const data = imgData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    const noise = (Math.random() - 0.5) * 40;
+                    data[i] = Math.min(255, Math.max(0, data[i] + noise));
+                    data[i+1] = Math.min(255, Math.max(0, data[i+1] + noise * 0.5));
+                    data[i+2] = Math.min(255, Math.max(0, data[i+2] + noise * 0.25));
+                }
+                ctx.putImageData(imgData, 0, 0);
+
+                rustTexture = new THREE.CanvasTexture(canvas);
+                rustTexture.wrapS = THREE.RepeatWrapping;
+                rustTexture.wrapT = THREE.RepeatWrapping;
+            }
+            return rustTexture;
+        }
+
+
+        // -------------------------------------------------------------
+        // LABERINTO COMPACTO (15x15) - Dinámico, rápido y conectado
+        // -------------------------------------------------------------
+        const GRID_SIZE = 15;
+        const CELL_SIZE = 4.2;
+
+        // 0: Camino con Engranaje
+        // 1: Muro cibernético 3D
+        // 2: Super Engranaje (Power Cog)
+        // 3: Punto de inicio de Volt (sin engranaje)
+        // 4: Base / Salida de Robots Oxidados (sin engranaje)
+        // 5: Túnel de teletransporte (sin engranaje)
+        const MAZE_LAYOUT = [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 0
+            [1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 2, 1], // 1
+            [1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1], // 2
+            [1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1], // 3
+            [1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1], // 4
+            [1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1], // 5
+            [5, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 5], // 6 (Túnel wrap-around)
+            [1, 1, 0, 1, 0, 1, 4, 4, 4, 1, 0, 1, 0, 1, 1], // 7 (Hub de robots oxidados)
+            [1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1], // 8
+            [5, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 5], // 9 (Spawn de Volt en 7, 9 + túnel)
+            [1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1], // 10
+            [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1], // 11
+            [1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1], // 12
+            [1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 2, 1], // 13
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]  // 14
+        ];
+
+        function getWorldPos(gridX, gridZ) {
+            return {
+                x: (gridX - GRID_SIZE / 2 + 0.5) * CELL_SIZE,
+                z: (gridZ - GRID_SIZE / 2 + 0.5) * CELL_SIZE
+            };
+        }
+
+
+        // -------------------------------------------------------------
+        // MODELO 3D DE VOLT (El protagonista de RoboLane y Secuenciador)
+        // -------------------------------------------------------------
+        function createVoltMesh() {
+            const group = new THREE.Group();
+
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x151824, metalness: 0.7, roughness: 0.45 });
+            const torsoMat = new THREE.MeshPhysicalMaterial({ color: 0x00e5ff, emissive: 0x00e5ff, emissiveIntensity: 0.5, metalness: 0.5, roughness: 0.35, clearcoat: 0.8 });
+            const headMat = new THREE.MeshPhysicalMaterial({ color: 0x00c853, emissive: 0x00c853, emissiveIntensity: 0.45, metalness: 0.5, roughness: 0.35, clearcoat: 0.8 });
+            const armMat = new THREE.MeshPhysicalMaterial({ color: 0xaa00ff, emissive: 0xaa00ff, emissiveIntensity: 0.45, metalness: 0.5, roughness: 0.35, clearcoat: 0.8 });
+            const legMat = new THREE.MeshPhysicalMaterial({ color: 0xff6d00, emissive: 0xff6d00, emissiveIntensity: 0.45, metalness: 0.5, roughness: 0.35, clearcoat: 0.8 });
+            const panzaMat = new THREE.MeshPhysicalMaterial({ color: 0xffd600, emissive: 0xffd600, emissiveIntensity: 0.6, metalness: 0.5, roughness: 0.35 });
+            const antMat = new THREE.MeshPhysicalMaterial({ color: 0xf50057, emissive: 0xf50057, emissiveIntensity: 0.8, metalness: 0.5, roughness: 0.3 });
+
+            // Piernas
+            const legL = new THREE.Group(); legL.position.set(-0.35, 0.6, 0); group.add(legL);
+            const legR = new THREE.Group(); legR.position.set(0.35, 0.6, 0); group.add(legR);
+
+            const footGeo = new THREE.SphereGeometry(0.3, 12, 10);
+            const fL = new THREE.Mesh(footGeo, legMat); fL.scale.set(1, 0.5, 1.3); fL.position.set(0, -0.38, 0.05); legL.add(fL);
+            const fR = new THREE.Mesh(footGeo, legMat); fR.scale.set(1, 0.5, 1.3); fR.position.set(0, -0.38, 0.05); legR.add(fR);
+
+            const cylinderLeg = new THREE.CylinderGeometry(0.08, 0.09, 0.32, 8);
+            const cL = new THREE.Mesh(cylinderLeg, legMat); cL.position.set(0, -0.18, 0); legL.add(cL);
+            const cR = new THREE.Mesh(cylinderLeg, legMat); cR.position.set(0, -0.18, 0); legR.add(cR);
+
+            // Torso
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.15, 0.75), torsoMat);
+            torso.position.set(0, 1.1, 0);
+            group.add(torso);
+
+            const waist = new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.14, 0.78), darkMat);
+            waist.position.set(0, 0.53, 0); group.add(waist);
+
+            const panza = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 0.08), panzaMat);
+            panza.position.set(0, 1.1, 0.41); group.add(panza);
+
+            // Cuello
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.2, 10), darkMat);
+            neck.position.set(0, 1.74, 0); group.add(neck);
+
+            // Cabeza
+            const headGroup = new THREE.Group(); headGroup.position.set(0, 1.9, 0); group.add(headGroup);
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.65, 0.7), headMat);
+            head.position.set(0, 0.28, 0); headGroup.add(head);
+
+            const visor = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.16, 0.06), darkMat);
+            visor.position.set(0, 0.38, 0.33); headGroup.add(visor);
+
+            const eyeGeo = new THREE.SphereGeometry(0.09, 10, 8);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+            const eyeL = new THREE.Mesh(eyeGeo, eyeMat); eyeL.position.set(-0.18, 0.38, 0.34); headGroup.add(eyeL);
+            const eyeR = new THREE.Mesh(eyeGeo, eyeMat); eyeR.position.set(0.18, 0.38, 0.34); headGroup.add(eyeR);
+
+            const antBase = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.26, 8), darkMat);
+            antBase.position.set(0, 0.72, 0); headGroup.add(antBase);
+
+            const antGlobe = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), antMat);
+            antGlobe.position.set(0, 0.88, 0); headGroup.add(antGlobe);
+
+            // Brazos
+            const armL = new THREE.Group(); armL.position.set(-0.62, 1.45, 0); group.add(armL);
+            const armR = new THREE.Group(); armR.position.set(0.62, 1.45, 0); group.add(armR);
+
+            const shoulder = new THREE.SphereGeometry(0.14, 10, 8);
+            armL.add(new THREE.Mesh(shoulder, armMat));
+            armR.add(new THREE.Mesh(shoulder, armMat));
+
+            const limb = new THREE.CylinderGeometry(0.065, 0.065, 0.48, 8);
+            const aMeshL = new THREE.Mesh(limb, armMat); aMeshL.position.set(0, -0.27, 0); armL.add(aMeshL);
+            const aMeshR = new THREE.Mesh(limb, armMat); aMeshR.position.set(0, -0.27, 0); armR.add(aMeshR);
+
+            const fist = new THREE.SphereGeometry(0.1, 8, 8);
+            const fMeshL = new THREE.Mesh(fist, armMat); fMeshL.position.set(0, -0.54, 0); armL.add(fMeshL);
+            const fMeshR = new THREE.Mesh(fist, armMat); fMeshR.position.set(0, -0.54, 0); armR.add(fMeshR);
+
+            // Luz cibernética personal de Volt que ilumina los pasillos a su alrededor
+            const voltGlow = new THREE.PointLight(0x00e5ff, 1.4, 14);
+            voltGlow.position.set(0, 1.8, 0);
+            group.add(voltGlow);
+
+            // Volt aumentado de tamaño para vista en 3ª persona
+            group.scale.set(1.45, 1.45, 1.45);
+
+            return {
+                group,
+                headGroup,
+                legL,
+                legR,
+                armL,
+                armR,
+                antGlobe,
+                torsoMat,
+                headMat,
+                armMat,
+                legMat,
+                panzaMat,
+                antMat,
+                voltGlow
+            };
+        }
+
+
+        // -------------------------------------------------------------
+        // MODELO 3D DE ROBOT OXIDADO (Enemigo Patrullero)
+        // -------------------------------------------------------------
+        function createRustyBotMesh() {
+            const group = new THREE.Group();
+            const rustMat = new THREE.MeshStandardMaterial({
+                map: getRustTexture(),
+                color: 0xb85420,
+                roughness: 0.92,
+                metalness: 0.25,
+                emissive: 0x3d1405,
+                emissiveIntensity: 0.25
+            });
+
+            const darkMetal = new THREE.MeshStandardMaterial({ color: 0x221a15, metalness: 0.8, roughness: 0.5 });
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff1744 }); // Ojo rojo amenazante
+
+            // Chasis oxidado
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.05, 0.8), rustMat);
+            body.position.set(0, 0.9, 0); group.add(body);
+
+            // Cabeza cúbica oxidada
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.65, 0.7), rustMat);
+            head.position.set(0, 1.7, 0); group.add(head);
+
+            // Visor ranura óptica
+            const eyeVisor = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.12, 0.1), eyeMat);
+            eyeVisor.position.set(0, 1.7, 0.36); group.add(eyeVisor);
+
+            // Chimeneas / tubos oxidados
+            const pipeL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.35, 8), darkMetal);
+            pipeL.position.set(-0.25, 2.1, -0.15); group.add(pipeL);
+
+            const pipeR = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.35, 8), darkMetal);
+            pipeR.position.set(0.25, 2.1, -0.15); group.add(pipeR);
+
+            // Brazos de pistón oxidado
+            const armGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.65, 8);
+            const armL = new THREE.Mesh(armGeo, rustMat); armL.position.set(-0.58, 0.8, 0); group.add(armL);
+            const armR = new THREE.Mesh(armGeo, rustMat); armR.position.set(0.58, 0.8, 0); group.add(armR);
+
+            // Orugas o base de marcha oxidada
+            const base = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.35, 0.95), darkMetal);
+            base.position.set(0, 0.18, 0); group.add(base);
+
+            // Baliza luminosa del robot oxidado
+            const botGlow = new THREE.PointLight(0xff1744, 1.2, 12);
+            botGlow.position.set(0, 1.8, 0.4);
+            group.add(botGlow);
+
+            // Robot oxidado aumentado de tamaño para presencia imponente
+            group.scale.set(1.5, 1.5, 1.5);
+
+            return {
+                group,
+                rustMat,
+                eyeMat,
+                armL,
+                armR,
+                botGlow
+            };
+        }
+
+
+        // -------------------------------------------------------------
+        // MODELO 3D DE ENGRANAJE METÁLICO (Collectible Gear)
+        // -------------------------------------------------------------
+        function createGearMesh(isSuper = false) {
+            const group = new THREE.Group();
+            const radius = isSuper ? 0.85 : 0.52;
+            const teethCount = isSuper ? 8 : 6;
+
+            const mat = new THREE.MeshStandardMaterial({
+                color: isSuper ? 0x00e5ff : 0xffd700,
+                metalness: 0.85,
+                roughness: 0.25,
+                emissive: isSuper ? 0x00e5ff : 0xff9900,
+                emissiveIntensity: isSuper ? 0.85 : 0.35
+            });
+
+            // Centro del engranaje
+            const hub = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.7, radius * 0.7, 0.18, 16), mat);
+            group.add(hub);
+
+            // Eje central hueco
+            const hole = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.26, radius * 0.26, 0.2, 12), new THREE.MeshBasicMaterial({ color: 0x070b18 }));
+            group.add(hole);
+
+            // Dientes radiales
+            for (let i = 0; i < teethCount; i++) {
+                const angle = i * (Math.PI * 2 / teethCount);
+                const tooth = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.32, 0.16, radius * 0.38), mat);
+                tooth.position.set(Math.cos(angle) * (radius * 0.85), 0, Math.sin(angle) * (radius * 0.85));
+                tooth.rotation.y = -angle;
+                group.add(tooth);
+            }
+
+            // Luz suave para el Super Engranaje
+            if (isSuper) {
+                const light = new THREE.PointLight(0x00e5ff, 1.4, 7);
+                light.position.set(0, 0.5, 0);
+                group.add(light);
+            }
+
+            return group;
+        }
+
+
+        // -------------------------------------------------------------
+        // SISTEMA DE CHISPAS
+        // -------------------------------------------------------------
+        let sparks = [];
+        function spawnSparks(x, y, z, colorHex = 0xff6d00, count = 20) {
+            const sparkGeo = new THREE.BoxGeometry(0.08, 0.08, 0.08);
+            const sparkMat = new THREE.MeshBasicMaterial({ color: colorHex });
+
+            for (let i = 0; i < count; i++) {
+                const m = new THREE.Mesh(sparkGeo, sparkMat);
+                m.position.set(x, y, z);
+                scene.add(m);
+
+                sparks.push({
+                    mesh: m,
+                    vel: new THREE.Vector3(
+                        (Math.random() - 0.5) * 5.5,
+                        Math.random() * 4.0 + 1.5,
+                        (Math.random() - 0.5) * 5.5
+                    ),
+                    life: 0.85
+                });
+            }
+        }
+
+        function updateSparks(dt) {
+            for (let i = sparks.length - 1; i >= 0; i--) {
+                const s = sparks[i];
+                s.life -= dt;
+                if (s.life <= 0) {
+                    scene.remove(s.mesh);
+                    s.mesh.geometry.dispose();
+                    s.mesh.material.dispose();
+                    sparks.splice(i, 1);
+                } else {
+                    s.vel.y -= dt * 9.8;
+                    s.mesh.position.addScaledVector(s.vel, dt);
+                    s.mesh.rotation.x += dt * 5;
+                    s.mesh.rotation.y += dt * 5;
+                }
+            }
+        }
+
+
+        // -------------------------------------------------------------
+        // MOTOR PRINCIPAL THREE.JS Y ESTADO DE JUEGO
+        // -------------------------------------------------------------
+        let scene, camera, renderer;
+        let voltEntity = null;
+        let rustyBots = [];
+        let gearList = [];
+        let totalGearsInSector = 0;
+        let gearsCollected = 0;
+        let targetGears = 50;
+        let currentDifficulty = 'normal'; // 'easy' (30), 'normal' (50), 'hard' (full)
+        let score = 0;
+        let dismantledCount = 0;
+        let isPlaying = false;
+        let isDying = false;
+
+        // Variables de Sobrecarga (Power Gear)
+        let powerTimer = 0.0;
+        const POWER_DURATION = 8.0;
+
+        function setDifficulty(diff) {
+            currentDifficulty = diff;
+            document.querySelectorAll('.diff-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.diff === diff);
+            });
+            updateTargetGears();
+        }
+
+        function updateTargetGears() {
+            if (currentDifficulty === 'easy') {
+                targetGears = 30;
+                const m = document.getElementById('mode-display');
+                if (m) m.textContent = 'FÁCIL (30)';
+            } else if (currentDifficulty === 'normal') {
+                targetGears = 50;
+                const m = document.getElementById('mode-display');
+                if (m) m.textContent = 'NORMAL (50)';
+            } else {
+                targetGears = totalGearsInSector || 80;
+                const m = document.getElementById('mode-display');
+                if (m) m.textContent = `DIFÍCIL (${totalGearsInSector || 'FULL'})`;
+            }
+            const gd = document.getElementById('gears-display');
+            if (gd) gd.textContent = `${gearsCollected} / ${targetGears}`;
+        }
+
+        // Variables de Cámara en 3ª Persona
+        let cameraMode = 'third_person'; // 'third_person' (default), 'chase', 'overview'
+        const camLookAt = new THREE.Vector3(0, 1.4, 0);
+
+        let clock = new THREE.Clock();
+
+        // Direcciones cardinales para Tank Controls
+        // 0: Norte (Z-, hacia arriba en el mapa)
+        // 1: Este  (X+, hacia la derecha)
+        // 2: Sur   (Z+, hacia abajo en el mapa)
+        // 3: Oeste (X-, hacia la izquierda)
+        const CARDINALS = [
+            { dx: 0, dz: -1, rotY: Math.PI },       // 0: Norte
+            { dx: 1, dz: 0,  rotY: Math.PI / 2 },   // 1: Este
+            { dx: 0, dz: 1,  rotY: 0 },             // 2: Sur
+            { dx: -1, dz: 0, rotY: -Math.PI / 2 }   // 3: Oeste
+        ];
+
+        function lerpAngle(from, to, t) {
+            let diff = (to - from) % (Math.PI * 2);
+            if (diff < -Math.PI) diff += Math.PI * 2;
+            if (diff > Math.PI) diff -= Math.PI * 2;
+            return from + diff * t;
+        }
+
+        let cameraYaw = -Math.PI / 2;
+        const keysDown = {};
+
+        // Control de movimiento de Volt con Tank Controls
+        let player = {
+            gridX: 7, gridZ: 9, targetGridX: 7, targetGridZ: 9,
+            moveProgress: 0.0, speed: 6.2,
+            heading: 3, // Inicia mirando hacia el Oeste (pasillo largo y despejado)
+            currentRotY: -Math.PI / 2,
+            targetRotY: -Math.PI / 2,
+            dirX: 0, dirZ: 0,
+            bufferedTurn: null, // 'LEFT', 'RIGHT', 'FORWARD'
+            isMoving: false,
+            meshComp: null
+        };
+
+        function initScene3D() {
+            const container = document.getElementById('game-canvas');
+            container.innerHTML = '';
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050711);
+            scene.fog = new THREE.FogExp2(0x050711, 0.014);
+
+            // Vista en 3ª persona siguiendo a Volt
+            camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const startPos = getWorldPos(7, 9);
+            const rotY = -Math.PI / 2;
+            const dist = 9.2;
+            cameraYaw = rotY;
+            camera.position.set(startPos.x - Math.sin(rotY) * dist, 6.8, startPos.z - Math.cos(rotY) * dist);
+            camLookAt.set(startPos.x + Math.sin(rotY) * 3.0, 1.8, startPos.z + Math.cos(rotY) * 3.0);
+            camera.lookAt(camLookAt);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Iluminación
+            scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            dirLight.position.set(15, 45, 20);
+            scene.add(dirLight);
+
+            const rimLight = new THREE.DirectionalLight(0x00e5ff, 0.55);
+            rimLight.position.set(-20, 25, -20);
+            scene.add(rimLight);
+
+            buildMaze3D();
+            spawnVolt();
+            spawnRustyBots();
+            spawnGears3D();
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function buildMaze3D() {
+            // Suelo metálico con sutil cuadrícula
+            const floorGeo = new THREE.PlaneGeometry(GRID_SIZE * CELL_SIZE + 4, GRID_SIZE * CELL_SIZE + 4);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x0c1020, metalness: 0.6, roughness: 0.4 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = -0.05;
+            scene.add(floor);
+
+            // Muros cibernéticos con neón superior
+            const wallGeo = new THREE.BoxGeometry(CELL_SIZE, 2.6, CELL_SIZE);
+            const wallMat = new THREE.MeshStandardMaterial({
+                color: 0x12182c,
+                metalness: 0.8,
+                roughness: 0.25,
+                emissive: 0x090f22
+            });
+
+            const trimGeo = new THREE.BoxGeometry(CELL_SIZE * 0.95, 0.08, CELL_SIZE * 0.95);
+            const trimMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (MAZE_LAYOUT[r][c] === 1) {
+                        const wall = new THREE.Mesh(wallGeo, wallMat);
+                        const pos = getWorldPos(c, r);
+                        wall.position.set(pos.x, 1.3, pos.z);
+                        scene.add(wall);
+
+                        // Filete de neón decorativo
+                        const trim = new THREE.Mesh(trimGeo, trimMat);
+                        trim.position.set(pos.x, 2.64, pos.z);
+                        scene.add(trim);
+                    }
+                }
+            }
+        }
+
+        function spawnVolt() {
+            if (voltEntity && voltEntity.group) scene.remove(voltEntity.group);
+
+            voltEntity = createVoltMesh();
+            player.gridX = 7; player.gridZ = 9;
+            player.targetGridX = 7; player.targetGridZ = 9;
+            player.moveProgress = 0.0;
+            player.isMoving = false;
+            player.heading = 3; // Inicia mirando hacia el Oeste
+            player.currentRotY = -Math.PI / 2;
+            player.targetRotY = -Math.PI / 2;
+            cameraYaw = -Math.PI / 2;
+            player.dirX = 0; player.dirZ = 0;
+            player.bufferedTurn = null;
+            player.meshComp = voltEntity;
+
+            const pos = getWorldPos(7, 9);
+            voltEntity.group.position.set(pos.x, 0.0, pos.z);
+            voltEntity.group.rotation.y = -Math.PI / 2;
+            scene.add(voltEntity.group);
+
+            // Posicionar cámara detrás de Volt mirando hacia el Oeste
+            const rotY = -Math.PI / 2;
+            const dist = 9.2;
+            camera.position.set(pos.x - Math.sin(rotY) * dist, 6.8, pos.z - Math.cos(rotY) * dist);
+            camLookAt.set(pos.x + Math.sin(rotY) * 3.0, 1.8, pos.z + Math.cos(rotY) * 3.0);
+            camera.lookAt(camLookAt);
+        }
+
+        function spawnRustyBots() {
+            rustyBots.forEach(b => scene.remove(b.comp.group));
+            rustyBots = [];
+
+            // Puntos de inicio de los 3 robots oxidados en la base central
+            const spawnPoints = [
+                { x: 7, z: 6 },
+                { x: 6, z: 7 },
+                { x: 8, z: 7 }
+            ];
+
+            spawnPoints.forEach((sp, idx) => {
+                const comp = createRustyBotMesh();
+                const pos = getWorldPos(sp.x, sp.z);
+                comp.group.position.set(pos.x, 0.0, pos.z);
+                scene.add(comp.group);
+
+                rustyBots.push({
+                    id: idx,
+                    spawnX: sp.x, spawnZ: sp.z,
+                    gridX: sp.x, gridZ: sp.z,
+                    targetGridX: sp.x, targetGridZ: sp.z,
+                    moveProgress: 0.0,
+                    speed: 3.6,
+                    dirX: 0, dirZ: -1,
+                    isMoving: false,
+                    comp: comp,
+                    isDismantled: false,
+                    respawnTimer: 0
+                });
+            });
+        }
+
+        function spawnGears3D() {
+            gearList.forEach(g => scene.remove(g.mesh));
+            gearList = [];
+            totalGearsInSector = 0;
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = MAZE_LAYOUT[r][c];
+                    if (cell === 0 || cell === 2) {
+                        const isSuper = (cell === 2);
+                        const gearMesh = createGearMesh(isSuper);
+                        const pos = getWorldPos(c, r);
+                        gearMesh.position.set(pos.x, isSuper ? 1.05 : 0.85, pos.z);
+                        scene.add(gearMesh);
+
+                        gearList.push({
+                            gridX: c,
+                            gridZ: r,
+                            isSuper: isSuper,
+                            mesh: gearMesh,
+                            baseY: isSuper ? 1.05 : 0.85,
+                            phase: Math.random() * Math.PI * 2
+                        });
+
+                        totalGearsInSector++;
+                    }
+                }
+            }
+
+            updateTargetGears();
+        }
+
+        function isValidTileMove(gridX, gridZ, dx, dz) {
+            let nX = gridX + dx;
+            let nZ = gridZ + dz;
+
+            // Manejo de túnel de teletransporte lateral
+            if (nX < 0 || nX >= GRID_SIZE) {
+                return (nZ >= 0 && nZ < GRID_SIZE && MAZE_LAYOUT[nZ][(nX + GRID_SIZE) % GRID_SIZE] !== 1);
+            }
+            if (nZ < 0 || nZ >= GRID_SIZE) return false;
+
+            return MAZE_LAYOUT[nZ][nX] !== 1;
+        }
+
+        function handleTankInput(action) {
+            if (!isPlaying || isDying) return;
+
+            if (action === 'FORWARD') {
+                if (!player.isMoving) {
+                    const fwd = CARDINALS[player.heading];
+                    if (isValidTileMove(player.gridX, player.gridZ, fwd.dx, fwd.dz)) {
+                        player.dirX = fwd.dx;
+                        player.dirZ = fwd.dz;
+                        player.targetGridX = (player.gridX + fwd.dx + GRID_SIZE) % GRID_SIZE;
+                        player.targetGridZ = player.gridZ + fwd.dz;
+                        player.moveProgress = 0.0;
+                        player.isMoving = true;
+                        player.bufferedTurn = null;
+                    }
+                } else {
+                    player.bufferedTurn = 'FORWARD';
+                }
+            } else if (action === 'REVERSE' || action === 'BACKWARD') {
+                // Giro de 180° inmediato (Reversa)
+                const revHeading = (player.heading + 2) % 4;
+                const revCard = CARDINALS[revHeading];
+                player.heading = revHeading;
+                player.targetRotY = revCard.rotY;
+                player.bufferedTurn = null;
+
+                if (player.isMoving) {
+                    const tempX = player.gridX;
+                    const tempZ = player.gridZ;
+                    player.gridX = player.targetGridX;
+                    player.gridZ = player.targetGridZ;
+                    player.targetGridX = tempX;
+                    player.targetGridZ = tempZ;
+                    player.dirX = revCard.dx;
+                    player.dirZ = revCard.dz;
+                    player.moveProgress = Math.max(0.0, 1.0 - player.moveProgress);
+                } else {
+                    if (isValidTileMove(player.gridX, player.gridZ, revCard.dx, revCard.dz)) {
+                        player.dirX = revCard.dx;
+                        player.dirZ = revCard.dz;
+                        player.targetGridX = (player.gridX + revCard.dx + GRID_SIZE) % GRID_SIZE;
+                        player.targetGridZ = player.gridZ + revCard.dz;
+                        player.moveProgress = 0.0;
+                        player.isMoving = true;
+                    }
+                }
+            } else if (action === 'LEFT') {
+                const leftHeading = (player.heading + 3) % 4;
+                const leftCard = CARDINALS[leftHeading];
+
+                if (!player.isMoving) {
+                    player.heading = leftHeading;
+                    player.targetRotY = leftCard.rotY;
+                    if (isValidTileMove(player.gridX, player.gridZ, leftCard.dx, leftCard.dz)) {
+                        player.dirX = leftCard.dx;
+                        player.dirZ = leftCard.dz;
+                        player.targetGridX = (player.gridX + leftCard.dx + GRID_SIZE) % GRID_SIZE;
+                        player.targetGridZ = player.gridZ + leftCard.dz;
+                        player.moveProgress = 0.0;
+                        player.isMoving = true;
+                    }
+                    player.bufferedTurn = null;
+                } else {
+                    player.bufferedTurn = 'LEFT';
+                }
+            } else if (action === 'RIGHT') {
+                const rightHeading = (player.heading + 1) % 4;
+                const rightCard = CARDINALS[rightHeading];
+
+                if (!player.isMoving) {
+                    player.heading = rightHeading;
+                    player.targetRotY = rightCard.rotY;
+                    if (isValidTileMove(player.gridX, player.gridZ, rightCard.dx, rightCard.dz)) {
+                        player.dirX = rightCard.dx;
+                        player.dirZ = rightCard.dz;
+                        player.targetGridX = (player.gridX + rightCard.dx + GRID_SIZE) % GRID_SIZE;
+                        player.targetGridZ = player.gridZ + rightCard.dz;
+                        player.moveProgress = 0.0;
+                        player.isMoving = true;
+                    }
+                    player.bufferedTurn = null;
+                } else {
+                    player.bufferedTurn = 'RIGHT';
+                }
+            }
+        }
+
+        // Entradas de teclado (Tank Controls: W/S/A/D o Flechas)
+        window.addEventListener('keydown', (e) => {
+            const k = e.key.toLowerCase();
+            keysDown[k] = true;
+            if (!isPlaying || isDying) return;
+
+            switch(k) {
+                case 'arrowup':    case 'w': handleTankInput('FORWARD'); break;
+                case 'arrowdown':  case 's': handleTankInput('REVERSE'); break;
+                case 'arrowleft':  case 'a': handleTankInput('LEFT');    break;
+                case 'arrowright': case 'd': handleTankInput('RIGHT');   break;
+                case 'c':          case 'v': toggleCameraMode();         break;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            delete keysDown[e.key.toLowerCase()];
+        });
+
+        // Controles táctiles D-Pad (Tank Controls: ▲, ▼, ↶, ↷)
+        const handleDpadAction = (action) => (e) => {
+            e.preventDefault();
+            handleTankInput(action);
+        };
+        ['touchstart', 'mousedown'].forEach(evt => {
+            document.getElementById('dpad-u').addEventListener(evt, handleDpadAction('FORWARD'));
+            document.getElementById('dpad-d').addEventListener(evt, handleDpadAction('REVERSE'));
+            document.getElementById('dpad-l').addEventListener(evt, handleDpadAction('LEFT'));
+            document.getElementById('dpad-r').addEventListener(evt, handleDpadAction('RIGHT'));
+        });
+
+        // Gestos táctiles de deslizamiento (Swipe)
+        let touchStartX = 0, touchStartY = 0;
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            if (e.changedTouches.length > 0 && isPlaying && !isDying) {
+                const dx = e.changedTouches[0].clientX - touchStartX;
+                const dy = e.changedTouches[0].clientY - touchStartY;
+                if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        handleTankInput(dx > 0 ? 'RIGHT' : 'LEFT');
+                    } else {
+                        handleTankInput(dy > 0 ? 'REVERSE' : 'FORWARD');
+                    }
+                }
+            }
+        }, { passive: true });
+
+
+        // -------------------------------------------------------------
+        // ACTUALIZACIÓN DE JUGADOR (VOLT CON TANK CONTROLS)
+        // -------------------------------------------------------------
+        function updateVolt(delta, time) {
+            if (!voltEntity || !voltEntity.group) return;
+
+            // Rotación suave del modelo de Volt hacia targetRotY
+            player.currentRotY = lerpAngle(player.currentRotY, player.targetRotY, Math.min(1.0, delta * 18));
+            voltEntity.group.rotation.y = player.currentRotY;
+
+            if (!player.isMoving) {
+                // Si está quieto y mantiene W o Flecha Arriba, avanzar si el camino está libre
+                if (keysDown['w'] || keysDown['arrowup']) {
+                    const fwd = CARDINALS[player.heading];
+                    if (isValidTileMove(player.gridX, player.gridZ, fwd.dx, fwd.dz)) {
+                        player.dirX = fwd.dx;
+                        player.dirZ = fwd.dz;
+                        player.targetGridX = (player.gridX + fwd.dx + GRID_SIZE) % GRID_SIZE;
+                        player.targetGridZ = player.gridZ + fwd.dz;
+                        player.moveProgress = 0.0;
+                        player.isMoving = true;
+                    }
+                }
+            }
+
+            if (player.isMoving) {
+                player.moveProgress += delta * (player.speed * (powerTimer > 0 ? 1.15 : 1.0));
+
+                // Animación de caminata
+                const swing = Math.sin(time * 14) * 0.45;
+                voltEntity.legL.rotation.x = swing;
+                voltEntity.legR.rotation.x = -swing;
+                voltEntity.armL.rotation.x = -swing * 0.8;
+                voltEntity.armR.rotation.x = swing * 0.8;
+                voltEntity.antGlobe.scale.setScalar(0.9 + Math.sin(time * 8) * 0.2);
+
+                if (player.moveProgress >= 1.0) {
+                    // Túneles laterales de teletransporte
+                    if (player.targetGridX === 0 && player.dirX === -1) {
+                        player.gridX = GRID_SIZE - 2; player.targetGridX = GRID_SIZE - 2;
+                    } else if (player.targetGridX === GRID_SIZE - 1 && player.dirX === 1) {
+                        player.gridX = 1; player.targetGridX = 1;
+                    } else {
+                        player.gridX = player.targetGridX;
+                    }
+                    player.gridZ = player.targetGridZ;
+                    player.moveProgress = 0.0;
+
+                    // Recolectar engranaje
+                    checkGearCollection(player.gridX, player.gridZ);
+
+                    // Ejecutar giro en cola o continuar avance
+                    let transitioned = false;
+
+                    if (player.bufferedTurn === 'LEFT') {
+                        const candH = (player.heading + 3) % 4;
+                        const cand = CARDINALS[candH];
+                        if (isValidTileMove(player.gridX, player.gridZ, cand.dx, cand.dz)) {
+                            player.heading = candH;
+                            player.targetRotY = cand.rotY;
+                            player.dirX = cand.dx;
+                            player.dirZ = cand.dz;
+                            player.targetGridX = (player.gridX + cand.dx + GRID_SIZE) % GRID_SIZE;
+                            player.targetGridZ = player.gridZ + cand.dz;
+                            player.moveProgress = 0.0;
+                            player.isMoving = true;
+                            player.bufferedTurn = null;
+                            transitioned = true;
+                        }
+                    } else if (player.bufferedTurn === 'RIGHT') {
+                        const candH = (player.heading + 1) % 4;
+                        const cand = CARDINALS[candH];
+                        if (isValidTileMove(player.gridX, player.gridZ, cand.dx, cand.dz)) {
+                            player.heading = candH;
+                            player.targetRotY = cand.rotY;
+                            player.dirX = cand.dx;
+                            player.dirZ = cand.dz;
+                            player.targetGridX = (player.gridX + cand.dx + GRID_SIZE) % GRID_SIZE;
+                            player.targetGridZ = player.gridZ + cand.dz;
+                            player.moveProgress = 0.0;
+                            player.isMoving = true;
+                            player.bufferedTurn = null;
+                            transitioned = true;
+                        }
+                    }
+
+                    if (!transitioned) {
+                        const fwd = CARDINALS[player.heading];
+                        if (isValidTileMove(player.gridX, player.gridZ, fwd.dx, fwd.dz)) {
+                            player.dirX = fwd.dx;
+                            player.dirZ = fwd.dz;
+                            player.targetGridX = (player.gridX + fwd.dx + GRID_SIZE) % GRID_SIZE;
+                            player.targetGridZ = player.gridZ + fwd.dz;
+                            player.moveProgress = 0.0;
+                            player.isMoving = true;
+                        } else {
+                            player.isMoving = false;
+                            player.dirX = 0;
+                            player.dirZ = 0;
+                            player.moveProgress = 0.0;
+                        }
+                    }
+                }
+
+                const currentPos = getWorldPos(player.gridX, player.gridZ);
+                const targetPos = getWorldPos(player.targetGridX, player.targetGridZ);
+
+                voltEntity.group.position.x = currentPos.x + (targetPos.x - currentPos.x) * player.moveProgress;
+                voltEntity.group.position.z = currentPos.z + (targetPos.z - currentPos.z) * player.moveProgress;
+            } else {
+                voltEntity.legL.rotation.x = 0;
+                voltEntity.legR.rotation.x = 0;
+                voltEntity.armL.rotation.x = 0;
+                voltEntity.armR.rotation.x = 0;
+            }
+        }
+
+        function checkGearCollection(gx, gz) {
+            const idx = gearList.findIndex(g => g.gridX === gx && g.gridZ === gz);
+            if (idx !== -1) {
+                const gear = gearList[idx];
+                scene.remove(gear.mesh);
+                gearList.splice(idx, 1);
+
+                gearsCollected++;
+                document.getElementById('gears-display').textContent = `${gearsCollected} / ${targetGears}`;
+
+                const pos = getWorldPos(gx, gz);
+
+                if (gear.isSuper) {
+                    // Super Engranaje: activa Sobrecarga
+                    score += 50;
+                    powerTimer = POWER_DURATION;
+                    audio.playSuperGear();
+                    spawnSparks(pos.x, 0.8, pos.z, 0x00e5ff, 25);
+                    showToast("¡SOBRECARGA ACTIVADA!");
+
+                    document.getElementById('flash-overlay').className = 'power-flash';
+                    setTimeout(() => { document.getElementById('flash-overlay').className = ''; }, 250);
+                } else {
+                    // Engranaje normal
+                    score += 10;
+                    audio.playGearClink();
+                    spawnSparks(pos.x, 0.6, pos.z, 0xffd700, 8);
+                }
+
+                document.getElementById('score-display').textContent = score;
+
+                // Condición de Victoria: ¡Objetivo de engranajes alcanzado o sector completado!
+                if (gearsCollected >= targetGears || gearList.length === 0) {
+                    triggerVictory();
+                }
+            }
+        }
+
+
+        // -------------------------------------------------------------
+        // ACTUALIZACIÓN DE ROBOTS OXIDADOS (Inteligencia de Caza / Huida)
+        // -------------------------------------------------------------
+        function updateRustyBots(delta) {
+            rustyBots.forEach(bot => {
+                if (bot.isDismantled) {
+                    bot.respawnTimer -= delta;
+                    if (bot.respawnTimer <= 0) {
+                        bot.isDismantled = false;
+                        bot.gridX = bot.spawnX; bot.gridZ = bot.spawnZ;
+                        bot.targetGridX = bot.spawnX; bot.targetGridZ = bot.spawnZ;
+                        const pos = getWorldPos(bot.spawnX, bot.spawnZ);
+                        bot.comp.group.position.set(pos.x, 0.0, pos.z);
+                        bot.comp.group.visible = true;
+                    }
+                    return;
+                }
+
+                // Aspecto visual según el modo Sobrecarga
+                if (powerTimer > 0) {
+                    // Asustados: ojos parpadean en cian y velocidad reducida
+                    const blink = Math.sin(clock.elapsedTime * 12) > 0;
+                    bot.comp.eyeMat.color.setHex(blink ? 0x00e5ff : 0x003366);
+                    bot.comp.rustMat.emissive.setHex(0x002244);
+                    if (bot.comp.botGlow) bot.comp.botGlow.color.setHex(blink ? 0x00e5ff : 0x002244);
+                } else {
+                    // Modo caza agresivo: ojos rojos encendidos
+                    bot.comp.eyeMat.color.setHex(0xff1744);
+                    bot.comp.rustMat.emissive.setHex(0x3d1405);
+                    if (bot.comp.botGlow) bot.comp.botGlow.color.setHex(0xff1744);
+                }
+
+                if (!bot.isMoving) {
+                    // Forzar salida si está dentro de la base central
+                    if (bot.gridX >= 6 && bot.gridX <= 8 && bot.gridZ >= 6 && bot.gridZ <= 8) {
+                        bot.dirX = 0; bot.dirZ = -1;
+                        bot.targetGridX = bot.gridX;
+                        bot.targetGridZ = bot.gridZ - 1;
+                        bot.isMoving = true;
+                        return;
+                    }
+
+                    const possibleDirs = [
+                        { x: 0, z: -1 },
+                        { x: 0, z: 1 },
+                        { x: -1, z: 0 },
+                        { x: 1, z: 0 }
+                    ];
+
+                    let validDirs = possibleDirs.filter(d => 
+                        isValidTileMove(bot.gridX, bot.gridZ, d.x, d.z) && 
+                        !(d.x === -bot.dirX && d.z === -bot.dirZ)
+                    );
+
+                    if (validDirs.length === 0) {
+                        validDirs = possibleDirs.filter(d => isValidTileMove(bot.gridX, bot.gridZ, d.x, d.z));
+                    }
+
+                    if (validDirs.length > 0) {
+                        let chosen = validDirs[0];
+
+                        if (powerTimer > 0) {
+                            // Modo Huida: alejarse de Volt
+                            let maxDist = -1;
+                            validDirs.forEach(d => {
+                                const nX = bot.gridX + d.x;
+                                const nZ = bot.gridZ + d.z;
+                                const dist = Math.hypot(nX - player.gridX, nZ - player.gridZ);
+                                if (dist > maxDist) {
+                                    maxDist = dist;
+                                    chosen = d;
+                                }
+                            });
+                        } else {
+                            // Modo Persecución: IA de intercepción
+                            let minDist = Infinity;
+                            validDirs.forEach(d => {
+                                const nX = bot.gridX + d.x;
+                                const nZ = bot.gridZ + d.z;
+                                const dist = Math.hypot(nX - player.gridX, nZ - player.gridZ);
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    chosen = d;
+                                }
+                            });
+                        }
+
+                        bot.dirX = chosen.x; bot.dirZ = chosen.z;
+                        bot.targetGridX = (bot.gridX + chosen.x + GRID_SIZE) % GRID_SIZE;
+                        bot.targetGridZ = bot.gridZ + chosen.z;
+                        bot.isMoving = true;
+                    }
+                }
+
+                if (bot.isMoving) {
+                    const currentSpeed = powerTimer > 0 ? 2.3 : bot.speed;
+                    bot.moveProgress += delta * currentSpeed;
+
+                    if (bot.moveProgress >= 1.0) {
+                        if (bot.targetGridX === 0 && bot.dirX === -1) {
+                            bot.gridX = GRID_SIZE - 2; bot.targetGridX = GRID_SIZE - 2;
+                        } else if (bot.targetGridX === GRID_SIZE - 1 && bot.dirX === 1) {
+                            bot.gridX = 1; bot.targetGridX = 1;
+                        } else {
+                            bot.gridX = bot.targetGridX;
+                        }
+
+                        bot.gridZ = bot.targetGridZ;
+                        bot.moveProgress = 0.0;
+                        bot.isMoving = false;
+                    }
+
+                    const currentPos = getWorldPos(bot.gridX, bot.gridZ);
+                    const targetPos = getWorldPos(bot.targetGridX, bot.targetGridZ);
+
+                    bot.comp.group.position.x = currentPos.x + (targetPos.x - currentPos.x) * bot.moveProgress;
+                    bot.comp.group.position.z = currentPos.z + (targetPos.z - currentPos.z) * bot.moveProgress;
+                }
+
+                // Detección de Colisión con Volt
+                const distToVolt = Math.hypot(
+                    bot.comp.group.position.x - voltEntity.group.position.x,
+                    bot.comp.group.position.z - voltEntity.group.position.z
+                );
+
+                if (distToVolt < 2.8 && !isDying) {
+                    if (powerTimer > 0) {
+                        // ¡Volt desmantela al robot oxidado!
+                        bot.isDismantled = true;
+                        bot.respawnTimer = 6.0;
+                        bot.comp.group.visible = false;
+
+                        score += 200;
+                        dismantledCount++;
+                        document.getElementById('score-display').textContent = score;
+
+                        audio.playDismantle();
+                        spawnSparks(bot.comp.group.position.x, 1.2, bot.comp.group.position.z, 0xff5722, 35);
+                        showToast("¡ROBOT OXIDADO DESMANTELADO! +200");
+                    } else {
+                        // ¡El robot oxidado golpea a Volt!
+                        triggerVoltHit();
+                    }
+                }
+            });
+        }
+
+
+        // -------------------------------------------------------------
+        // COLISIONES, DAÑO Y FINAL DEL JUEGO
+        // -------------------------------------------------------------
+        function triggerVoltHit() {
+            isDying = true;
+            audio.playVoltHit();
+
+            spawnSparks(voltEntity.group.position.x, 1.0, voltEntity.group.position.z, 0xff1744, 45);
+            document.getElementById('flash-overlay').className = 'flash-active';
+
+            // Animación de colapso inmediato de Volt
+            voltEntity.group.rotation.x = Math.PI * 0.45;
+            voltEntity.group.position.y = -0.3;
+
+            setTimeout(() => {
+                document.getElementById('flash-overlay').className = '';
+                endGameByDefeat();
+            }, 900);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-msg');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 1400);
+        }
+
+        function endGameByDefeat() {
+            isPlaying = false;
+            document.getElementById('final-gears').textContent = `${gearsCollected} / ${targetGears}`;
+            document.getElementById('final-dismantled').textContent = dismantledCount;
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-over-screen').classList.remove('hidden');
+        }
+
+        function triggerVictory() {
+            isPlaying = false;
+            audio.playVictory();
+
+            document.getElementById('victory-gears').textContent = `${gearsCollected} / ${targetGears}`;
+            document.getElementById('victory-score').textContent = score;
+            document.getElementById('victory-screen').classList.remove('hidden');
+        }
+
+        function onWindowResize() {
+            if (camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+
+        // -------------------------------------------------------------
+        // SISTEMA DE CÁMARA EN 3ª PERSONA (FOLLOW CAMERA)
+        // -------------------------------------------------------------
+        function updateCamera(dt) {
+            if (!voltEntity || !voltEntity.group) return;
+
+            const vx = voltEntity.group.position.x || 0;
+            const vy = voltEntity.group.position.y || 0;
+            const vz = voltEntity.group.position.z || 0;
+
+            if (isNaN(camera.position.x) || isNaN(camera.position.y) || isNaN(camera.position.z)) {
+                camera.position.set(vx + 9.2, 6.8, vz);
+                camLookAt.set(vx - 3.0, 1.8, vz);
+            }
+
+            let desiredX = 0, desiredY = 52, desiredZ = 22;
+            let desiredLookX = 0, desiredLookY = -2, desiredLookZ = 0;
+            let lerpSpeed = dt * 7.5;
+
+            if (cameraMode === 'third_person') {
+                // Modo 3ª Persona Detrás de Volt (Tank Controls):
+                // La cámara orbita suavemente detrás de la espalda de Volt
+                cameraYaw = lerpAngle(cameraYaw, player.targetRotY, Math.min(1.0, dt * 7.5));
+                const dist = 9.2;
+                const height = 6.8;
+
+                desiredX = vx - Math.sin(cameraYaw) * dist;
+                desiredZ = vz - Math.cos(cameraYaw) * dist;
+                desiredY = vy + height;
+
+                desiredLookX = vx + Math.sin(cameraYaw) * 3.0;
+                desiredLookZ = vz + Math.cos(cameraYaw) * 3.0;
+                desiredLookY = vy + 1.8;
+                lerpSpeed = dt * 8.5;
+            } else if (cameraMode === 'close') {
+                // Modo 3ª Persona Cercana:
+                cameraYaw = lerpAngle(cameraYaw, player.targetRotY, Math.min(1.0, dt * 9.0));
+                const dist = 6.2;
+                const height = 4.2;
+
+                desiredX = vx - Math.sin(cameraYaw) * dist;
+                desiredZ = vz - Math.cos(cameraYaw) * dist;
+                desiredY = vy + height;
+
+                desiredLookX = vx + Math.sin(cameraYaw) * 3.2;
+                desiredLookZ = vz + Math.cos(cameraYaw) * 3.2;
+                desiredLookY = vy + 1.6;
+                lerpSpeed = dt * 10.0;
+            } else {
+                // Modo Vista Aérea Global del Sector:
+                desiredX = 0;
+                desiredY = 52;
+                desiredZ = 22;
+                desiredLookX = 0;
+                desiredLookY = -2;
+                desiredLookZ = 0;
+                lerpSpeed = dt * 4.5;
+            }
+
+            // Envoltura de túnel lateral: si la distancia es enorme, reubicar sin lerp
+            if (Math.abs(desiredX - camera.position.x) > 20) {
+                camera.position.x = desiredX;
+                camera.position.z = desiredZ;
+                camLookAt.x = desiredLookX;
+                camLookAt.z = desiredLookZ;
+            }
+
+            const followLerp = Math.min(1.0, lerpSpeed);
+            camera.position.x += (desiredX - camera.position.x) * followLerp;
+            camera.position.y += (desiredY - camera.position.y) * followLerp;
+            camera.position.z += (desiredZ - camera.position.z) * followLerp;
+
+            camLookAt.x += (desiredLookX - camLookAt.x) * followLerp;
+            camLookAt.y += (desiredLookY - camLookAt.y) * followLerp;
+            camLookAt.z += (desiredLookZ - camLookAt.z) * followLerp;
+
+            camera.lookAt(camLookAt);
+        }
+
+        function toggleCameraMode() {
+            if (cameraMode === 'third_person') {
+                cameraMode = 'close';
+                showToast("CÁMARA: 3ª PERSONA CERCANA");
+            } else if (cameraMode === 'close') {
+                cameraMode = 'overview';
+                showToast("CÁMARA: VISTA AÉREA");
+            } else {
+                cameraMode = 'third_person';
+                showToast("CÁMARA: 3ª PERSONA SEGUIDOR");
+            }
+        }
+
+
+        // -------------------------------------------------------------
+        // BUCLE PRINCIPAL DE JUEGO (GAME LOOP)
+        // -------------------------------------------------------------
+        function gameLoop() {
+            if (!isPlaying) return;
+            requestAnimationFrame(gameLoop);
+
+            const dt = Math.min(clock.getDelta(), 0.08);
+            const time = clock.elapsedTime;
+
+            // Gestión del medidor de Sobrecarga
+            if (powerTimer > 0) {
+                powerTimer -= dt;
+                const ratio = Math.max(0, powerTimer / POWER_DURATION);
+                document.getElementById('power-bar').style.width = `${ratio * 100}%`;
+                document.getElementById('power-lbl').style.color = '#00e5ff';
+            } else {
+                document.getElementById('power-bar').style.width = '0%';
+                document.getElementById('power-lbl').style.color = '#8c90b0';
+            }
+
+            // Rotación continua de engranajes en el laberinto
+            gearList.forEach(g => {
+                g.mesh.rotation.y = time * 2.6;
+                g.mesh.position.y = g.baseY + Math.sin(time * 3.5 + g.phase) * 0.12;
+            });
+
+            if (!isDying) {
+                updateVolt(dt, time);
+                updateRustyBots(dt);
+            }
+
+            updateCamera(dt);
+            updateSparks(dt);
+            renderer.render(scene, camera);
+        }
+
+        // -------------------------------------------------------------
+        // INICIO Y REINICIO
+        // -------------------------------------------------------------
+        document.getElementById('start-btn').addEventListener('click', startNewGame);
+        document.getElementById('restart-btn').addEventListener('click', startNewGame);
+        document.getElementById('victory-replay-btn').addEventListener('click', startNewGame);
+        document.getElementById('cam-btn').addEventListener('click', toggleCameraMode);
+
+        // Listeners para botones de selección de dificultad (Fácil 30, Normal 50, Difícil Full)
+        document.querySelectorAll('.diff-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                setDifficulty(btn.dataset.diff);
+            });
+        });
+
+        const goToMenu = () => { window.location.href = 'menu.html'; };
+        document.getElementById('menu-back-btn').addEventListener('click', goToMenu);
+        document.getElementById('exit-menu-btn').addEventListener('click', goToMenu);
+        document.getElementById('victory-menu-btn').addEventListener('click', goToMenu);
+
+        function startNewGame() {
+            audio.init();
+
+            score = 0;
+            gearsCollected = 0;
+            dismantledCount = 0;
+            powerTimer = 0.0;
+            isDying = false;
+
+            document.getElementById('score-display').textContent = '0';
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.add('hidden');
+
+            initScene3D();
+            updateTargetGears();
+            isPlaying = true;
+            clock.start();
+            gameLoop();
+        }
+    </script>
+</body>
+</html>

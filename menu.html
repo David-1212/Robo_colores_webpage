@@ -244,6 +244,15 @@
       }
     }
 
+    @keyframes spin-slow {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     /* Logos institucionales en las esquinas */
     .corner-logo {
       position: fixed;
@@ -662,30 +671,32 @@
       </a>
 
 
-      <a class="game-card" href="pacman.html">
-        <div class="game-icon" style="background:linear-gradient(135deg,#332300,#4d3500)">
+      <a class="game-card" href="botman.html">
+        <div class="game-icon" style="background:linear-gradient(135deg,#0a1b3a,#241005)">
           <svg viewBox="0 0 100 100" aria-hidden="true">
-            <g style="animation:blink 1.8s ease-in-out infinite">
-              <path d="M22 78 a7 7 0 0 1 14 0z" fill="#ff0000" />
-              <circle cx="27" cy="70" r="2" fill="#99c2ff" />
-              <path d="M14 78 l4 -6" stroke="#ff0000" stroke-width="2" stroke-linecap="round" />
-              <path d="M30 78 l4 -6" stroke="#ff0000" stroke-width="2" stroke-linecap="round" />
+            <!-- Rotating Gear icon behind -->
+            <g style="transform-origin:50px 50px;animation:spin-slow 6s linear infinite" fill="#ffd700">
+              <circle cx="50" cy="50" r="28" fill="none" stroke="#ffd700" stroke-width="6"/>
+              <rect x="46" y="16" width="8" height="10" rx="2"/>
+              <rect x="46" y="74" width="8" height="10" rx="2"/>
+              <rect x="16" y="46" width="10" height="8" rx="2"/>
+              <rect x="74" y="46" width="10" height="8" rx="2"/>
+              <rect x="26" y="26" width="8" height="10" rx="2" transform="rotate(45 50 50)"/>
+              <rect x="26" y="26" width="8" height="10" rx="2" transform="rotate(-45 50 50)"/>
+              <rect x="26" y="26" width="8" height="10" rx="2" transform="rotate(135 50 50)"/>
+              <rect x="26" y="26" width="8" height="10" rx="2" transform="rotate(-135 50 50)"/>
             </g>
-            <g style="animation:blink 1.8s .7s ease-in-out infinite">
-              <path d="M58 74 a7 7 0 0 1 14 0z" fill="#ff8c00" />
-              <circle cx="63" cy="66" r="2" fill="#fff" />
-              <path d="M50 74 l4 -6" stroke="#ff8c00" stroke-width="2" stroke-linecap="round" />
-              <path d="M66 74 l4 -6" stroke="#ff8c00" stroke-width="2" stroke-linecap="round" />
-            </g>
-            <g style="transform-origin:40px 52px;animation:chew 1s steps(2,end) infinite">
-              <path d="M40 28 A20 20 0 1 0 40 76 L40 52 Z" fill="#ffe000" />
-              <circle cx="46" cy="42" r="2.6" fill="#000" />
-              <circle cx="46" cy="42" r="1" fill="#fff" />
-            </g>
+            <!-- Volt Robot Face in center -->
+            <rect x="36" y="36" width="28" height="24" rx="4" fill="#00c853" stroke="#00e5ff" stroke-width="2"/>
+            <rect x="38" y="42" width="24" height="6" rx="2" fill="#151824"/>
+            <circle cx="43" cy="45" r="2.2" fill="#00e5ff"/>
+            <circle cx="57" cy="45" r="2.2" fill="#00e5ff"/>
+            <rect x="48" y="29" width="4" height="7" fill="#151824"/>
+            <circle cx="50" cy="28" r="3" fill="#f50057"/>
           </svg>
         </div>
-        <div class="game-name">PACMAN <span class="mini-badge">INDIVIDUAL</span></div>
-        <div class="game-desc">Clásico Pac-Man con mezcla cromática. Come, crece y esquiva a los fantasmas.</div>
+        <div class="game-name">BOTMAN <span class="mini-badge">INDIVIDUAL</span></div>
+        <div class="game-desc">Laberinto cibernético 3D: guía a Volt, recolecta engranajes y desmantela a los robots oxidados.</div>
         <div class="game-go">JUGAR</div>
       </a>
 
