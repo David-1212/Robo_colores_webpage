@@ -89,6 +89,38 @@
       text-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
     }
 
+    /* Indicador del color a atrapar (esfera 3D giratoria) */
+    .target-hint {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      pointer-events: none;
+    }
+
+    .th-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #d3e6ff;
+      text-shadow: 0 0 12px rgba(0, 229, 255, .6);
+      white-space: nowrap;
+    }
+
+    .th-sphere {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      overflow: hidden;
+      filter: drop-shadow(0 0 10px rgba(0, 229, 255, .35));
+    }
+
+    .th-sphere canvas {
+      display: block;
+    }
+
     .hud-sidebar {
       display: flex;
       flex-direction: column;
@@ -576,6 +608,14 @@
       .brand {
         font-size: 16px;
       }
+      .th-label {
+        font-size: 8px;
+        letter-spacing: 1px;
+      }
+      .th-sphere {
+        width: 40px;
+        height: 40px;
+      }
       .blueprints-container {
         padding: 6px 10px;
         border-radius: 14px;
@@ -621,6 +661,12 @@
     <!-- HUD Superior -->
     <header class="interactive">
       <div class="brand">ROBO·LANE</div>
+
+      <!-- Color objetivo: esfera giratoria (sin mostrar el nombre del color) -->
+      <div class="target-hint" id="target-hint">
+        <span class="th-label">ATRAPA ESTE COLOR</span>
+        <span class="th-sphere" id="target-sphere"></span>
+      </div>
       
       <div class="hud-sidebar">
         <div class="hud-stats">
@@ -862,8 +908,6 @@
       const statsScore = $('#stats-score');
       const statsPct = $('#stats-pct');
       const statsStep = $('#stats-step');
-      const gamePrompt = $('#game-prompt');
-      const promptText = $('#prompt-text');
       const feedbackToast = $('#feedback-toast');
 
       // -------------------------------------------------------------
@@ -1019,6 +1063,9 @@
         // Inicializar mini visualizador 3D objetivo
         initMini3D();
 
+        // Inicializar esfera del color a atrapar
+        initTargetSphere();
+
         window.addEventListener('resize', onWindowResize);
       }
 
@@ -1060,6 +1107,49 @@
         miniScene.add(miniRobot.group);
       }
 
+      // -------------------------------------------------------------
+      // ESFERA DEL COLOR A ATRAPAR (gira de forma continua)
+      // -------------------------------------------------------------
+      let tgtScene, tgtCamera, tgtRenderer, tgtSphere, tgtMat, tgtSize = 54;
+
+      function initTargetSphere() {
+        const box = $('#target-sphere');
+        if (!box) return;
+
+        tgtSize = box.clientWidth || 54;
+        tgtRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        tgtRenderer.setSize(tgtSize, tgtSize);
+        tgtRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        box.appendChild(tgtRenderer.domElement);
+
+        tgtScene = new THREE.Scene();
+        tgtCamera = new THREE.PerspectiveCamera(35, 1, 0.1, 20);
+        tgtCamera.position.set(0, 0, 4.2);
+
+        tgtScene.add(new THREE.HemisphereLight(0xffffff, 0x1a2030, 1.6));
+        const key = new THREE.DirectionalLight(0xffffff, 1.5);
+        key.position.set(2.5, 3, 3.5);
+        tgtScene.add(key);
+        const rim = new THREE.DirectionalLight(0x00e5ff, 0.8);
+        rim.position.set(-3, 2, -2.5);
+        tgtScene.add(rim);
+
+        tgtMat = new THREE.MeshStandardMaterial({
+          color: 0x00e5ff,
+          roughness: 0.26,
+          metalness: 0.12
+        });
+        tgtSphere = new THREE.Mesh(new THREE.SphereGeometry(1.45, 48, 32), tgtMat);
+        tgtScene.add(tgtSphere);
+      }
+
+      function setTargetSphereColor(hex) {
+        if (!tgtMat) return;
+        tgtMat.color.setHex(hex);
+        tgtMat.emissive.setHex(hex);
+        tgtMat.emissiveIntensity = 0.3;
+      }
+
       function buildStarfield() {
         const starsGeo = new THREE.BufferGeometry();
         const count = 400;
@@ -1094,6 +1184,17 @@
               miniCamera.aspect = w / h;
               miniCamera.updateProjectionMatrix();
               miniRenderer.setSize(w, h);
+            }
+          }
+        }
+
+        if (tgtRenderer && tgtCamera) {
+          const box = $('#target-sphere');
+          if (box) {
+            const s = box.clientWidth;
+            if (s > 0 && Math.abs(s - tgtSize) > 1) {
+              tgtSize = s;
+              tgtRenderer.setSize(s, s);
             }
           }
         }
@@ -1908,14 +2009,8 @@
         statsStep.textContent = `${Math.min(currentStep + 1, 7)} / 7`;
 
         if (currentStep < 7) {
-          const currentPart = PARTS_SEQUENCE[currentStep];
           const targetColor = PALETTE[targetSequence[currentStep]];
-          if (promptText) promptText.innerHTML = `Pinta la parte: <b>${currentPart.name}</b> en color <b>${targetColor.nombre}</b>`;
-          const dot = $('.prompt-dot');
-          if (dot) {
-            dot.style.backgroundColor = targetColor.css;
-            dot.style.boxShadow = `0 0 10px ${targetColor.css}`;
-          }
+          setTargetSphereColor(targetColor.hex);
         }
       }
 
@@ -2253,6 +2348,13 @@
         if (miniRobot) {
           miniRobot.update(dt, t);
           miniRenderer.render(miniScene, miniCamera);
+        }
+
+        // Esfera del color a atrapar: gira siempre
+        if (tgtRenderer && tgtSphere) {
+          tgtSphere.rotation.y += dt * 1.15;
+          tgtSphere.rotation.x = Math.sin(t * 0.9) * 0.28;
+          tgtRenderer.render(tgtScene, tgtCamera);
         }
       }
 
