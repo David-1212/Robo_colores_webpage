@@ -569,7 +569,7 @@
      tapar el HUD de los juegos (que usan las esquinas). */
   .hub-bar {
     position: fixed;
-    top: max(10px, env(safe-area-inset-top));
+    top: max(74px, calc(env(safe-area-inset-top) + 74px));
     left: 50%;
     transform: translateX(-50%);
     z-index: 6000;
@@ -578,10 +578,11 @@
     gap: 10px;
     padding: 7px 9px;
     border-radius: 999px;
-    background: rgba(6, 10, 24, .55);
-    border: 1px solid rgba(0, 229, 255, .22);
+    background: rgba(6, 10, 24, .72);
+    border: 1px solid rgba(0, 229, 255, .3);
     backdrop-filter: blur(6px);
-    opacity: .3;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, .5);
+    opacity: .88;
     transition: opacity .25s ease;
   }
 
@@ -833,7 +834,7 @@
   <!-- Controles del hub visibles durante el juego -->
   <div id="hub-bar" class="hub-bar hidden">
     <span class="hub-fs-state" id="hub-fs-state">PANTALLA COMPLETA</span>
-    <button id="hub-back" class="hub-btn" type="button" title="Volver al menu">&larr; MENU</button>
+    <button id="hub-back" class="hub-btn" type="button" title="Volver al menu">&larr; SALIR AL MEN&Uacute;</button>
     <button id="hub-fs" class="hub-btn" type="button" title="Quitar pantalla completa">SALIR DE PANTALLA COMPLETA</button>
   </div>
 
