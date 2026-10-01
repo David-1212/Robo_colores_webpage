@@ -66,9 +66,25 @@
 
       <div class="rules">
         <div><b>1.</b> Los 5 robots van uno después de otro: <b>VOLT</b>, <b>NOVA</b>, <b>TURBO</b>, <b>PIXEL</b> y <b>LUNA</b>. Los triunfos de cada robot se acumulan.</div>
-        <div><b>2.</b> Cada robot trae su propia secuencia: VOLT empieza con <b>3 colores</b> y sube de uno en uno hasta LUNA con <b>7</b>. Mientras más colores, más rápido pasa la secuencia.</div>
+        <div><b>2.</b> Elige el nivel antes de jugar: <b>FÁCIL</b> (3 a 4 colores), <b>MEDIO</b> (3 a 5) o <b>DIFÍCIL</b> (3 a 6). Los 5 robots sacan su número de colores al azar dentro del rango del nivel.</div>
         <div><b>3.</b> Jugador 1: teclas <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>7</kbd><kbd>5</kbd><kbd>6</kbd> · Jugador 2: teclas <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><kbd>J</kbd><kbd>G</kbd><kbd>H</kbd> (o toca los botones).</div>
         <div><b>4.</b> Un color equivocado = derrota inmediata.</div>
+      </div>
+
+      <div class="level-row" id="level-row">
+        <div class="level-row-label">Nivel</div>
+        <button type="button" class="level-btn" data-level="facil">
+          FÁCIL
+          <span class="lv-range">3 a 4 colores</span>
+        </button>
+        <button type="button" class="level-btn active" data-level="medio">
+          MEDIO
+          <span class="lv-range">3 a 5 colores</span>
+        </button>
+        <button type="button" class="level-btn" data-level="dificil">
+          DIFÍCIL
+          <span class="lv-range">3 a 6 colores</span>
+        </button>
       </div>
 
       <button id="btn-play">JUGAR</button>
@@ -81,6 +97,7 @@
       <h2 id="win-title"></h2>
       <p id="win-reason"></p>
       <div id="win-score"></div>
+      <ul id="win-breakdown" class="final-breakdown"></ul>
       <div class="btnrow">
         <button id="btn-next" class="hidden">SIGUIENTE ROBOT</button>
         <button id="btn-menu">MENÚ</button>

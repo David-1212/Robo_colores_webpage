@@ -19,7 +19,17 @@ const ROSTER = [
   { id: 'pixel', name: 'PIXEL', css: '#aa00ff' },
   { id: 'luna',  name: 'LUNA',  css: '#f50057' }
 ];
-const ROUND_LENS = [3, 4, 5, 6, 7];
+const LEVELS = {
+  facil:   { id: 'facil',   label: 'FÁCIL',   min: 3, max: 4, desc: '3 a 4 colores' },
+  medio:   { id: 'medio',   label: 'MEDIO',   min: 3, max: 5, desc: '3 a 5 colores' },
+  dificil: { id: 'dificil', label: 'DIFÍCIL', min: 3, max: 6, desc: '3 a 6 colores' }
+};
+let levelId = 'medio';
+
+function roundLen() {
+  const lv = LEVELS[levelId] || LEVELS.medio;
+  return lv.min + Math.floor(Math.random() * (lv.max - lv.min + 1));
+}
 
 function stepMs() {
   const ramp = [1700, 1450, 1200, 950, 700];
@@ -543,6 +553,7 @@ const els = {
   winTitle: $('#win-title'),
   winReason: $('#win-reason'),
   winScore: $('#win-score'),
+  winBreakdown: $('#win-breakdown'),
   score: { 1: $('#score1'), 2: $('#score2') },
   btnNext: $('#btn-next'),
   introOverlay: $('#overlay-intro'),
@@ -671,7 +682,8 @@ function hideBanner() { els.banner.classList.add('hidden'); }
 
 function applyMatchUI() {
   const pr = pairs[pairIdx];
-  els.roundinfo.textContent = `ROBOT ${pairIdx + 1}/5 · ${curRobo.name} · ${seq.length} COLORES`;
+  const lv = LEVELS[levelId] || LEVELS.medio;
+  els.roundinfo.textContent = `NIVEL ${lv.label} · ROBOT ${pairIdx + 1}/5 · ${curRobo.name} · ${seq.length} COLORES`;
   els.ctag[1].textContent = `${curRobo.name} · JUGADOR 1 · TECLAS 1, 2, 3, 7, 5, 6`;
   els.ctag[2].textContent = `${curRobo.name} · JUGADOR 2 · TECLAS A S D J G H`;
   els.score[1].textContent = pr.w1;
@@ -813,7 +825,7 @@ function prepRound(len) {
 }
 
 function startPair() {
-  prepRound(ROUND_LENS[pairIdx % ROUND_LENS.length]);
+  prepRound(roundLen());
   buildRobots(ROSTER[pairIdx % ROSTER.length]);
   robots[1].resetAll();
   robots[2].resetAll();
@@ -830,7 +842,8 @@ function finish(winner, how, errBy) {
   setControls(false);
   hideBanner();
   const pr = pairs[pairIdx];
-  if (how === 'seq') pr['w' + winner]++;
+  pr.len = seq.length;
+  pr['w' + winner]++;
   els.score[1].textContent = pr.w1;
   els.score[2].textContent = pr.w2;
   const loser = winner === 1 ? 2 : 1;
@@ -843,15 +856,22 @@ function finish(winner, how, errBy) {
   later(() => showResult(winner, how, errBy), 1300);
 }
 
+function tally() {
+  let t1 = 0, t2 = 0;
+  pairs.forEach(p => { t1 += p.w1; t2 += p.w2; });
+  return { t1, t2, winner: t1 > t2 ? 1 : 2 };
+}
+
 function showResult(winner, how, errBy) {
   const isLast = pairIdx === ROSTER.length - 1;
+  const t = tally();
   els.winTitle.textContent = `¡Jugador ${winner} gana!`;
   els.winTitle.className = winner === 1 ? 'w1' : 'w2';
   els.winReason.textContent = how === 'seq'
     ? `El Jugador ${winner} repitió la secuencia completa antes que el Jugador ${winner === 1 ? 2 : 1}.`
     : `El Jugador ${errBy} presionó un color equivocado.`;
-  const pr = pairs[pairIdx];
-  els.winScore.textContent = `${pr.w1} — ${pr.w2}`;
+  els.winScore.innerHTML = `<span class="score-tag">Marcador Acumulado</span><span>EQUIPO 1: ${t.t1} — EQUIPO 2: ${t.t2}</span>`;
+  els.winBreakdown.innerHTML = '';
   els.btnNext.classList.remove('hidden');
   els.btnNext.textContent = isLast ? 'VER RESULTADO FINAL' : 'SIGUIENTE ROBOT';
   overAction = isLast ? 'final' : 'next';
@@ -859,16 +879,28 @@ function showResult(winner, how, errBy) {
 }
 
 function showFinal() {
-  let t1 = 0, t2 = 0;
-  pairs.forEach(p => { t1 += p.w1; t2 += p.w2; });
-  const winner = t1 > t2 ? 1 : 2;
+  const t = tally();
+  const lv = LEVELS[levelId] || LEVELS.medio;
+  const winner = t.winner;
+  const wName = winner === 1 ? t.t1 : t.t2;
+  const lName = winner === 1 ? t.t2 : t.t1;
   overAction = null;
   els.winTitle.textContent = `¡GANÓ EL EQUIPO ${winner}!`;
   els.winTitle.className = winner === 1 ? 'w1' : 'w2';
-  els.winReason.textContent = `Fin de los 5 robots. El Jugador ${winner} ganó ${winner === 1 ? t1 : t2} robots contra ${
-    winner === 1 ? t2 : t1
-  } del Jugador ${winner === 1 ? 2 : 1}. ¡Felicidades al equipo ganador!`;
-  els.winScore.textContent = `${t1} — ${t2}`;
+  els.winReason.textContent = `Nivel ${lv.label} · Fin de los 5 robots. El Equipo ${winner} pintó ${wName} robots contra ${lName} del Equipo ${winner === 1 ? 2 : 1}. ¡Felicidades al equipo ganador!`;
+  els.winScore.innerHTML = `<span class="score-tag">Marcador Final · 5 Robots</span><span>EQUIPO 1: ${t.t1} — EQUIPO 2: ${t.t2}</span>`;
+
+  els.winBreakdown.innerHTML = pairs.map((p, i) => {
+    const owner = p.w1 > 0 ? 1 : 2;
+    const robo = ROSTER[i % ROSTER.length];
+    const mark = owner === winner ? ' is-victor' : '';
+    return `<li class="${mark}">
+      <span class="fb-robot">${i + 1}. ${robo.name}</span>
+      <span class="fb-lens">${p.len || 0} colores</span>
+      <span class="fb-owner p${owner}">EQUIPO ${owner}</span>
+    </li>`;
+  }).join('');
+
   els.btnNext.classList.add('hidden');
   els.result.classList.remove('hidden');
 }
@@ -881,6 +913,7 @@ function goMenu() {
   els.stage.classList.add('hidden');
   els.count.classList.add('hidden');
   els.roundinfo.classList.add('hidden');
+  els.winBreakdown.innerHTML = '';
   hideBanner();
   setControls(false);
   buildRobots(ROSTER[0]);
@@ -890,6 +923,16 @@ function goMenu() {
 
 buildControls();
 buildRobots(ROSTER[0]);
+
+document.querySelectorAll('.level-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const id = btn.dataset.level;
+    if (!LEVELS[id]) return;
+    levelId = id;
+    document.querySelectorAll('.level-btn').forEach(b => b.classList.toggle('active', b === btn));
+    tone(760, 0.09, 'square', 0.12);
+  });
+});
 
 $('#btn-play').addEventListener('click', () => {
   tone(660, 0.1, 'square', 0.12);

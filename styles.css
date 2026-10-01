@@ -476,6 +476,138 @@ body {
   transform: scale(1.05);
 }
 
+/* Selector de nivel */
+.level-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 4px 0 14px;
+}
+
+.level-row-label {
+  width: 100%;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #8b93c4;
+  margin-bottom: 2px;
+}
+
+.level-btn {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: .1em;
+  font-size: 14px;
+  color: #dfe7ff;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 14px;
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 104px;
+  transition: transform .15s, background .18s, border-color .18s, box-shadow .18s, color .18s;
+}
+
+.level-btn .lv-range {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  opacity: .72;
+}
+
+.level-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(0, 229, 255, .55);
+}
+
+.level-btn.active {
+  background: linear-gradient(135deg, var(--p1), var(--p2));
+  color: #071018;
+  border-color: transparent;
+  box-shadow: 0 8px 26px rgba(0, 229, 255, .4);
+}
+
+.level-btn.active .lv-range {
+  opacity: .9;
+}
+
+/* Desglose final de los 5 robots */
+.final-breakdown {
+  list-style: none;
+  width: 100%;
+  max-width: 460px;
+  margin: 14px auto 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.final-breakdown:empty {
+  display: none;
+  margin: 0;
+}
+
+.final-breakdown li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .1);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+
+.final-breakdown .fb-robot {
+  color: #aab3e0;
+  min-width: 68px;
+  text-align: left;
+}
+
+.final-breakdown .fb-lens {
+  color: #7f88b8;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: auto;
+  padding-right: 4px;
+}
+
+.final-breakdown .fb-owner {
+  font-weight: 900;
+  letter-spacing: .1em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.final-breakdown .fb-owner.p1 {
+  background: rgba(0, 229, 255, .18);
+  border: 1px solid rgba(0, 229, 255, .5);
+  color: #7ef0ff;
+}
+
+.final-breakdown .fb-owner.p2 {
+  background: rgba(245, 0, 87, .18);
+  border: 1px solid rgba(245, 0, 87, .5);
+  color: #ff8ab0;
+}
+
+.final-breakdown li.is-victor {
+  background: rgba(0, 229, 255, .12);
+  border-color: rgba(0, 229, 255, .45);
+}
+
 #win-title {
   font-size: clamp(32px, 6vw, 54px);
   margin-bottom: 6px;
@@ -502,6 +634,18 @@ body {
   font-weight: 800;
   margin-bottom: 20px;
   letter-spacing: .2em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+#win-score .score-tag {
+  font-size: clamp(10px, 1.6vw, 13px);
+  font-weight: 800;
+  letter-spacing: .28em;
+  opacity: .65;
+  text-transform: uppercase;
 }
 
 /* ---------- 8b. Video de introducción ---------- */
