@@ -298,6 +298,221 @@
             fill: currentColor;
         }
 
+        /* ============================================================
+           MINIMAPA (Radar / Vista Superior del Laberinto Completo)
+           ============================================================ */
+        .minimap-panel {
+            position: absolute;
+            bottom: 18px;
+            right: 18px;
+            width: 175px;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            pointer-events: auto;
+            user-select: none;
+            transition: width 0.25s ease;
+        }
+
+        .minimap-panel.enlarged {
+            width: 250px;
+        }
+
+        .minimap-panel.enlarged .minimap-viewport {
+            height: 230px;
+        }
+
+        .minimap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 8px;
+            background: rgba(10, 14, 30, 0.88);
+            border: 1px solid rgba(0, 229, 255, 0.4);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+        }
+
+        .minimap-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: var(--primary);
+            text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+        }
+
+        .minimap-pulse {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+            animation: pulse-minimap 1.6s ease-in-out infinite;
+        }
+
+        @keyframes pulse-minimap {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.4); opacity: 0.4; }
+        }
+
+        .minimap-btn {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 8px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            background: rgba(0, 229, 255, 0.15);
+            border: 1px solid rgba(0, 229, 255, 0.4);
+            border-radius: 6px;
+            padding: 2px 7px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .minimap-btn:hover {
+            background: rgba(0, 229, 255, 0.3);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .minimap-viewport {
+            width: 100%;
+            height: 155px;
+            position: relative;
+            border-radius: 12px;
+            border: 2px solid rgba(0, 229, 255, 0.7);
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            overflow: hidden;
+            box-shadow: 0 0 18px rgba(0, 229, 255, 0.35), inset 0 0 14px rgba(0, 229, 255, 0.15);
+            pointer-events: none;
+            transition: height 0.25s ease;
+        }
+
+        /* Radar scanline sweep */
+        .minimap-scanline {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, rgba(0, 229, 255, 0.75), transparent);
+            box-shadow: 0 0 8px rgba(0, 229, 255, 0.85);
+            animation: scanline-sweep 3s linear infinite;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        @keyframes scanline-sweep {
+            0% { top: 0%; opacity: 0.8; }
+            100% { top: 100%; opacity: 0.25; }
+        }
+
+        /* Marcador flotante de Volt en el minimapa */
+        .minimap-volt-tag {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+            z-index: 5;
+            transition: left 0.05s linear, top 0.05s linear;
+        }
+
+        .volt-tag-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 7px;
+            font-weight: 900;
+            color: #ffffff;
+            background: rgba(0, 229, 255, 0.55);
+            border: 1px solid var(--primary);
+            border-radius: 3px;
+            padding: 0 4px;
+            text-shadow: 0 0 5px var(--primary);
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .volt-tag-arrow {
+            font-size: 6px;
+            line-height: 5px;
+            color: var(--primary);
+            text-shadow: 0 0 6px var(--primary);
+            animation: beacon-bounce 0.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes beacon-bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-2px); }
+        }
+
+        /* Leyenda del minimapa */
+        .minimap-footer {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            padding: 5px 8px;
+            background: rgba(10, 14, 30, 0.88);
+            border: 1px solid rgba(0, 229, 255, 0.4);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+        }
+
+        .minimap-legend {
+            display: flex;
+            justify-content: space-between;
+            font-size: 7.5px;
+            color: rgba(255, 255, 255, 0.65);
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .leg-item {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .leg-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .leg-dot.volt {
+            background-color: var(--primary);
+            box-shadow: 0 0 5px var(--primary);
+        }
+
+        .leg-dot.bot {
+            background-color: #ff1744;
+            box-shadow: 0 0 5px #ff1744;
+        }
+
+        .leg-dot.gear {
+            background-color: #ffd700;
+            box-shadow: 0 0 5px #ffd700;
+        }
+
         /* Screen Overlays */
         .screen-overlay {
             position: absolute;
@@ -463,6 +678,35 @@
             }
             .hud-value { font-size: 1.15rem; }
             .game-title { font-size: 2.2rem; }
+            .minimap-panel {
+                bottom: 12px;
+                right: 12px;
+                width: 130px;
+                padding: 6px;
+            }
+            .minimap-panel.enlarged {
+                width: 190px;
+            }
+            .minimap-panel.enlarged .minimap-viewport {
+                height: 170px;
+            }
+            .minimap-viewport {
+                height: 114px;
+            }
+            .minimap-title {
+                font-size: 9.5px;
+            }
+            .minimap-btn {
+                font-size: 7px;
+                padding: 1px 4px;
+            }
+            .dpad-container {
+                left: 18px;
+                bottom: 60px;
+                transform: none;
+                width: 125px;
+                height: 125px;
+            }
         }
 
         /* Fullscreen button top-left */
@@ -532,9 +776,36 @@
             <button class="dpad-btn dpad-down" id="dpad-d" title="Reversa 180° (S / ▼)">▼</button>
         </div>
 
+        <!-- Minimapa (Radar / Vista Superior de Todo el Laberinto) -->
+        <div id="minimap-panel" class="minimap-panel interactive">
+            <div class="minimap-header">
+                <div class="minimap-title">
+                    <span class="minimap-pulse"></span>
+                    <span>RADAR</span>
+                </div>
+                <button id="minimap-size-btn" class="minimap-btn" type="button" title="Ampliar / Reducir Radar">
+                    <span id="minimap-size-label">AMPLIAR</span>
+                </button>
+            </div>
+            <div id="minimap-viewport" class="minimap-viewport">
+                <div class="minimap-scanline"></div>
+                <div id="minimap-volt-tag" class="minimap-volt-tag">
+                    <span class="volt-tag-text">VOLT</span>
+                    <span class="volt-tag-arrow">▼</span>
+                </div>
+            </div>
+            <div class="minimap-footer">
+                <div class="minimap-legend">
+                    <span class="leg-item"><span class="leg-dot volt"></span>VOLT</span>
+                    <span class="leg-item"><span class="leg-dot bot"></span>OXIDADOS</span>
+                    <span class="leg-item"><span class="leg-dot gear"></span>PIEZAS</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Bottom Controls -->
         <footer class="interactive">
-            <div style="display: flex; gap: 12px;">
+            <div style="display: flex; gap: 10px;">
                 <button id="cam-btn" class="control-btn" title="Alternar Vista de Cámara (Tecla C / V)">
                     <svg viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="3.2"/>
@@ -546,12 +817,12 @@
                         <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
                     </svg>
                 </button>
+                <button id="menu-back-btn" class="control-btn" title="Volver al Menú Principal">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+                    </svg>
+                </button>
             </div>
-            <button id="menu-back-btn" class="control-btn" title="Volver al Menú Principal">
-                <svg viewBox="0 0 24 24">
-                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-                </svg>
-            </button>
         </footer>
     </div>
 
@@ -1096,6 +1367,26 @@
             botGlow.position.set(0, 1.8, 0.4);
             group.add(botGlow);
 
+            // Baliza táctica de neón para robots oxidados en el minimapa
+            const botRingGeo = new THREE.RingGeometry(0.8, 1.8, 24);
+            botRingGeo.rotateX(-Math.PI / 2);
+            const botRingMat = new THREE.MeshBasicMaterial({
+                color: 0xff1744,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.95
+            });
+            const botBeacon = new THREE.Mesh(botRingGeo, botRingMat);
+            botBeacon.position.set(0, 0.08, 0);
+            group.add(botBeacon);
+
+            // Baliza aérea cenital para robots oxidados
+            const botTopRingGeo = new THREE.RingGeometry(0.3, 0.9, 16);
+            botTopRingGeo.rotateX(-Math.PI / 2);
+            const botTopBeacon = new THREE.Mesh(botTopRingGeo, botRingMat);
+            botTopBeacon.position.set(0, 2.5, 0);
+            group.add(botTopBeacon);
+
             // Robot oxidado aumentado de tamaño para presencia imponente
             group.scale.set(1.5, 1.5, 1.5);
 
@@ -1105,7 +1396,8 @@
                 eyeMat,
                 armL,
                 armR,
-                botGlow
+                botGlow,
+                botBeacon
             };
         }
 
@@ -1202,6 +1494,7 @@
         // MOTOR PRINCIPAL THREE.JS Y ESTADO DE JUEGO
         // -------------------------------------------------------------
         let scene, camera, renderer;
+        let minimapCamera;
         let voltEntity = null;
         let rustyBots = [];
         let gearList = [];
@@ -1302,6 +1595,15 @@
             camera.position.set(startPos.x - Math.sin(rotY) * dist, 6.8, startPos.z - Math.cos(rotY) * dist);
             camLookAt.set(startPos.x + Math.sin(rotY) * 3.0, 1.8, startPos.z + Math.cos(rotY) * 3.0);
             camera.lookAt(camLookAt);
+
+            // Cámara Cenital del Minimapa (Vista superior de todo el laberinto)
+            // Laberinto de 15x15 celdas * 4.2 = 63x63 unidades.
+            // Cubre de -33.5 a +33.5 con margen estético exacto.
+            const mapExtent = 33.5;
+            minimapCamera = new THREE.OrthographicCamera(-mapExtent, mapExtent, mapExtent, -mapExtent, 1, 300);
+            minimapCamera.position.set(0, 100, 0);
+            minimapCamera.up.set(0, 0, -1);
+            minimapCamera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1777,6 +2079,7 @@
         function updateRustyBots(delta) {
             rustyBots.forEach(bot => {
                 if (bot.isDismantled) {
+                    if (bot.comp.botBeacon) bot.comp.botBeacon.material.opacity = 0.0;
                     bot.respawnTimer -= delta;
                     if (bot.respawnTimer <= 0) {
                         bot.isDismantled = false;
@@ -1785,6 +2088,7 @@
                         const pos = getWorldPos(bot.spawnX, bot.spawnZ);
                         bot.comp.group.position.set(pos.x, 0.0, pos.z);
                         bot.comp.group.visible = true;
+                        if (bot.comp.botBeacon) bot.comp.botBeacon.material.opacity = 0.95;
                     }
                     return;
                 }
@@ -1796,11 +2100,19 @@
                     bot.comp.eyeMat.color.setHex(blink ? 0x00e5ff : 0x003366);
                     bot.comp.rustMat.emissive.setHex(0x002244);
                     if (bot.comp.botGlow) bot.comp.botGlow.color.setHex(blink ? 0x00e5ff : 0x002244);
+                    if (bot.comp.botBeacon) {
+                        bot.comp.botBeacon.material.color.setHex(blink ? 0x00e5ff : 0x003366);
+                        bot.comp.botBeacon.material.opacity = 0.95;
+                    }
                 } else {
                     // Modo caza agresivo: ojos rojos encendidos
                     bot.comp.eyeMat.color.setHex(0xff1744);
                     bot.comp.rustMat.emissive.setHex(0x3d1405);
                     if (bot.comp.botGlow) bot.comp.botGlow.color.setHex(0xff1744);
+                    if (bot.comp.botBeacon) {
+                        bot.comp.botBeacon.material.color.setHex(0xff1744);
+                        bot.comp.botBeacon.material.opacity = 0.95;
+                    }
                 }
 
                 if (!bot.isMoving) {
@@ -2099,7 +2411,86 @@
 
             updateCamera(dt);
             updateSparks(dt);
+
+            // 1. Renderizar vista principal
+            renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+            renderer.setScissorTest(false);
             renderer.render(scene, camera);
+
+            // 2. Renderizar minimapa (Vista superior de todo el mapa)
+            renderMinimap();
+        }
+
+        // -------------------------------------------------------------
+        // RENDERIZADO DEL MINIMAPA (Vista Superior Cenital)
+        // -------------------------------------------------------------
+        function renderMinimap() {
+            if (!renderer || !scene || !minimapCamera) return;
+            const vp = document.getElementById('minimap-viewport');
+            if (!vp) return;
+
+            const rect = vp.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0) return;
+
+            const sx = Math.round(rect.left);
+            const sy = Math.round(window.innerHeight - rect.bottom);
+            const sw = Math.round(rect.width);
+            const sh = Math.round(rect.height);
+
+            const aspect = sw / sh;
+            const baseExtent = 33.5;
+            if (aspect >= 1.0) {
+                minimapCamera.left = -baseExtent * aspect;
+                minimapCamera.right = baseExtent * aspect;
+                minimapCamera.top = baseExtent;
+                minimapCamera.bottom = -baseExtent;
+            } else {
+                minimapCamera.left = -baseExtent;
+                minimapCamera.right = baseExtent;
+                minimapCamera.top = baseExtent / aspect;
+                minimapCamera.bottom = -baseExtent / aspect;
+            }
+            minimapCamera.position.set(0, 80, 0);
+            minimapCamera.up.set(0, 0, -1);
+            minimapCamera.lookAt(0, 0, 0);
+            minimapCamera.updateProjectionMatrix();
+            minimapCamera.updateMatrixWorld(true);
+
+            // Actualizar etiqueta flotante de Volt en el HUD del minimapa
+            const voltTag = document.getElementById('minimap-volt-tag');
+            if (voltTag && voltEntity && voltEntity.group) {
+                const vx = voltEntity.group.position.x || 0;
+                const vz = voltEntity.group.position.z || 0;
+                const normX = (vx - minimapCamera.left) / (minimapCamera.right - minimapCamera.left);
+                const normY = (minimapCamera.top + vz) / (minimapCamera.top - minimapCamera.bottom);
+                voltTag.style.left = `${Math.max(4, Math.min(96, normX * 100)).toFixed(1)}%`;
+                voltTag.style.top = `${Math.max(4, Math.min(96, normY * 100)).toFixed(1)}%`;
+            }
+
+            // Desactivar niebla temporalmente para que la vista superior sea nítida y brillante
+            const savedFog = scene.fog;
+            scene.fog = null;
+
+            // Renderizar minimapa en la ventana de recorte
+            renderer.setScissorTest(true);
+            renderer.setScissor(sx, sy, sw, sh);
+            renderer.setViewport(sx, sy, sw, sh);
+
+            const origClearColor = new THREE.Color();
+            renderer.getClearColor(origClearColor);
+            const origClearAlpha = renderer.getClearAlpha();
+
+            renderer.setClearColor(0x060919, 1.0);
+            renderer.clear(true, true, true);
+
+            renderer.shadowMap.autoUpdate = false;
+            renderer.render(scene, minimapCamera);
+            renderer.shadowMap.autoUpdate = true;
+
+            // Restaurar configuración original
+            renderer.setClearColor(origClearColor, origClearAlpha);
+            renderer.setScissorTest(false);
+            scene.fog = savedFog;
         }
 
         // -------------------------------------------------------------
@@ -2109,6 +2500,16 @@
         document.getElementById('restart-btn').addEventListener('click', startNewGame);
         document.getElementById('victory-replay-btn').addEventListener('click', startNewGame);
         document.getElementById('cam-btn').addEventListener('click', toggleCameraMode);
+
+        const minimapSizeBtn = document.getElementById('minimap-size-btn');
+        if (minimapSizeBtn) {
+            minimapSizeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const panel = document.getElementById('minimap-panel');
+                const isEnlarged = panel.classList.toggle('enlarged');
+                document.getElementById('minimap-size-label').textContent = isEnlarged ? 'REDUCIR' : 'AMPLIAR';
+            });
+        }
 
         // Listeners para botones de selección de dificultad (Fácil 30, Normal 50, Difícil Full)
         document.querySelectorAll('.diff-btn').forEach(btn => {
