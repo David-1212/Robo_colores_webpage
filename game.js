@@ -554,6 +554,8 @@ const els = {
   winReason: $('#win-reason'),
   winScore: $('#win-score'),
   winBreakdown: $('#win-breakdown'),
+  nextTimer: $('#next-timer'),
+  nextCount: $('#next-count'),
   score: { 1: $('#score1'), 2: $('#score2') },
   btnNext: $('#btn-next'),
   introOverlay: $('#overlay-intro'),
@@ -818,6 +820,7 @@ function prepRound(len) {
   els.result.classList.add('hidden');
   els.stage.classList.add('hidden');
   els.count.classList.add('hidden');
+  els.nextTimer.classList.add('hidden');
   els.pips[1].innerHTML = '';
   els.pips[2].innerHTML = '';
   setControls(false);
@@ -862,6 +865,56 @@ function tally() {
   return { t1, t2, winner: t1 > t2 ? 1 : 2 };
 }
 
+function advanceRobot() {
+  if (state !== 'over') return;
+  clearTimers();
+  hideBanner();
+  els.nextTimer.classList.add('hidden');
+  pairIdx = (pairIdx + 1) % ROSTER.length;
+  startPair();
+}
+
+function interlude() {
+  if (state !== 'over') return;
+  const next = ROSTER[(pairIdx + 1) % ROSTER.length];
+  setControls(false);
+  setBanner(`SIGUIENTE ROBOT: ${next.name}`);
+  els.result.classList.remove('hidden');
+  els.nextTimer.classList.remove('hidden');
+  let n = 5;
+  const tick = () => {
+    if (state !== 'over') return;
+    if (n <= 0) {
+      els.nextTimer.classList.add('hidden');
+      advanceRobot();
+      return;
+    }
+    try {
+      els.nextCount.textContent = String(n);
+      sndTick();
+    } catch (e) { console.error('Error en cuenta de transición:', e); }
+    n--;
+    later(tick, 1000);
+  };
+  later(tick, 100);
+}
+
+function sboardHTML(tag, t) {
+  const w = t.winner;
+  const dots = (side, n) => {
+    let s = '';
+    for (let i = 0; i < n; i++) s += '<span class="sb-dot"></span>';
+    return s;
+  };
+  const row = (side, n) => `<div class="sboard-row sb${side}${side === w ? ' is-winner' : ''}">
+      <span class="sb-team">Equipo ${side}</span>
+      <span class="sb-dots">${dots(side, n)}</span>
+      <span class="sb-pts">${n}</span>
+    </div>`;
+  return `<span class="score-tag">${tag}</span>
+    <div class="sboard">${row(1, t.t1)}${row(2, t.t2)}</div>`;
+}
+
 function showResult(winner, how, errBy) {
   const isLast = pairIdx === ROSTER.length - 1;
   const t = tally();
@@ -870,12 +923,15 @@ function showResult(winner, how, errBy) {
   els.winReason.textContent = how === 'seq'
     ? `El Jugador ${winner} repitió la secuencia completa antes que el Jugador ${winner === 1 ? 2 : 1}.`
     : `El Jugador ${errBy} presionó un color equivocado.`;
-  els.winScore.innerHTML = `<span class="score-tag">Marcador Acumulado</span><span>EQUIPO 1: ${t.t1} — EQUIPO 2: ${t.t2}</span>`;
+  els.winScore.innerHTML = sboardHTML('Marcador Acumulado', t);
   els.winBreakdown.innerHTML = '';
+  els.nextTimer.classList.add('hidden');
+  els.nextCount.textContent = '5';
   els.btnNext.classList.remove('hidden');
-  els.btnNext.textContent = isLast ? 'VER RESULTADO FINAL' : 'SIGUIENTE ROBOT';
+  els.btnNext.textContent = isLast ? 'VER RESULTADO FINAL' : 'SALTAR';
   overAction = isLast ? 'final' : 'next';
   els.result.classList.remove('hidden');
+  if (!isLast) later(() => { if (overAction === 'next') interlude(); }, 2100);
 }
 
 function showFinal() {
@@ -888,7 +944,7 @@ function showFinal() {
   els.winTitle.textContent = `¡GANÓ EL EQUIPO ${winner}!`;
   els.winTitle.className = winner === 1 ? 'w1' : 'w2';
   els.winReason.textContent = `Nivel ${lv.label} · Fin de los 5 robots. El Equipo ${winner} pintó ${wName} robots contra ${lName} del Equipo ${winner === 1 ? 2 : 1}. ¡Felicidades al equipo ganador!`;
-  els.winScore.innerHTML = `<span class="score-tag">Marcador Final · 5 Robots</span><span>EQUIPO 1: ${t.t1} — EQUIPO 2: ${t.t2}</span>`;
+  els.winScore.innerHTML = sboardHTML(`Marcador Final · 5 Robots · Nivel ${lv.label}`, t);
 
   els.winBreakdown.innerHTML = pairs.map((p, i) => {
     const owner = p.w1 > 0 ? 1 : 2;
@@ -902,6 +958,7 @@ function showFinal() {
   }).join('');
 
   els.btnNext.classList.add('hidden');
+  els.nextTimer.classList.add('hidden');
   els.result.classList.remove('hidden');
 }
 
@@ -914,6 +971,7 @@ function goMenu() {
   els.count.classList.add('hidden');
   els.roundinfo.classList.add('hidden');
   els.winBreakdown.innerHTML = '';
+  els.nextTimer.classList.add('hidden');
   hideBanner();
   setControls(false);
   buildRobots(ROSTER[0]);
@@ -940,8 +998,7 @@ $('#btn-play').addEventListener('click', () => {
 });
 els.btnNext.addEventListener('click', () => {
   if (overAction === 'final') { showFinal(); return; }
-  pairIdx = (pairIdx + 1) % ROSTER.length;
-  startPair();
+  advanceRobot();
 });
 $('#btn-menu').addEventListener('click', () => { location.href = 'menu.html'; });
 els.btnSkip.addEventListener('click', () => endIntro());
