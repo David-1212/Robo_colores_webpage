@@ -38,23 +38,25 @@
   };
 
   /* Boton fijo de "salir al menu", siempre visible durante la partida.
-   * Solo se inyecta fuera del hub: dentro, la barra del menu ya lo muestra
-   * por encima del juego y dos botones serian redundantes. */
+   * Va pegado al borde izquierdo (zona libre en todos los juegos) y se
+   * desvanece solo tras unos segundos de inactividad para no estorbar; al
+   * mover el raton o tocar la pantalla vuelve a aparecer. */
   function injectExit() {
     var doc = global.document;
     if (doc.getElementById('papirolas-exit')) return;
 
     var style = doc.createElement('style');
     style.textContent =
-      '#papirolas-exit{position:fixed;top:74px;left:50%;transform:translateX(-50%);' +
+      '#papirolas-exit{position:fixed;top:70px;left:10px;' +
       'z-index:9998;display:inline-flex;align-items:center;justify-content:center;' +
-      'width:42px;height:42px;padding:0;border-radius:50%;' +
-      'border:1px solid rgba(0,229,255,.45);background:rgba(6,10,24,.74);' +
+      'width:36px;height:36px;padding:0;border-radius:50%;' +
+      'border:1px solid rgba(0,229,255,.45);background:rgba(6,10,24,.7);' +
       'color:#d8f6ff;cursor:pointer;backdrop-filter:blur(6px);' +
-      'box-shadow:0 6px 22px rgba(0,0,0,.5);opacity:.88;' +
-      'transition:opacity .2s ease,transform .15s ease}' +
-      '#papirolas-exit:hover{opacity:1;transform:translateX(-50%) scale(1.08)}' +
-      '#papirolas-exit:active{transform:translateX(-50%) scale(.95)}';
+      'box-shadow:0 4px 16px rgba(0,0,0,.45);opacity:.5;' +
+      'transition:opacity .25s ease,transform .15s ease}' +
+      '#papirolas-exit:hover,#papirolas-exit:focus-visible{opacity:1;transform:scale(1.1)}' +
+      '#papirolas-exit:active{transform:scale(.94)}' +
+      '#papirolas-exit.is-idle{opacity:0}';
 
     var btn = doc.createElement('button');
     btn.id = 'papirolas-exit';
@@ -62,13 +64,24 @@
     btn.title = 'Regresar al men\u00fa';
     btn.setAttribute('aria-label', 'Regresar al men\u00fa');
     btn.innerHTML =
-      '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" ' +
+      '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" ' +
       'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M15 5 L8 12 L15 19"/></svg>';
     btn.addEventListener('click', function () { global.papirolasGoMenu(); });
 
     doc.head.appendChild(style);
     doc.body.appendChild(btn);
+
+    var idle = null;
+    var wake = function () {
+      btn.classList.remove('is-idle');
+      if (idle) clearTimeout(idle);
+      idle = setTimeout(function () { btn.classList.add('is-idle'); }, 3000);
+    };
+    ['pointermove', 'pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
+      global.addEventListener(ev, wake, { passive: true });
+    });
+    wake();
   }
 
   if (IN_FRAME) {
@@ -78,7 +91,9 @@
       var own = global.document.getElementById('fs-btn');
       if (own) own.style.display = 'none';
     });
-  } else if (global.document.readyState === 'loading') {
+  }
+
+  if (global.document.readyState === 'loading') {
     global.document.addEventListener('DOMContentLoaded', injectExit);
   } else {
     injectExit();
