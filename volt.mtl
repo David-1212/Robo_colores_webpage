@@ -1,0 +1,83 @@
+# Wavefront Material Template File (.mtl)
+# Robot Volt Materials (from Robo-Colores / Secuenciador 3D)
+
+newmtl mat_torso_cyan
+Ka 0.000 0.898 1.000
+Kd 0.000 0.898 1.000
+Ks 0.500 0.500 0.500
+Ns 60.0
+d 1.0
+illum 2
+
+newmtl mat_head_green
+Ka 0.000 0.784 0.325
+Kd 0.000 0.784 0.325
+Ks 0.500 0.500 0.500
+Ns 60.0
+d 1.0
+illum 2
+
+newmtl mat_arms_purple
+Ka 0.667 0.000 1.000
+Kd 0.667 0.000 1.000
+Ks 0.500 0.500 0.500
+Ns 60.0
+d 1.0
+illum 2
+
+newmtl mat_belly_yellow
+Ka 1.000 0.839 0.000
+Kd 1.000 0.839 0.000
+Ks 0.500 0.500 0.500
+Ns 60.0
+d 1.0
+illum 2
+
+newmtl mat_legs_orange
+Ka 1.000 0.427 0.000
+Kd 1.000 0.427 0.000
+Ks 0.500 0.500 0.500
+Ns 60.0
+d 1.0
+illum 2
+
+newmtl mat_core_red
+Ka 1.000 0.090 0.267
+Kd 1.000 0.090 0.267
+Ks 0.500 0.500 0.500
+Ns 60.0
+d 1.0
+illum 2
+
+newmtl mat_antenna_magenta
+Ka 0.961 0.000 0.341
+Kd 0.961 0.000 0.341
+Ks 0.500 0.500 0.500
+Ns 60.0
+d 1.0
+illum 2
+
+newmtl mat_dark_trim
+Ka 0.086 0.098 0.141
+Kd 0.086 0.098 0.141
+Ks 0.400 0.400 0.400
+Ns 40.0
+d 1.0
+illum 2
+
+newmtl mat_eyes_cyan
+Ka 0.000 0.898 1.000
+Kd 0.000 0.898 1.000
+Ks 1.000 1.000 1.000
+Ke 0.000 0.898 1.000
+Ns 100.0
+d 1.0
+illum 2
+
+newmtl mat_base_metal
+Ka 0.141 0.165 0.243
+Kd 0.141 0.165 0.243
+Ks 0.500 0.500 0.500
+Ns 50.0
+d 1.0
+illum 2
