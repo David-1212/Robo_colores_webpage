@@ -19,7 +19,17 @@ const ROSTER = [
   { id: 'pixel', name: 'PIXEL', css: '#aa00ff' },
   { id: 'luna',  name: 'LUNA',  css: '#f50057' }
 ];
-const ROUND_LENS = [3, 4, 5, 6, 7];
+const LEVELS = {
+  facil:   { id: 'facil',   label: 'FÁCIL',   min: 3, max: 4, desc: '3 a 4 colores' },
+  medio:   { id: 'medio',   label: 'MEDIO',   min: 3, max: 5, desc: '3 a 5 colores' },
+  dificil: { id: 'dificil', label: 'DIFÍCIL', min: 3, max: 6, desc: '3 a 6 colores' }
+};
+let levelId = 'medio';
+
+function roundLen() {
+  const lv = LEVELS[levelId] || LEVELS.medio;
+  return lv.min + Math.floor(Math.random() * (lv.max - lv.min + 1));
+}
 
 function stepMs() {
   const ramp = [1700, 1450, 1200, 950, 700];
@@ -671,7 +681,8 @@ function hideBanner() { els.banner.classList.add('hidden'); }
 
 function applyMatchUI() {
   const pr = pairs[pairIdx];
-  els.roundinfo.textContent = `ROBOT ${pairIdx + 1}/5 · ${curRobo.name} · ${seq.length} COLORES`;
+  const lv = LEVELS[levelId] || LEVELS.medio;
+  els.roundinfo.textContent = `NIVEL ${lv.label} · ROBOT ${pairIdx + 1}/5 · ${curRobo.name} · ${seq.length} COLORES`;
   els.ctag[1].textContent = `${curRobo.name} · JUGADOR 1 · TECLAS 1, 2, 3, 7, 5, 6`;
   els.ctag[2].textContent = `${curRobo.name} · JUGADOR 2 · TECLAS A S D J G H`;
   els.score[1].textContent = pr.w1;
@@ -813,7 +824,7 @@ function prepRound(len) {
 }
 
 function startPair() {
-  prepRound(ROUND_LENS[pairIdx % ROUND_LENS.length]);
+  prepRound(roundLen());
   buildRobots(ROSTER[pairIdx % ROSTER.length]);
   robots[1].resetAll();
   robots[2].resetAll();
@@ -862,10 +873,11 @@ function showFinal() {
   let t1 = 0, t2 = 0;
   pairs.forEach(p => { t1 += p.w1; t2 += p.w2; });
   const winner = t1 > t2 ? 1 : 2;
+  const lv = LEVELS[levelId] || LEVELS.medio;
   overAction = null;
   els.winTitle.textContent = `¡GANÓ EL EQUIPO ${winner}!`;
   els.winTitle.className = winner === 1 ? 'w1' : 'w2';
-  els.winReason.textContent = `Fin de los 5 robots. El Jugador ${winner} ganó ${winner === 1 ? t1 : t2} robots contra ${
+  els.winReason.textContent = `Nivel ${lv.label} completado. El Jugador ${winner} ganó ${winner === 1 ? t1 : t2} robots contra ${
     winner === 1 ? t2 : t1
   } del Jugador ${winner === 1 ? 2 : 1}. ¡Felicidades al equipo ganador!`;
   els.winScore.textContent = `${t1} — ${t2}`;
@@ -890,6 +902,16 @@ function goMenu() {
 
 buildControls();
 buildRobots(ROSTER[0]);
+
+document.querySelectorAll('.level-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const id = btn.dataset.level;
+    if (!LEVELS[id]) return;
+    levelId = id;
+    document.querySelectorAll('.level-btn').forEach(b => b.classList.toggle('active', b === btn));
+    tone(760, 0.09, 'square', 0.12);
+  });
+});
 
 $('#btn-play').addEventListener('click', () => {
   tone(660, 0.1, 'square', 0.12);

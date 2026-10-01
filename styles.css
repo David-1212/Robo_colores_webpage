@@ -476,6 +476,69 @@ body {
   transform: scale(1.05);
 }
 
+/* Selector de nivel */
+.level-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 4px 0 14px;
+}
+
+.level-row-label {
+  width: 100%;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #8b93c4;
+  margin-bottom: 2px;
+}
+
+.level-btn {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: .1em;
+  font-size: 14px;
+  color: #dfe7ff;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 14px;
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 104px;
+  transition: transform .15s, background .18s, border-color .18s, box-shadow .18s, color .18s;
+}
+
+.level-btn .lv-range {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  opacity: .72;
+}
+
+.level-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(0, 229, 255, .55);
+}
+
+.level-btn.active {
+  background: linear-gradient(135deg, var(--p1), var(--p2));
+  color: #071018;
+  border-color: transparent;
+  box-shadow: 0 8px 26px rgba(0, 229, 255, .4);
+}
+
+.level-btn.active .lv-range {
+  opacity: .9;
+}
+
 #win-title {
   font-size: clamp(32px, 6vw, 54px);
   margin-bottom: 6px;
