@@ -843,7 +843,7 @@ function finish(winner, how, errBy) {
   hideBanner();
   const pr = pairs[pairIdx];
   pr.len = seq.length;
-  if (how === 'seq') pr['w' + winner]++;
+  pr['w' + winner]++;
   els.score[1].textContent = pr.w1;
   els.score[2].textContent = pr.w2;
   const loser = winner === 1 ? 2 : 1;
@@ -891,16 +891,13 @@ function showFinal() {
   els.winScore.innerHTML = `<span class="score-tag">Marcador Final · 5 Robots</span><span>EQUIPO 1: ${t.t1} — EQUIPO 2: ${t.t2}</span>`;
 
   els.winBreakdown.innerHTML = pairs.map((p, i) => {
-    const owner = p.w1 > 0 ? 1 : (p.w2 > 0 ? 2 : 0);
+    const owner = p.w1 > 0 ? 1 : 2;
     const robo = ROSTER[i % ROSTER.length];
     const mark = owner === winner ? ' is-victor' : '';
-    const who = owner === 0
-      ? '<span class="fb-owner" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#c6cde8;">EMPATE</span>'
-      : `<span class="fb-owner p${owner}">EQUIPO ${owner}</span>`;
-    return `<li class="fb-robot-row${mark}">
+    return `<li class="${mark}">
       <span class="fb-robot">${i + 1}. ${robo.name}</span>
       <span class="fb-lens">${p.len || 0} colores</span>
-      ${who}
+      <span class="fb-owner p${owner}">EQUIPO ${owner}</span>
     </li>`;
   }).join('');
 
