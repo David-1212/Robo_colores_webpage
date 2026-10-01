@@ -941,14 +941,16 @@
     <!-- Three.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
+    <script src="assets/hubnav.js"></script>
+
     <!-- Game Engine Script -->
     <script>
         // -------------------------------------------------------------
         // NAVEGACIÓN
         // -------------------------------------------------------------
-        document.getElementById('menu-back-btn').addEventListener('click', () => { window.location.href = 'menu.html'; });
-        document.getElementById('exit-menu-btn').addEventListener('click', () => { window.location.href = 'menu.html'; });
-        document.getElementById('victory-menu-btn').addEventListener('click', () => { window.location.href = 'menu.html'; });
+        document.getElementById('menu-back-btn').addEventListener('click', () => { papirolasGoMenu(); });
+        document.getElementById('exit-menu-btn').addEventListener('click', () => { papirolasGoMenu(); });
+        document.getElementById('victory-menu-btn').addEventListener('click', () => { papirolasGoMenu(); });
 
         // -------------------------------------------------------------
         // STARFIELD BACKGROUND
@@ -2519,7 +2521,7 @@
             });
         });
 
-        const goToMenu = () => { window.location.href = 'menu.html'; };
+        const goToMenu = () => { papirolasGoMenu(); };
         document.getElementById('menu-back-btn').addEventListener('click', goToMenu);
         document.getElementById('exit-menu-btn').addEventListener('click', goToMenu);
         document.getElementById('victory-menu-btn').addEventListener('click', goToMenu);

@@ -741,6 +741,8 @@
   <!-- Three.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
+  <script src="assets/hubnav.js"></script>
+
   <script>
     (() => {
       'use strict';
@@ -2152,8 +2154,8 @@
       $('#btn-start').addEventListener('click', startNewGame);
       $('#btn-replay').addEventListener('click', startNewGame);
       
-      $('#btn-main-menu').addEventListener('click', () => { window.location.href = 'menu.html'; });
-      $('#btn-exit-hub').addEventListener('click', () => { window.location.href = 'menu.html'; });
+      $('#btn-main-menu').addEventListener('click', () => { papirolasGoMenu(); });
+      $('#btn-exit-hub').addEventListener('click', () => { papirolasGoMenu(); });
 
       // -------------------------------------------------------------
       // LOOP DE JUEGO Y RENDER

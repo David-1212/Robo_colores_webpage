@@ -1070,6 +1070,8 @@
     <!-- Three.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
+    <script src="assets/hubnav.js"></script>
+
     <!-- Game & 3D Robot Script -->
     <script>
         // -------------------------------------------------------------
@@ -2065,7 +2067,7 @@
         document.getElementById('start-btn').addEventListener('click', startGame);
         document.getElementById('restart-btn').addEventListener('click', startGame);
         document.getElementById('gameover-menu-btn').addEventListener('click', () => {
-            window.location.href = 'menu.html';
+            papirolasGoMenu();
         });
         document.getElementById('mute-btn').addEventListener('click', () => audio.toggleMute());
 

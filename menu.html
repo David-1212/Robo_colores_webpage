@@ -547,6 +547,96 @@
         font-size: 13px;
       }
     }
+  /* ===== Escenario de juego (iframe) =====
+     El menu nunca navega: los juegos se cargan aqui dentro, de modo que el
+     navegador no descarga la pagina y el modo pantalla completa se mantiene
+     encendido al entrar a cualquier juego. */
+  #stage-frame {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #04060d;
+    z-index: 5000;
+  }
+
+  #stage-frame.hidden {
+    display: none;
+  }
+
+  /* Controles del hub durante el juego:Offsets centro superior para no
+     tapar el HUD de los juegos (que usan las esquinas). */
+  .hub-bar {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 6000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 9px;
+    border-radius: 999px;
+    background: rgba(6, 10, 24, .55);
+    border: 1px solid rgba(0, 229, 255, .22);
+    backdrop-filter: blur(6px);
+    opacity: .3;
+    transition: opacity .25s ease;
+  }
+
+  .hub-bar:hover,
+  .hub-bar:focus-within {
+    opacity: 1;
+  }
+
+  .hub-bar.hidden {
+    display: none;
+  }
+
+  .hub-btn {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 13px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 229, 255, .38);
+    background: rgba(0, 229, 255, .12);
+    color: #d8f6ff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .hub-btn:hover {
+    background: rgba(0, 229, 255, .26);
+    transform: translateY(-1px);
+  }
+
+  .hub-btn.is-off {
+    border-color: rgba(255, 45, 120, .45);
+    background: rgba(255, 45, 120, .12);
+    color: #ffd4e2;
+  }
+
+  .hub-fs-state {
+    pointer-events: none;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    color: #93a7d8;
+    padding-right: 4px;
+  }
+
+  body.in-game .menu,
+  body.in-game .corner-logo {
+    display: none;
+  }
   </style>
 </head>
 
@@ -736,6 +826,17 @@
     </div>
   </div>
 
+  <!-- Escenario de juego: mantiene la pantalla completa al cambiar de juego -->
+  <iframe id="stage-frame" class="hidden" title="Juego" allow="fullscreen; autoplay; gamepad"
+    allowfullscreen></iframe>
+
+  <!-- Controles del hub visibles durante el juego -->
+  <div id="hub-bar" class="hub-bar hidden">
+    <span class="hub-fs-state" id="hub-fs-state">PANTALLA COMPLETA</span>
+    <button id="hub-back" class="hub-btn" type="button" title="Volver al menu">&larr; MENU</button>
+    <button id="hub-fs" class="hub-btn" type="button" title="Quitar pantalla completa">SALIR DE PANTALLA COMPLETA</button>
+  </div>
+
   <!-- Three.js fondo animado -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
@@ -830,6 +931,7 @@
       const master = actx.createGain();
       master.gain.value = 0.9;
       master.connect(actx.destination);
+      window.__menuAudio = actx;
 
       const N = {
         C2: 65.41, F2: 87.31, G2: 98.00, A2: 110.00,
@@ -983,35 +1085,108 @@
     })();
   </script>
 
-  <!-- Pantalla completa -->
+  <!-- Hub: pantalla completa persistente + carga de juegos sin navegar -->
   <script>
     (function () {
-      const btn = document.getElementById('fs-btn');
-      const REQ = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+      const doc = document;
+      const frame = doc.getElementById('stage-frame');
+      const bar = doc.getElementById('hub-bar');
+      const backBtn = doc.getElementById('hub-back');
+      const fsBtn = doc.getElementById('fs-btn');
+      const hubFs = doc.getElementById('hub-fs');
+      const hubState = doc.getElementById('hub-fs-state');
+      const REQ = doc.documentElement.requestFullscreen || doc.documentElement.webkitRequestFullscreen;
+      const EXIT = doc.exitFullscreen || doc.webkitExitFullscreen;
+
+      function isFull() {
+        return !!doc.fullscreenElement || !!doc.webkitFullscreenElement;
+      }
+
       function enter() {
-        if (!document.fullscreenElement) {
-          (REQ || function () { }).call(document.documentElement);
-        }
+        if (isFull() || !REQ) return;
+        try {
+          const p = REQ.call(doc.documentElement);
+          if (p && p.catch) p.catch(function () { });
+        } catch (e) { }
       }
-      function toggle() {
-        if (!document.fullscreenElement) {
-          enter();
-        } else {
-          (document.exitFullscreen || document.webkitExitFullscreen || function () { }).call(document);
-        }
+
+      function exit() {
+        if (!isFull() || !EXIT) return;
+        try {
+          const p = EXIT.call(doc);
+          if (p && p.catch) p.catch(function () { });
+        } catch (e) { }
       }
-      if (btn) btn.addEventListener('click', toggle);
-      document.querySelectorAll('.game-card').forEach(function (card) {
-        card.addEventListener('click', enter);
-        card.addEventListener('touchstart', enter);
+
+      function toggle() { isFull() ? exit() : enter(); }
+
+      function paintFs() {
+        const on = isFull();
+        if (hubFs) {
+          hubFs.textContent = on ? 'SALIR DE PANTALLA COMPLETA' : 'PANTALLA COMPLETA';
+          hubFs.classList.toggle('is-off', on);
+        }
+        if (hubState) hubState.textContent = on ? 'PANTALLA COMPLETA' : 'VENTANA NORMAL';
+      }
+
+      function pauseMenuMusic() {
+        try { if (window.__menuAudio) window.__menuAudio.suspend(); } catch (e) { }
+      }
+
+      function resumeMenuMusic() {
+        try { if (window.__menuAudio) window.__menuAudio.resume(); } catch (e) { }
+      }
+
+      function openGame(src) {
+        if (!frame || !src) return;
+        doc.body.classList.add('in-game');
+        frame.classList.remove('hidden');
+        bar.classList.remove('hidden');
+        pauseMenuMusic();
+        if (frame.getAttribute('src') !== src) frame.setAttribute('src', src);
+        enter();
+        paintFs();
+      }
+
+      function closeGame() {
+        if (!frame) return;
+        doc.body.classList.remove('in-game');
+        frame.classList.add('hidden');
+        frame.removeAttribute('src');
+        bar.classList.add('hidden');
+        resumeMenuMusic();
+      }
+
+      window.addEventListener('message', function (ev) {
+        const d = ev && ev.data;
+        if (d && d.type === 'papirolas:menu') closeGame();
       });
-      var autoFS = function () {
+
+      if (backBtn) backBtn.addEventListener('click', closeGame);
+      if (fsBtn) fsBtn.addEventListener('click', toggle);
+      if (hubFs) hubFs.addEventListener('click', toggle);
+
+      doc.addEventListener('fullscreenchange', paintFs);
+      doc.addEventListener('webkitfullscreenchange', paintFs);
+
+      /* Las tarjetas ya no navegan: el juego se carga dentro del iframe para
+         que el navegador no descargue la pagina y el fullscreen no se apague. */
+      doc.querySelectorAll('.game-card').forEach(function (card) {
+        card.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          openGame(card.getAttribute('href'));
+        });
+      });
+
+      const autoFS = function () {
         enter();
         window.removeEventListener('pointerdown', autoFS);
         window.removeEventListener('keydown', autoFS);
       };
       window.addEventListener('pointerdown', autoFS);
       window.addEventListener('keydown', autoFS);
+
+      paintFs();
     })();
   </script>
 </body>

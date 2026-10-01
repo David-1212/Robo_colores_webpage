@@ -1000,7 +1000,7 @@ els.btnNext.addEventListener('click', () => {
   if (overAction === 'final') { showFinal(); return; }
   advanceRobot();
 });
-$('#btn-menu').addEventListener('click', () => { location.href = 'menu.html'; });
+$('#btn-menu').addEventListener('click', () => { papirolasGoMenu(); });
 els.btnSkip.addEventListener('click', () => endIntro());
 els.introTap.addEventListener('click', () => {
   els.introTap.classList.add('hidden');
