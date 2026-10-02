@@ -33,6 +33,7 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
             touch-action: none;
         }
 
@@ -43,6 +44,9 @@
             font-family: 'Outfit', sans-serif;
             background: var(--bg-gradient);
             color: #ffffff;
+            touch-action: none;
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: auto;
         }
 
         #stars-canvas {
@@ -1970,24 +1974,47 @@
         });
 
         // -------------------------------------------------------------
-        // GESTOS TÁCTILES FLUIDOS DE DESLIZAMIENTO (SWIPES PARA TABLET)
+        // GESTOS TÁCTILES FLUIDOS DE DESLIZAMIENTO (SWIPES TABLET & SAFARI)
         // -------------------------------------------------------------
+        // Detección segura de elementos interactivos (evita excepciones en Safari con Text nodes o SVG)
+        function isInteractiveTouchTarget(target) {
+            if (!target) return false;
+            const el = (target.nodeType === 1) ? target : target.parentElement;
+            if (!el || typeof el.closest !== 'function') return false;
+            return !!(
+                el.closest('.interactive') ||
+                el.closest('.dpad-container') ||
+                el.closest('.screen-overlay:not(.hidden)') ||
+                el.closest('button') ||
+                el.closest('a')
+            );
+        }
+
+        // Prevenir gestos nativos de zoom o navegación en WebKit / Safari
+        ['gesturestart', 'gesturechange', 'gestureend'].forEach(evt => {
+            document.addEventListener(evt, (e) => {
+                if (e.cancelable) e.preventDefault();
+            }, { passive: false });
+        });
+
         let touchStartX = 0;
         let touchStartY = 0;
         let touchStartTime = 0;
         let isSwiping = false;
         let swipeTriggeredInSession = false;
+        let lastTouchTime = 0;
 
         window.addEventListener('touchstart', (e) => {
+            lastTouchTime = Date.now();
             if (!isPlaying || isDying) return;
-            // Ignorar gestos si se originan en botones interactivos, D-pad, minimapa o modales
-            if (e.target.closest('.interactive') || e.target.closest('.dpad-container') || e.target.closest('.screen-overlay:not(.hidden)')) {
+            if (isInteractiveTouchTarget(e.target)) {
                 isSwiping = false;
                 return;
             }
 
-            if (e.touches.length > 0) {
-                const t = e.touches[0];
+            const touches = (e.touches && e.touches.length > 0) ? e.touches : e.targetTouches;
+            if (touches && touches.length > 0) {
+                const t = touches[0];
                 touchStartX = t.clientX;
                 touchStartY = t.clientY;
                 touchStartTime = Date.now();
@@ -1997,14 +2024,23 @@
         }, { passive: true });
 
         window.addEventListener('touchmove', (e) => {
-            if (!isSwiping || !isPlaying || isDying || e.touches.length === 0) return;
+            if (!isSwiping || !isPlaying || isDying) return;
 
-            const t = e.touches[0];
+            // VITAL PARA SAFARI: preventDefault evita que Safari capture el arrastre como
+            // scroll elástico o navegación de historial (edge swipe), lo cual cancelaba el evento touch.
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+
+            const touches = (e.touches && e.touches.length > 0) ? e.touches : e.targetTouches;
+            if (!touches || touches.length === 0) return;
+
+            const t = touches[0];
             const dx = t.clientX - touchStartX;
             const dy = t.clientY - touchStartY;
-            const SWIPE_THRESHOLD = 26;
+            const SWIPE_THRESHOLD = 24;
 
-            // Detección en tiempo real durante el arrastre (sin esperar a soltar el dedo)
+            // Detección fluida continua durante el arrastre (tiempo real)
             if (Math.abs(dx) >= SWIPE_THRESHOLD || Math.abs(dy) >= SWIPE_THRESHOLD) {
                 let action = null;
                 if (Math.abs(dx) > Math.abs(dy)) {
@@ -2017,28 +2053,30 @@
                 handleTankInput(action);
                 swipeTriggeredInSession = true;
 
-                // Reiniciar el origen para permitir encadenar giros fluidos continuos
+                // Reiniciar el origen para permitir encadenar giros sucesivos fluidamente
                 touchStartX = t.clientX;
                 touchStartY = t.clientY;
             }
-        }, { passive: true });
+        }, { passive: false });
 
         window.addEventListener('touchend', (e) => {
+            lastTouchTime = Date.now();
             if (!isSwiping || !isPlaying || isDying) {
                 isSwiping = false;
                 return;
             }
             isSwiping = false;
 
-            // Deslizamientos rápidos (flicks) que terminen antes de cruzar el umbral continuo
-            if (!swipeTriggeredInSession && e.changedTouches.length > 0) {
-                const t = e.changedTouches[0];
+            // Deslizamientos rápidos (flicks) que finalicen antes del umbral continuo
+            const touches = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches : e.touches;
+            if (!swipeTriggeredInSession && touches && touches.length > 0) {
+                const t = touches[0];
                 const dx = t.clientX - touchStartX;
                 const dy = t.clientY - touchStartY;
                 const FLICK_THRESHOLD = 18;
                 const elapsed = Date.now() - touchStartTime;
 
-                if (elapsed < 300 && (Math.abs(dx) >= FLICK_THRESHOLD || Math.abs(dy) >= FLICK_THRESHOLD)) {
+                if (elapsed < 350 && (Math.abs(dx) >= FLICK_THRESHOLD || Math.abs(dy) >= FLICK_THRESHOLD)) {
                     let action = null;
                     if (Math.abs(dx) > Math.abs(dy)) {
                         action = dx > 0 ? 'RIGHT' : 'LEFT';
@@ -2050,6 +2088,84 @@
                 }
             }
         }, { passive: true });
+
+        window.addEventListener('touchcancel', () => {
+            isSwiping = false;
+            swipeTriggeredInSession = false;
+        }, { passive: true });
+
+        // Soporte adicional de arrastre para Safari en escritorio / trackpad / mouse
+        let mouseStartX = 0;
+        let mouseStartY = 0;
+        let mouseStartTime = 0;
+        let isMouseDragging = false;
+        let mouseTriggeredInSession = false;
+
+        window.addEventListener('mousedown', (e) => {
+            if (Date.now() - lastTouchTime < 650) return;
+            if (!isPlaying || isDying || e.button !== 0) return;
+            if (isInteractiveTouchTarget(e.target)) {
+                isMouseDragging = false;
+                return;
+            }
+            mouseStartX = e.clientX;
+            mouseStartY = e.clientY;
+            mouseStartTime = Date.now();
+            isMouseDragging = true;
+            mouseTriggeredInSession = false;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (Date.now() - lastTouchTime < 650) return;
+            if (!isMouseDragging || !isPlaying || isDying) return;
+
+            const dx = e.clientX - mouseStartX;
+            const dy = e.clientY - mouseStartY;
+            const SWIPE_THRESHOLD = 26;
+
+            if (Math.abs(dx) >= SWIPE_THRESHOLD || Math.abs(dy) >= SWIPE_THRESHOLD) {
+                let action = null;
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    action = dx > 0 ? 'RIGHT' : 'LEFT';
+                } else {
+                    action = dy > 0 ? 'REVERSE' : 'FORWARD';
+                }
+
+                highlightDpad(action);
+                handleTankInput(action);
+                mouseTriggeredInSession = true;
+
+                mouseStartX = e.clientX;
+                mouseStartY = e.clientY;
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (Date.now() - lastTouchTime < 650) return;
+            if (!isMouseDragging || !isPlaying || isDying) {
+                isMouseDragging = false;
+                return;
+            }
+            isMouseDragging = false;
+
+            if (!mouseTriggeredInSession) {
+                const dx = e.clientX - mouseStartX;
+                const dy = e.clientY - mouseStartY;
+                const FLICK_THRESHOLD = 18;
+                const elapsed = Date.now() - mouseStartTime;
+
+                if (elapsed < 350 && (Math.abs(dx) >= FLICK_THRESHOLD || Math.abs(dy) >= FLICK_THRESHOLD)) {
+                    let action = null;
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        action = dx > 0 ? 'RIGHT' : 'LEFT';
+                    } else {
+                        action = dy > 0 ? 'REVERSE' : 'FORWARD';
+                    }
+                    highlightDpad(action);
+                    handleTankInput(action);
+                }
+            }
+        });
 
 
         // -------------------------------------------------------------

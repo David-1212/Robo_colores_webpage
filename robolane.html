@@ -30,6 +30,8 @@
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
     }
 
     body, html {
@@ -39,6 +41,9 @@
       font-family: 'Outfit', sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
+      touch-action: none;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: auto;
     }
 
     #webgl-container {
@@ -2376,8 +2381,26 @@
       bindTouchButton($('#btn-jump'), triggerJump);
 
       // -------------------------------------------------------------
-      // GESTOS TÁCTILES EN TABLET (SWIPES LATERALES Y TOQUE PARA SALTAR)
+      // GESTOS TÁCTILES EN TABLET & SAFARI (SWIPES LATERALES Y SALTO)
       // -------------------------------------------------------------
+      function isInteractiveTarget(target) {
+        if (!target) return false;
+        const el = (target.nodeType === 1) ? target : target.parentElement;
+        if (!el || typeof el.closest !== 'function') return false;
+        return !!(
+          el.closest('.interactive') ||
+          el.closest('.overlay:not(.hidden)') ||
+          el.closest('button') ||
+          el.closest('a')
+        );
+      }
+
+      ['gesturestart', 'gesturechange', 'gestureend'].forEach(evt => {
+        document.addEventListener(evt, (e) => {
+          if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+      });
+
       let touchStartX = 0;
       let touchStartY = 0;
       let touchStartTime = 0;
@@ -2386,27 +2409,39 @@
       window.addEventListener('touchstart', (e) => {
         if (gameState !== 'playing') return;
         // Ignorar gestos si se tocó dentro de botones interactivos o modales
-        if (e.target.closest('.interactive') || e.target.closest('.overlay:not(.hidden)')) {
+        if (isInteractiveTarget(e.target)) {
           gestureActive = false;
           return;
         }
 
-        const t = e.touches[0];
-        touchStartX = t.clientX;
-        touchStartY = t.clientY;
-        touchStartTime = Date.now();
-        gestureActive = true;
+        const touches = (e.touches && e.touches.length > 0) ? e.touches : e.targetTouches;
+        if (touches && touches.length > 0) {
+          const t = touches[0];
+          touchStartX = t.clientX;
+          touchStartY = t.clientY;
+          touchStartTime = Date.now();
+          gestureActive = true;
+        }
       }, { passive: true });
 
       window.addEventListener('touchmove', (e) => {
         if (!gestureActive || gameState !== 'playing') return;
-        const t = e.touches[0];
+
+        // VITAL PARA SAFARI: evitar que capture el arrastre como scroll elástico de página
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+
+        const touches = (e.touches && e.touches.length > 0) ? e.touches : e.targetTouches;
+        if (!touches || touches.length === 0) return;
+
+        const t = touches[0];
         const dx = t.clientX - touchStartX;
         const dy = t.clientY - touchStartY;
 
         // Detección de deslizamiento horizontal (swipe izq/der)
-        const HORIZ_SWIPE_THRESHOLD = 36;
-        if (Math.abs(dx) > HORIZ_SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy) * 1.25) {
+        const HORIZ_SWIPE_THRESHOLD = 32;
+        if (Math.abs(dx) > HORIZ_SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy) * 1.2) {
           if (dx < 0) {
             moveLeft();
           } else {
@@ -2416,20 +2451,23 @@
           touchStartX = t.clientX;
           touchStartY = t.clientY;
         }
-      }, { passive: true });
+      }, { passive: false });
 
       window.addEventListener('touchend', (e) => {
         if (!gestureActive || gameState !== 'playing') return;
         gestureActive = false;
 
         const duration = Date.now() - touchStartTime;
-        const t = e.changedTouches[0];
+        const touches = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches : e.touches;
+        if (!touches || touches.length === 0) return;
+
+        const t = touches[0];
         const dx = t.clientX - touchStartX;
         const dy = t.clientY - touchStartY;
         const dist = Math.hypot(dx, dy);
 
         // Gesto de deslizar hacia arriba -> SALTAR
-        if (dy < -42 && Math.abs(dy) > Math.abs(dx) * 1.2) {
+        if (dy < -38 && Math.abs(dy) > Math.abs(dx) * 1.15) {
           triggerJump();
           return;
         }
@@ -2438,6 +2476,10 @@
         if (dist < 18 && duration < 320) {
           triggerJump();
         }
+      }, { passive: true });
+
+      window.addEventListener('touchcancel', () => {
+        gestureActive = false;
       }, { passive: true });
       
       $('#btn-start').addEventListener('click', startNewGame);
