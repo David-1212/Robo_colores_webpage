@@ -2388,9 +2388,11 @@
         if (e.cancelable && gameState === 'playing') e.preventDefault();
       }, { passive: false });
 
-      /* Umbrales: un tap es corto y quieto; un swipe supera holgadamente esto. */
-      const SWIPE_X = 34;        // px para cambiar de carril
-      const SWIPE_UP = 40;       // px hacia arriba para saltar
+      /* Umbrales. Son independientes a proposito: el tap usa un margen pequeno y
+         el swipe otro mayor, de modo que un gesto de salto (28 px) nunca se
+         confunda con un tap ni quede descartado por marcar "movido". */
+      const SWIPE_X = 34;        // px horizontales para cambiar de carril
+      const SWIPE_UP = 28;       // px hacia arriba para saltar
       const TAP_MAX_DIST = 16;   // px maximos de recorrido para que sea tap
       const TAP_MAX_TIME = 300;  // ms maximos para que sea tap
       const DOMINANCE = 1.2;     // un eje debe ganar por este factor
@@ -2400,40 +2402,53 @@
       let gStartY = 0;
       let gStartTime = 0;
       let gMoved = false;
+      let gJumped = false;
 
       window.addEventListener('pointerdown', (e) => {
-        if (gameState !== 'playing') { gActive = false; return; }
-        /* Solo el dedo o el lapiz. El raton ya tiene botones propios y en
-           iPadOS el trackpad emite pointerType "mouse". */
-        if (e.pointerType === 'mouse') { gActive = false; return; }
-        if (isInteractiveTarget(e.target)) { gActive = false; return; }
+        gActive = false;
+        if (gameState !== 'playing') return;
+        /* Solo el boton principal: el clic derecho o el menu contextual no
+           deben mover al robot. */
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (isInteractiveTarget(e.target)) return;
 
         gActive = true;
+        gJumped = false;
+        gMoved = false;
         gStartX = e.clientX;
         gStartY = e.clientY;
         gStartTime = Date.now();
-        gMoved = false;
       }, { passive: true });
 
       window.addEventListener('pointermove', (e) => {
         if (!gActive || gameState !== 'playing') return;
 
         /* Imprescindible en Safari: sin esto el arrastre se convierte en
-           scroll de pagina en vez de mover el robot. */
+           scroll de pagina en vez de mover al robot. */
         if (e.cancelable) e.preventDefault();
 
         const dx = e.clientX - gStartX;
         const dy = e.clientY - gStartY;
-
         if (Math.abs(dx) > TAP_MAX_DIST || Math.abs(dy) > TAP_MAX_DIST) gMoved = true;
 
-        /* Swipe horizontal: permite varios cambios de carril en un solo
-           gesto deslizando varias veces, sin soltar el dedo. */
+        /* Swipe horizontal: responde al instante y recentra el origen para
+           permitir varios cambios de carril en un mismo gesto. */
         if (Math.abs(dx) > SWIPE_X && Math.abs(dx) > Math.abs(dy) * DOMINANCE) {
           if (dx < 0) moveLeft(); else moveRight();
-          /* Se recentra el origen para no repetir el mismo carril. */
           gStartX = e.clientX;
           gStartY = e.clientY;
+          gJumped = true;
+          return;
+        }
+
+        /* Deslizar hacia arriba -> SALTAR. Se dispara en cuanto se alcanza
+           el umbral, sin esperar a soltar, que es como se percibe natural en
+           pantalla tactil. No se exige !gMoved: un gesto de 28 px supera de
+           sobra el margen del tap, asi que exigirlo dejaba el salto muerto. */
+        if (dy < -SWIPE_UP && Math.abs(dy) > Math.abs(dx) * DOMINANCE) {
+          triggerJump();
+          gStartY = e.clientY;
+          gJumped = true;
         }
       }, { passive: false });
 
@@ -2441,26 +2456,60 @@
         if (!gActive) return;
         gActive = false;
         if (gameState !== 'playing') return;
-        if (e.pointerType === 'mouse') return;
+
+        /* Los swipes ya actuaron durante el arrastre: no se repiten aqui. */
+        if (gJumped) return;
 
         const duration = Date.now() - gStartTime;
         const dx = e.clientX - gStartX;
         const dy = e.clientY - gStartY;
 
-        /* Swipe hacia arriba -> SALTAR. Se evalua antes que el tap y se
-           descarta si ya hubo movimiento, para no saltar sin querer. */
-        if (!gMoved && dy < -SWIPE_UP && Math.abs(dy) > Math.abs(dx) * DOMINANCE) {
-          triggerJump();
-          return;
-        }
-
-        /* Tap limpio en cualquier parte de la pantalla -> SALTAR. */
+        /* Toque corto y quieto en cualquier parte de la pantalla -> SALTAR. */
         if (!gMoved && Math.hypot(dx, dy) < TAP_MAX_DIST && duration < TAP_MAX_TIME) {
           triggerJump();
         }
       }, { passive: true });
 
       window.addEventListener('pointercancel', () => { gActive = false; }, { passive: true });
+
+      /* Respaldo con Touch Events para navegadores sin Pointer Events.
+         Safari antiguo en iPad lo necesita. */
+      if (!('PointerEvent' in window)) {
+        let tX = 0, tY = 0, tMoved = false;
+
+        window.addEventListener('touchstart', (e) => {
+          if (gameState !== 'playing') return;
+          if (isInteractiveTarget(e.target)) return;
+          const t = e.touches[0];
+          if (!t) return;
+          tX = t.clientX; tY = t.clientY; tMoved = false;
+          gActive = true;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+          if (!gActive || gameState !== 'playing') return;
+          if (e.cancelable) e.preventDefault();
+          const t = e.touches[0];
+          if (!t) return;
+          const dx = t.clientX - tX;
+          const dy = t.clientY - tY;
+
+          if (Math.abs(dx) > SWIPE_X && Math.abs(dx) > Math.abs(dy) * DOMINANCE) {
+            if (dx < 0) moveLeft(); else moveRight();
+            tX = t.clientX; tMoved = true;
+            return;
+          }
+          if (dy < -SWIPE_UP && Math.abs(dy) > Math.abs(dx) * DOMINANCE) {
+            triggerJump();
+            tY = t.clientY;
+            tMoved = true;
+          }
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => { gActive = false; }, { passive: true });
+
+        window.addEventListener('touchcancel', () => { gActive = false; }, { passive: true });
+      }
       
       
 
