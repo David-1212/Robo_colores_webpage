@@ -33,6 +33,7 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
             touch-action: none;
         }
 
@@ -43,6 +44,9 @@
             font-family: 'Outfit', sans-serif;
             background: var(--bg-gradient);
             color: #ffffff;
+            touch-action: none;
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: auto;
         }
 
         #stars-canvas {
@@ -247,11 +251,11 @@
             backdrop-filter: blur(8px);
         }
 
-        .dpad-btn:active {
-            background: rgba(0, 229, 255, 0.35);
+        .dpad-btn:active, .dpad-btn.dpad-active {
+            background: rgba(0, 229, 255, 0.45);
             border-color: var(--primary);
             color: #ffffff;
-            box-shadow: 0 0 14px rgba(0, 229, 255, 0.6);
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.75);
             transform: scale(0.92);
         }
 
@@ -845,6 +849,7 @@
             • Guía a <b>Volt</b> en 3ª persona para recolectar los engranajes dorados requeridos.<br>
             • <b>¡Sin segundas oportunidades!</b> Un solo choque con un robot oxidado desactiva a Volt (¡ganar o morir!).<br>
             • Toma los <b>Super Engranajes</b> de las esquinas para activar la <b>Sobrecarga</b> y desmantelar a los robots por <b>+200 pts</b>.<br>
+            • Controles: Botones D-Pad, <b>desliza (swipe)</b> en pantalla o teclas W/A/S/D / Flechas.<br>
             • Alterna la vista de cámara con la tecla <b>C</b> o el botón de cámara.<br><br>
             <b>SELECCIONA LA DIFICULTAD:</b>
         </p>
@@ -1353,11 +1358,6 @@
             const base = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.35, 0.95), darkMetal);
             base.position.set(0, 0.18, 0); group.add(base);
 
-            // Baliza luminosa del robot oxidado
-            const botGlow = new THREE.PointLight(0xff1744, 1.2, 12);
-            botGlow.position.set(0, 1.8, 0.4);
-            group.add(botGlow);
-
             // Baliza táctica de neón para robots oxidados en el minimapa
             const botRingGeo = new THREE.RingGeometry(0.8, 1.8, 24);
             botRingGeo.rotateX(-Math.PI / 2);
@@ -1387,77 +1387,107 @@
                 eyeMat,
                 armL,
                 armR,
-                botGlow,
                 botBeacon
             };
         }
 
 
         // -------------------------------------------------------------
-        // MODELO 3D DE ENGRANAJE METÁLICO (Collectible Gear)
+        // MODELO 3D DE ENGRANAJE METÁLICO (Extruded Single Mesh - Optimizado)
         // -------------------------------------------------------------
-        function createGearMesh(isSuper = false) {
-            const group = new THREE.Group();
-            const radius = isSuper ? 0.85 : 0.52;
-            const teethCount = isSuper ? 8 : 6;
+        let normalGearGeo = null;
+        let superGearGeo = null;
+        let normalGearMat = null;
+        let superGearMat = null;
 
-            const mat = new THREE.MeshStandardMaterial({
-                color: isSuper ? 0x00e5ff : 0xffd700,
-                metalness: 0.85,
-                roughness: 0.25,
-                emissive: isSuper ? 0x00e5ff : 0xff9900,
-                emissiveIntensity: isSuper ? 0.85 : 0.35
+        function createGearGeometry(isSuper) {
+            const teeth = isSuper ? 8 : 6;
+            const rOuter = isSuper ? 0.85 : 0.54;
+            const rInner = rOuter * 0.72;
+            const shape = new THREE.Shape();
+            for (let i = 0; i < teeth * 2; i++) {
+                const angle = (i * Math.PI) / teeth;
+                const r = (i % 2 === 0) ? rOuter : rInner;
+                const x = Math.cos(angle) * r;
+                const y = Math.sin(angle) * r;
+                if (i === 0) shape.moveTo(x, y);
+                else shape.lineTo(x, y);
+            }
+            shape.closePath();
+
+            const hole = new THREE.Path();
+            hole.absarc(0, 0, rInner * 0.36, 0, Math.PI * 2, true);
+            shape.holes.push(hole);
+
+            const geo = new THREE.ExtrudeGeometry(shape, {
+                depth: 0.16,
+                bevelEnabled: false
             });
+            geo.rotateX(Math.PI / 2); // Disposición horizontal
+            return geo;
+        }
 
-            // Centro del engranaje
-            const hub = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.7, radius * 0.7, 0.18, 16), mat);
-            group.add(hub);
+        function getGearAssets() {
+            if (!normalGearGeo) {
+                normalGearGeo = createGearGeometry(false);
+                superGearGeo = createGearGeometry(true);
 
-            // Eje central hueco
-            const hole = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.26, radius * 0.26, 0.2, 12), new THREE.MeshBasicMaterial({ color: 0x070b18 }));
-            group.add(hole);
+                normalGearMat = new THREE.MeshStandardMaterial({
+                    color: 0xffd700,
+                    metalness: 0.85,
+                    roughness: 0.25,
+                    emissive: 0xff8800,
+                    emissiveIntensity: 0.4
+                });
 
-            // Dientes radiales
-            for (let i = 0; i < teethCount; i++) {
-                const angle = i * (Math.PI * 2 / teethCount);
-                const tooth = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.32, 0.16, radius * 0.38), mat);
-                tooth.position.set(Math.cos(angle) * (radius * 0.85), 0, Math.sin(angle) * (radius * 0.85));
-                tooth.rotation.y = -angle;
-                group.add(tooth);
+                superGearMat = new THREE.MeshStandardMaterial({
+                    color: 0x00e5ff,
+                    metalness: 0.85,
+                    roughness: 0.2,
+                    emissive: 0x00e5ff,
+                    emissiveIntensity: 1.6
+                });
             }
+        }
 
-            // Luz suave para el Super Engranaje
-            if (isSuper) {
-                const light = new THREE.PointLight(0x00e5ff, 1.4, 7);
-                light.position.set(0, 0.5, 0);
-                group.add(light);
-            }
-
-            return group;
+        function createGearMesh(isSuper = false) {
+            getGearAssets();
+            const mesh = new THREE.Mesh(isSuper ? superGearGeo : normalGearGeo, isSuper ? superGearMat : normalGearMat);
+            return mesh;
         }
 
 
         // -------------------------------------------------------------
-        // SISTEMA DE CHISPAS
+        // SISTEMA DE CHISPAS OPTIMIZADO (Zero Garbage & Zero Recompiles)
         // -------------------------------------------------------------
         let sparks = [];
-        function spawnSparks(x, y, z, colorHex = 0xff6d00, count = 20) {
-            const sparkGeo = new THREE.BoxGeometry(0.08, 0.08, 0.08);
-            const sparkMat = new THREE.MeshBasicMaterial({ color: colorHex });
+        const SPARK_GEO = new THREE.BoxGeometry(0.08, 0.08, 0.08);
+        const sparkMatCache = {};
 
-            for (let i = 0; i < count; i++) {
-                const m = new THREE.Mesh(sparkGeo, sparkMat);
+        function getSparkMaterial(colorHex) {
+            if (!sparkMatCache[colorHex]) {
+                sparkMatCache[colorHex] = new THREE.MeshBasicMaterial({ color: colorHex });
+            }
+            return sparkMatCache[colorHex];
+        }
+
+        function spawnSparks(x, y, z, colorHex = 0xff6d00, count = 12) {
+            const mat = getSparkMaterial(colorHex);
+            const actualCount = Math.min(count, 14);
+
+            for (let i = 0; i < actualCount; i++) {
+                const m = new THREE.Mesh(SPARK_GEO, mat);
                 m.position.set(x, y, z);
                 scene.add(m);
 
                 sparks.push({
                     mesh: m,
                     vel: new THREE.Vector3(
-                        (Math.random() - 0.5) * 5.5,
-                        Math.random() * 4.0 + 1.5,
-                        (Math.random() - 0.5) * 5.5
+                        (Math.random() - 0.5) * 5.0,
+                        Math.random() * 3.5 + 1.2,
+                        (Math.random() - 0.5) * 5.0
                     ),
-                    life: 0.85
+                    life: 0.65
                 });
             }
         }
@@ -1468,14 +1498,13 @@
                 s.life -= dt;
                 if (s.life <= 0) {
                     scene.remove(s.mesh);
-                    s.mesh.geometry.dispose();
-                    s.mesh.material.dispose();
+                    // NO disponer SPARK_GEO ni mat porque son compartidos y cacheados
                     sparks.splice(i, 1);
                 } else {
                     s.vel.y -= dt * 9.8;
                     s.mesh.position.addScaledVector(s.vel, dt);
-                    s.mesh.rotation.x += dt * 5;
-                    s.mesh.rotation.y += dt * 5;
+                    s.mesh.rotation.x += dt * 4;
+                    s.mesh.rotation.y += dt * 4;
                 }
             }
         }
@@ -1599,8 +1628,9 @@
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.enabled = false;
             container.appendChild(renderer.domElement);
+            updateMinimapRect();
 
             // Iluminación
             scene.add(new THREE.AmbientLight(0xffffff, 0.85));
@@ -1630,7 +1660,7 @@
             floor.position.y = -0.05;
             scene.add(floor);
 
-            // Muros cibernéticos con neón superior
+            // Muros cibernéticos con neón superior (InstancedMesh - solo 2 draw calls para todo el mapa)
             const wallGeo = new THREE.BoxGeometry(CELL_SIZE, 2.6, CELL_SIZE);
             const wallMat = new THREE.MeshStandardMaterial({
                 color: 0x12182c,
@@ -1642,21 +1672,41 @@
             const trimGeo = new THREE.BoxGeometry(CELL_SIZE * 0.95, 0.08, CELL_SIZE * 0.95);
             const trimMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
 
+            let wallCount = 0;
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (MAZE_LAYOUT[r][c] === 1) wallCount++;
+                }
+            }
+
+            const wallInstanced = new THREE.InstancedMesh(wallGeo, wallMat, wallCount);
+            const trimInstanced = new THREE.InstancedMesh(trimGeo, trimMat, wallCount);
+
+            const dummy = new THREE.Object3D();
+            let idx = 0;
             for (let r = 0; r < GRID_SIZE; r++) {
                 for (let c = 0; c < GRID_SIZE; c++) {
                     if (MAZE_LAYOUT[r][c] === 1) {
-                        const wall = new THREE.Mesh(wallGeo, wallMat);
                         const pos = getWorldPos(c, r);
-                        wall.position.set(pos.x, 1.3, pos.z);
-                        scene.add(wall);
 
-                        // Filete de neón decorativo
-                        const trim = new THREE.Mesh(trimGeo, trimMat);
-                        trim.position.set(pos.x, 2.64, pos.z);
-                        scene.add(trim);
+                        dummy.position.set(pos.x, 1.3, pos.z);
+                        dummy.updateMatrix();
+                        wallInstanced.setMatrixAt(idx, dummy.matrix);
+
+                        dummy.position.set(pos.x, 2.64, pos.z);
+                        dummy.updateMatrix();
+                        trimInstanced.setMatrixAt(idx, dummy.matrix);
+
+                        idx++;
                     }
                 }
             }
+
+            wallInstanced.instanceMatrix.needsUpdate = true;
+            trimInstanced.instanceMatrix.needsUpdate = true;
+
+            scene.add(wallInstanced);
+            scene.add(trimInstanced);
         }
 
         function spawnVolt() {
@@ -1872,40 +1922,239 @@
             delete keysDown[e.key.toLowerCase()];
         });
 
-        // Controles táctiles D-Pad (Tank Controls: ▲, ▼, ↶, ↷)
+        // Resaltar botón del D-Pad como respuesta visual a toques o gestos
+        function highlightDpad(action) {
+            const map = {
+                'FORWARD': 'dpad-u',
+                'REVERSE': 'dpad-d',
+                'LEFT': 'dpad-l',
+                'RIGHT': 'dpad-r'
+            };
+            const id = map[action];
+            if (id) {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.classList.add('dpad-active');
+                    setTimeout(() => btn.classList.remove('dpad-active'), 160);
+                }
+            }
+        }
+
+        // Controles táctiles D-Pad optimizados (Respuesta instantánea)
         const handleDpadAction = (action) => (e) => {
-            e.preventDefault();
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            highlightDpad(action);
             handleTankInput(action);
         };
-        ['touchstart', 'mousedown'].forEach(evt => {
-            document.getElementById('dpad-u').addEventListener(evt, handleDpadAction('FORWARD'));
-            document.getElementById('dpad-d').addEventListener(evt, handleDpadAction('REVERSE'));
-            document.getElementById('dpad-l').addEventListener(evt, handleDpadAction('LEFT'));
-            document.getElementById('dpad-r').addEventListener(evt, handleDpadAction('RIGHT'));
+
+        ['pointerdown', 'touchstart', 'mousedown'].forEach(evt => {
+            const opt = (evt === 'touchstart') ? { passive: false } : undefined;
+            const u = document.getElementById('dpad-u');
+            const d = document.getElementById('dpad-d');
+            const l = document.getElementById('dpad-l');
+            const r = document.getElementById('dpad-r');
+            if (u) u.addEventListener(evt, handleDpadAction('FORWARD'), opt);
+            if (d) d.addEventListener(evt, handleDpadAction('REVERSE'), opt);
+            if (l) l.addEventListener(evt, handleDpadAction('LEFT'), opt);
+            if (r) r.addEventListener(evt, handleDpadAction('RIGHT'), opt);
         });
 
-        // Gestos táctiles de deslizamiento (Swipe)
-        let touchStartX = 0, touchStartY = 0;
+        // -------------------------------------------------------------
+        // GESTOS TÁCTILES FLUIDOS DE DESLIZAMIENTO (SWIPES TABLET & SAFARI)
+        // -------------------------------------------------------------
+        // Detección segura de elementos interactivos (evita excepciones en Safari con Text nodes o SVG)
+        function isInteractiveTouchTarget(target) {
+            if (!target) return false;
+            const el = (target.nodeType === 1) ? target : target.parentElement;
+            if (!el || typeof el.closest !== 'function') return false;
+            return !!(
+                el.closest('.interactive') ||
+                el.closest('.dpad-container') ||
+                el.closest('.screen-overlay:not(.hidden)') ||
+                el.closest('button') ||
+                el.closest('a')
+            );
+        }
+
+        // Prevenir gestos nativos de zoom o navegación en WebKit / Safari
+        ['gesturestart', 'gesturechange', 'gestureend'].forEach(evt => {
+            document.addEventListener(evt, (e) => {
+                if (e.cancelable) e.preventDefault();
+            }, { passive: false });
+        });
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let isSwiping = false;
+        let swipeTriggeredInSession = false;
+        let lastTouchTime = 0;
+
         window.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 0) {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
+            lastTouchTime = Date.now();
+            if (!isPlaying || isDying) return;
+            if (isInteractiveTouchTarget(e.target)) {
+                isSwiping = false;
+                return;
+            }
+
+            const touches = (e.touches && e.touches.length > 0) ? e.touches : e.targetTouches;
+            if (touches && touches.length > 0) {
+                const t = touches[0];
+                touchStartX = t.clientX;
+                touchStartY = t.clientY;
+                touchStartTime = Date.now();
+                isSwiping = true;
+                swipeTriggeredInSession = false;
             }
         }, { passive: true });
 
+        window.addEventListener('touchmove', (e) => {
+            if (!isSwiping || !isPlaying || isDying) return;
+
+            // VITAL PARA SAFARI: preventDefault evita que Safari capture el arrastre como
+            // scroll elástico o navegación de historial (edge swipe), lo cual cancelaba el evento touch.
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+
+            const touches = (e.touches && e.touches.length > 0) ? e.touches : e.targetTouches;
+            if (!touches || touches.length === 0) return;
+
+            const t = touches[0];
+            const dx = t.clientX - touchStartX;
+            const dy = t.clientY - touchStartY;
+            const SWIPE_THRESHOLD = 24;
+
+            // Detección fluida continua durante el arrastre (tiempo real)
+            if (Math.abs(dx) >= SWIPE_THRESHOLD || Math.abs(dy) >= SWIPE_THRESHOLD) {
+                let action = null;
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    action = dx > 0 ? 'RIGHT' : 'LEFT';
+                } else {
+                    action = dy > 0 ? 'REVERSE' : 'FORWARD';
+                }
+
+                highlightDpad(action);
+                handleTankInput(action);
+                swipeTriggeredInSession = true;
+
+                // Reiniciar el origen para permitir encadenar giros sucesivos fluidamente
+                touchStartX = t.clientX;
+                touchStartY = t.clientY;
+            }
+        }, { passive: false });
+
         window.addEventListener('touchend', (e) => {
-            if (e.changedTouches.length > 0 && isPlaying && !isDying) {
-                const dx = e.changedTouches[0].clientX - touchStartX;
-                const dy = e.changedTouches[0].clientY - touchStartY;
-                if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
+            lastTouchTime = Date.now();
+            if (!isSwiping || !isPlaying || isDying) {
+                isSwiping = false;
+                return;
+            }
+            isSwiping = false;
+
+            // Deslizamientos rápidos (flicks) que finalicen antes del umbral continuo
+            const touches = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches : e.touches;
+            if (!swipeTriggeredInSession && touches && touches.length > 0) {
+                const t = touches[0];
+                const dx = t.clientX - touchStartX;
+                const dy = t.clientY - touchStartY;
+                const FLICK_THRESHOLD = 18;
+                const elapsed = Date.now() - touchStartTime;
+
+                if (elapsed < 350 && (Math.abs(dx) >= FLICK_THRESHOLD || Math.abs(dy) >= FLICK_THRESHOLD)) {
+                    let action = null;
                     if (Math.abs(dx) > Math.abs(dy)) {
-                        handleTankInput(dx > 0 ? 'RIGHT' : 'LEFT');
+                        action = dx > 0 ? 'RIGHT' : 'LEFT';
                     } else {
-                        handleTankInput(dy > 0 ? 'REVERSE' : 'FORWARD');
+                        action = dy > 0 ? 'REVERSE' : 'FORWARD';
                     }
+                    highlightDpad(action);
+                    handleTankInput(action);
                 }
             }
         }, { passive: true });
+
+        window.addEventListener('touchcancel', () => {
+            isSwiping = false;
+            swipeTriggeredInSession = false;
+        }, { passive: true });
+
+        // Soporte adicional de arrastre para Safari en escritorio / trackpad / mouse
+        let mouseStartX = 0;
+        let mouseStartY = 0;
+        let mouseStartTime = 0;
+        let isMouseDragging = false;
+        let mouseTriggeredInSession = false;
+
+        window.addEventListener('mousedown', (e) => {
+            if (Date.now() - lastTouchTime < 650) return;
+            if (!isPlaying || isDying || e.button !== 0) return;
+            if (isInteractiveTouchTarget(e.target)) {
+                isMouseDragging = false;
+                return;
+            }
+            mouseStartX = e.clientX;
+            mouseStartY = e.clientY;
+            mouseStartTime = Date.now();
+            isMouseDragging = true;
+            mouseTriggeredInSession = false;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (Date.now() - lastTouchTime < 650) return;
+            if (!isMouseDragging || !isPlaying || isDying) return;
+
+            const dx = e.clientX - mouseStartX;
+            const dy = e.clientY - mouseStartY;
+            const SWIPE_THRESHOLD = 26;
+
+            if (Math.abs(dx) >= SWIPE_THRESHOLD || Math.abs(dy) >= SWIPE_THRESHOLD) {
+                let action = null;
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    action = dx > 0 ? 'RIGHT' : 'LEFT';
+                } else {
+                    action = dy > 0 ? 'REVERSE' : 'FORWARD';
+                }
+
+                highlightDpad(action);
+                handleTankInput(action);
+                mouseTriggeredInSession = true;
+
+                mouseStartX = e.clientX;
+                mouseStartY = e.clientY;
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (Date.now() - lastTouchTime < 650) return;
+            if (!isMouseDragging || !isPlaying || isDying) {
+                isMouseDragging = false;
+                return;
+            }
+            isMouseDragging = false;
+
+            if (!mouseTriggeredInSession) {
+                const dx = e.clientX - mouseStartX;
+                const dy = e.clientY - mouseStartY;
+                const FLICK_THRESHOLD = 18;
+                const elapsed = Date.now() - mouseStartTime;
+
+                if (elapsed < 350 && (Math.abs(dx) >= FLICK_THRESHOLD || Math.abs(dy) >= FLICK_THRESHOLD)) {
+                    let action = null;
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        action = dx > 0 ? 'RIGHT' : 'LEFT';
+                    } else {
+                        action = dy > 0 ? 'REVERSE' : 'FORWARD';
+                    }
+                    highlightDpad(action);
+                    handleTankInput(action);
+                }
+            }
+        });
 
 
         // -------------------------------------------------------------
@@ -2090,7 +2339,6 @@
                     const blink = Math.sin(clock.elapsedTime * 12) > 0;
                     bot.comp.eyeMat.color.setHex(blink ? 0x00e5ff : 0x003366);
                     bot.comp.rustMat.emissive.setHex(0x002244);
-                    if (bot.comp.botGlow) bot.comp.botGlow.color.setHex(blink ? 0x00e5ff : 0x002244);
                     if (bot.comp.botBeacon) {
                         bot.comp.botBeacon.material.color.setHex(blink ? 0x00e5ff : 0x003366);
                         bot.comp.botBeacon.material.opacity = 0.95;
@@ -2099,7 +2347,6 @@
                     // Modo caza agresivo: ojos rojos encendidos
                     bot.comp.eyeMat.color.setHex(0xff1744);
                     bot.comp.rustMat.emissive.setHex(0x3d1405);
-                    if (bot.comp.botGlow) bot.comp.botGlow.color.setHex(0xff1744);
                     if (bot.comp.botBeacon) {
                         bot.comp.botBeacon.material.color.setHex(0xff1744);
                         bot.comp.botBeacon.material.opacity = 0.95;
@@ -2273,6 +2520,7 @@
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
+                updateMinimapRect();
             }
         }
 
@@ -2417,14 +2665,23 @@
         // -------------------------------------------------------------
         // RENDERIZADO DEL MINIMAPA (Vista Superior Cenital)
         // -------------------------------------------------------------
+        // RENDERIZADO DEL MINIMAPA (Vista Superior Cenital - Optimizado)
+        // -------------------------------------------------------------
+        let cachedMinimapRect = null;
+        function updateMinimapRect() {
+            const vp = document.getElementById('minimap-viewport');
+            if (vp) cachedMinimapRect = vp.getBoundingClientRect();
+        }
+
+        const minimapClearColor = new THREE.Color(0x060919);
+        const origClearColor = new THREE.Color();
+
         function renderMinimap() {
             if (!renderer || !scene || !minimapCamera) return;
-            const vp = document.getElementById('minimap-viewport');
-            if (!vp) return;
+            if (!cachedMinimapRect) updateMinimapRect();
+            if (!cachedMinimapRect || cachedMinimapRect.width <= 0) return;
 
-            const rect = vp.getBoundingClientRect();
-            if (rect.width <= 0 || rect.height <= 0) return;
-
+            const rect = cachedMinimapRect;
             const sx = Math.round(rect.left);
             const sy = Math.round(window.innerHeight - rect.bottom);
             const sw = Math.round(rect.width);
@@ -2460,30 +2717,22 @@
                 voltTag.style.top = `${Math.max(4, Math.min(96, normY * 100)).toFixed(1)}%`;
             }
 
-            // Desactivar niebla temporalmente para que la vista superior sea nítida y brillante
-            const savedFog = scene.fog;
-            scene.fog = null;
-
-            // Renderizar minimapa en la ventana de recorte
+            // Renderizar minimapa en la ventana de recorte (Sin conmutar niebla para evitar recompilación de shaders)
             renderer.setScissorTest(true);
             renderer.setScissor(sx, sy, sw, sh);
             renderer.setViewport(sx, sy, sw, sh);
 
-            const origClearColor = new THREE.Color();
             renderer.getClearColor(origClearColor);
             const origClearAlpha = renderer.getClearAlpha();
 
-            renderer.setClearColor(0x060919, 1.0);
+            renderer.setClearColor(minimapClearColor, 1.0);
             renderer.clear(true, true, true);
 
-            renderer.shadowMap.autoUpdate = false;
             renderer.render(scene, minimapCamera);
-            renderer.shadowMap.autoUpdate = true;
 
             // Restaurar configuración original
             renderer.setClearColor(origClearColor, origClearAlpha);
             renderer.setScissorTest(false);
-            scene.fog = savedFog;
         }
 
         // -------------------------------------------------------------
@@ -2499,6 +2748,7 @@
                 const panel = document.getElementById('minimap-panel');
                 const isEnlarged = panel.classList.toggle('enlarged');
                 document.getElementById('minimap-size-label').textContent = isEnlarged ? 'REDUCIR' : 'AMPLIAR';
+                setTimeout(updateMinimapRect, 270);
             });
         }
 

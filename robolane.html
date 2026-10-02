@@ -30,6 +30,8 @@
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
     }
 
     body, html {
@@ -39,6 +41,9 @@
       font-family: 'Outfit', sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
+      touch-action: none;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: auto;
     }
 
     #webgl-container {
@@ -295,15 +300,18 @@
 
     /* Barra de Progreso de Puerta / Cuenta atrás de 4s */
     .timer-container {
-      width: calc(100% - 50px);
-      margin: 0 auto 20px auto;
-      max-width: 600px;
-      background: rgba(255, 255, 255, 0.05);
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(540px, 85vw);
+      background: rgba(255, 255, 255, 0.06);
       border: 1px solid var(--panel-border);
       border-radius: 10px;
-      height: 8px;
+      height: 6px;
       overflow: hidden;
-      position: relative;
+      z-index: 12;
+      pointer-events: none;
     }
 
     .timer-bar {
@@ -314,40 +322,122 @@
       transition: width 0.1s linear;
     }
 
-    /* Controles Táctiles Laterales + Saltar */
+    /* Controles Táctiles Gigantes para Tablet */
     .touch-controls {
       position: absolute;
-      bottom: 40px;
+      top: 0;
+      left: 0;
       width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 40px;
-      z-index: 15;
+      height: 100%;
+      pointer-events: none;
+      z-index: 25;
     }
 
     .ctrl-btn {
-      width: 75px;
-      height: 75px;
-      border-radius: 50%;
-      background: rgba(15, 20, 42, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(8px);
+      position: absolute;
+      pointer-events: auto;
+      border: none;
+      outline: none;
+      cursor: pointer;
       display: flex;
       justify-content: center;
       align-items: center;
-      color: #fff;
-      font-size: 24px;
-      cursor: pointer;
-      box-shadow: var(--glass-glow);
-      transition: all 0.2s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
     }
 
-    .ctrl-btn:active {
-      transform: scale(0.9);
-      background: rgba(0, 229, 255, 0.2);
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+    /* Botones de movimiento gigantes a cada lado del carril a media altura vertical */
+    .ctrl-btn-lane {
+      top: 50%;
+      transform: translateY(-50%);
+      width: 112px;
+      height: 112px;
+      border-radius: 50%;
+      background: rgba(13, 17, 38, 0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      opacity: 0.65;
+    }
+
+    .ctrl-btn-left {
+      left: max(18px, calc(50% - 335px));
+      border: 2.5px solid rgba(0, 229, 255, 0.55);
+      color: #00e5ff;
+      box-shadow: 0 0 25px rgba(0, 229, 255, 0.25), inset 0 0 15px rgba(0, 229, 255, 0.1);
+    }
+
+    .ctrl-btn-right {
+      right: max(18px, calc(50% - 335px));
+      border: 2.5px solid rgba(245, 0, 87, 0.55);
+      color: #ff4081;
+      box-shadow: 0 0 25px rgba(245, 0, 87, 0.25), inset 0 0 15px rgba(245, 0, 87, 0.1);
+    }
+
+    .ctrl-btn-left:active, .ctrl-btn-left.touch-active {
+      transform: translateY(-50%) scale(0.92);
+      opacity: 0.98;
+      background: rgba(0, 229, 255, 0.28);
+      border-color: #00e5ff;
+      box-shadow: 0 0 40px rgba(0, 229, 255, 0.7), inset 0 0 20px rgba(0, 229, 255, 0.3);
+    }
+
+    .ctrl-btn-right:active, .ctrl-btn-right.touch-active {
+      transform: translateY(-50%) scale(0.92);
+      opacity: 0.98;
+      background: rgba(245, 0, 87, 0.28);
+      border-color: #ff4081;
+      box-shadow: 0 0 40px rgba(245, 0, 87, 0.7), inset 0 0 20px rgba(245, 0, 87, 0.3);
+    }
+
+    /* Botón de salto gigante debajo del robot */
+    .ctrl-btn-jump {
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(340px, 68vw);
+      height: 68px;
+      border-radius: 34px;
+      background: rgba(13, 17, 38, 0.55);
+      border: 2.5px solid rgba(0, 229, 255, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #ffffff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      opacity: 0.7;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 0 25px rgba(0, 229, 255, 0.25);
+    }
+
+    .ctrl-btn-jump:active, .ctrl-btn-jump.touch-active {
+      transform: translateX(-50%) scale(0.95);
+      opacity: 1;
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.35) 0%, rgba(170, 0, 255, 0.35) 100%);
+      border-color: #00e5ff;
+      box-shadow: 0 0 45px rgba(0, 229, 255, 0.75);
+    }
+
+    @media (max-width: 768px) {
+      .ctrl-btn-lane {
+        width: 86px;
+        height: 86px;
+      }
+      .ctrl-btn-left {
+        left: 12px;
+      }
+      .ctrl-btn-right {
+        right: 12px;
+      }
+      .ctrl-btn-jump {
+        width: min(290px, 80vw);
+        height: 60px;
+        font-size: 17px;
+        bottom: 18px;
+      }
     }
 
     /* Overlays de Pantalla */
@@ -714,11 +804,26 @@
     <!-- Toast de Feedback -->
     <div class="feedback-toast" id="feedback-toast">¡CORRECTO!</div>
 
-    <!-- Controles Táctiles (Bottom) -->
-    <div class="touch-controls interactive">
-      <div class="ctrl-btn" id="btn-left">◀</div>
-      <div class="ctrl-btn" id="btn-jump" style="width: 120px; border-radius: 20px; font-size: 14px; font-weight: bold; font-family: 'Orbitron';">SALTAR</div>
-      <div class="ctrl-btn" id="btn-right">▶</div>
+    <!-- Controles Táctiles Gigantes para Tablet -->
+    <div class="touch-controls" id="touch-controls-layer">
+      <button class="ctrl-btn ctrl-btn-lane ctrl-btn-left interactive" id="btn-left" aria-label="Mover a carril izquierdo">
+        <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
+
+      <button class="ctrl-btn ctrl-btn-jump interactive" id="btn-jump" aria-label="Saltar obstáculo">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+          <path d="M12 19V5M5 12l7-7 7 7"/>
+        </svg>
+        <span>SALTAR</span>
+      </button>
+
+      <button class="ctrl-btn ctrl-btn-lane ctrl-btn-right interactive" id="btn-right" aria-label="Mover a carril derecho">
+        <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </button>
     </div>
 
     <!-- Temporizador de Puerta -->
@@ -727,7 +832,31 @@
     </div>
   </div>
 
-<!-- Pantalla Cuenta Atrás -->
+  <!-- Pantalla de Inicio -->
+  <div class="overlay" id="menu-overlay">
+    <div class="card">
+      <h1>ROBO·LANE</h1>
+      <p style="color: var(--accent-cyan); font-family: 'Orbitron'; font-weight: 700; letter-spacing: 1px;">EL TREADMILL DE COLORES</p>
+      
+      <div class="story-box">
+        <p>Tu robot <b>Volt</b> ha sido decolorado y está atrapado en una cinta sin fin en el hiperespacio.</p>
+        <p>Elige las puertas correctas según el objetivo 3D. <b>¡Cuidado con los bloques de advertencia naranja!</b> Debes saltarlos o esquivarlos. ¡Un choque destruye al robot!</p>
+      </div>
+
+      <ul class="rules-list">
+        <li><b>1.</b> Hay <b>7 partes</b> para pintar: Torso, Cabeza, Brazos, Panel, Piernas, Cuello y Antena.</li>
+        <li><b>2.</b> Las puertas de colores y los obstáculos aparecen alternadamente.</li>
+        <li><b>3.</b> Controles: <b>Flechas Izquierda / Derecha</b> o <b>A / D</b> para esquivar.</li>
+        <li><b>4.</b> <b>Barra Espaciadora</b> o botón central <b>SALTAR</b> para saltar obstáculos.</li>
+        <li><b>5.</b> Logra un <b>80% de aciertos</b> (mínimo 6/7) sin chocar para ganar.</li>
+      </ul>
+
+      <button class="btn-action" id="btn-start">INICIAR CARRERA</button>
+      <button class="btn-action" id="btn-exit-hub" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); box-shadow: none;">VOLVER AL MENÚ</button>
+    </div>
+  </div>
+
+  <!-- Pantalla Cuenta Atrás -->
   <div class="overlay hidden" id="countdown-overlay">
     <div class="countdown-num" id="countdown-num">3</div>
   </div>
@@ -2236,9 +2365,140 @@
         }
       });
 
-      $('#btn-left').addEventListener('click', moveLeft);
-      $('#btn-right').addEventListener('click', moveRight);
-      $('#btn-jump').addEventListener('click', triggerJump);
+      // Enlace táctil optimizado para respuesta inmediata en tablets
+      function bindTouchButton(btn, action) {
+        if (!btn) return;
+        
+        const trigger = (e) => {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          btn.classList.add('touch-active');
+          action();
+        };
+
+        const release = (e) => {
+          if (e) e.stopPropagation();
+          btn.classList.remove('touch-active');
+        };
+
+        btn.addEventListener('pointerdown', trigger);
+        btn.addEventListener('pointerup', release);
+        btn.addEventListener('pointercancel', release);
+        btn.addEventListener('pointerleave', release);
+
+        // Prevenir click duplicado cuando pointerdown ya fue ejecutado
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
+      }
+
+      bindTouchButton($('#btn-left'), moveLeft);
+      bindTouchButton($('#btn-right'), moveRight);
+      bindTouchButton($('#btn-jump'), triggerJump);
+
+      // -------------------------------------------------------------
+      // GESTOS TÁCTILES EN TABLET & SAFARI (SWIPES LATERALES Y SALTO)
+      // -------------------------------------------------------------
+      function isInteractiveTarget(target) {
+        if (!target) return false;
+        const el = (target.nodeType === 1) ? target : target.parentElement;
+        if (!el || typeof el.closest !== 'function') return false;
+        return !!(
+          el.closest('.interactive') ||
+          el.closest('.overlay:not(.hidden)') ||
+          el.closest('button') ||
+          el.closest('a')
+        );
+      }
+
+      ['gesturestart', 'gesturechange', 'gestureend'].forEach(evt => {
+        document.addEventListener(evt, (e) => {
+          if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+      });
+
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartTime = 0;
+      let gestureActive = false;
+
+      window.addEventListener('touchstart', (e) => {
+        if (gameState !== 'playing') return;
+        // Ignorar gestos si se tocó dentro de botones interactivos o modales
+        if (isInteractiveTarget(e.target)) {
+          gestureActive = false;
+          return;
+        }
+
+        const touches = (e.touches && e.touches.length > 0) ? e.touches : e.targetTouches;
+        if (touches && touches.length > 0) {
+          const t = touches[0];
+          touchStartX = t.clientX;
+          touchStartY = t.clientY;
+          touchStartTime = Date.now();
+          gestureActive = true;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if (!gestureActive || gameState !== 'playing') return;
+
+        // VITAL PARA SAFARI: evitar que capture el arrastre como scroll elástico de página
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+
+        const touches = (e.touches && e.touches.length > 0) ? e.touches : e.targetTouches;
+        if (!touches || touches.length === 0) return;
+
+        const t = touches[0];
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
+
+        // Detección de deslizamiento horizontal (swipe izq/der)
+        const HORIZ_SWIPE_THRESHOLD = 32;
+        if (Math.abs(dx) > HORIZ_SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          if (dx < 0) {
+            moveLeft();
+          } else {
+            moveRight();
+          }
+          // Reiniciar origen para permitir cambios sucesivos de carril
+          touchStartX = t.clientX;
+          touchStartY = t.clientY;
+        }
+      }, { passive: false });
+
+      window.addEventListener('touchend', (e) => {
+        if (!gestureActive || gameState !== 'playing') return;
+        gestureActive = false;
+
+        const duration = Date.now() - touchStartTime;
+        const touches = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches : e.touches;
+        if (!touches || touches.length === 0) return;
+
+        const t = touches[0];
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
+        const dist = Math.hypot(dx, dy);
+
+        // Gesto de deslizar hacia arriba -> SALTAR
+        if (dy < -38 && Math.abs(dy) > Math.abs(dx) * 1.15) {
+          triggerJump();
+          return;
+        }
+
+        // Toque simple en la pantalla (Tap rápido) -> SALTAR
+        if (dist < 18 && duration < 320) {
+          triggerJump();
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchcancel', () => {
+        gestureActive = false;
+      }, { passive: true });
       
       
 
