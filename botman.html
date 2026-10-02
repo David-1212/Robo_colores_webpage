@@ -247,11 +247,11 @@
             backdrop-filter: blur(8px);
         }
 
-        .dpad-btn:active {
-            background: rgba(0, 229, 255, 0.35);
+        .dpad-btn:active, .dpad-btn.dpad-active {
+            background: rgba(0, 229, 255, 0.45);
             border-color: var(--primary);
             color: #ffffff;
-            box-shadow: 0 0 14px rgba(0, 229, 255, 0.6);
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.75);
             transform: scale(0.92);
         }
 
@@ -835,6 +835,7 @@
             • Guía a <b>Volt</b> en 3ª persona para recolectar los engranajes dorados requeridos.<br>
             • <b>¡Sin segundas oportunidades!</b> Un solo choque con un robot oxidado desactiva a Volt (¡ganar o morir!).<br>
             • Toma los <b>Super Engranajes</b> de las esquinas para activar la <b>Sobrecarga</b> y desmantelar a los robots por <b>+200 pts</b>.<br>
+            • Controles: Botones D-Pad, <b>desliza (swipe)</b> en pantalla o teclas W/A/S/D / Flechas.<br>
             • Alterna la vista de cámara con la tecla <b>C</b> o el botón de cámara.<br><br>
             <b>SELECCIONA LA DIFICULTAD:</b>
         </p>
@@ -1883,37 +1884,124 @@
             delete keysDown[e.key.toLowerCase()];
         });
 
-        // Controles táctiles D-Pad (Tank Controls: ▲, ▼, ↶, ↷)
+        // Resaltar botón del D-Pad como respuesta visual a toques o gestos
+        function highlightDpad(action) {
+            const map = {
+                'FORWARD': 'dpad-u',
+                'REVERSE': 'dpad-d',
+                'LEFT': 'dpad-l',
+                'RIGHT': 'dpad-r'
+            };
+            const id = map[action];
+            if (id) {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.classList.add('dpad-active');
+                    setTimeout(() => btn.classList.remove('dpad-active'), 160);
+                }
+            }
+        }
+
+        // Controles táctiles D-Pad optimizados (Respuesta instantánea)
         const handleDpadAction = (action) => (e) => {
-            e.preventDefault();
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            highlightDpad(action);
             handleTankInput(action);
         };
-        ['touchstart', 'mousedown'].forEach(evt => {
-            document.getElementById('dpad-u').addEventListener(evt, handleDpadAction('FORWARD'));
-            document.getElementById('dpad-d').addEventListener(evt, handleDpadAction('REVERSE'));
-            document.getElementById('dpad-l').addEventListener(evt, handleDpadAction('LEFT'));
-            document.getElementById('dpad-r').addEventListener(evt, handleDpadAction('RIGHT'));
+
+        ['pointerdown', 'touchstart', 'mousedown'].forEach(evt => {
+            const opt = (evt === 'touchstart') ? { passive: false } : undefined;
+            const u = document.getElementById('dpad-u');
+            const d = document.getElementById('dpad-d');
+            const l = document.getElementById('dpad-l');
+            const r = document.getElementById('dpad-r');
+            if (u) u.addEventListener(evt, handleDpadAction('FORWARD'), opt);
+            if (d) d.addEventListener(evt, handleDpadAction('REVERSE'), opt);
+            if (l) l.addEventListener(evt, handleDpadAction('LEFT'), opt);
+            if (r) r.addEventListener(evt, handleDpadAction('RIGHT'), opt);
         });
 
-        // Gestos táctiles de deslizamiento (Swipe)
-        let touchStartX = 0, touchStartY = 0;
+        // -------------------------------------------------------------
+        // GESTOS TÁCTILES FLUIDOS DE DESLIZAMIENTO (SWIPES PARA TABLET)
+        // -------------------------------------------------------------
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let isSwiping = false;
+        let swipeTriggeredInSession = false;
+
         window.addEventListener('touchstart', (e) => {
+            if (!isPlaying || isDying) return;
+            // Ignorar gestos si se originan en botones interactivos, D-pad, minimapa o modales
+            if (e.target.closest('.interactive') || e.target.closest('.dpad-container') || e.target.closest('.screen-overlay:not(.hidden)')) {
+                isSwiping = false;
+                return;
+            }
+
             if (e.touches.length > 0) {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
+                const t = e.touches[0];
+                touchStartX = t.clientX;
+                touchStartY = t.clientY;
+                touchStartTime = Date.now();
+                isSwiping = true;
+                swipeTriggeredInSession = false;
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isSwiping || !isPlaying || isDying || e.touches.length === 0) return;
+
+            const t = e.touches[0];
+            const dx = t.clientX - touchStartX;
+            const dy = t.clientY - touchStartY;
+            const SWIPE_THRESHOLD = 26;
+
+            // Detección en tiempo real durante el arrastre (sin esperar a soltar el dedo)
+            if (Math.abs(dx) >= SWIPE_THRESHOLD || Math.abs(dy) >= SWIPE_THRESHOLD) {
+                let action = null;
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    action = dx > 0 ? 'RIGHT' : 'LEFT';
+                } else {
+                    action = dy > 0 ? 'REVERSE' : 'FORWARD';
+                }
+
+                highlightDpad(action);
+                handleTankInput(action);
+                swipeTriggeredInSession = true;
+
+                // Reiniciar el origen para permitir encadenar giros fluidos continuos
+                touchStartX = t.clientX;
+                touchStartY = t.clientY;
             }
         }, { passive: true });
 
         window.addEventListener('touchend', (e) => {
-            if (e.changedTouches.length > 0 && isPlaying && !isDying) {
-                const dx = e.changedTouches[0].clientX - touchStartX;
-                const dy = e.changedTouches[0].clientY - touchStartY;
-                if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
+            if (!isSwiping || !isPlaying || isDying) {
+                isSwiping = false;
+                return;
+            }
+            isSwiping = false;
+
+            // Deslizamientos rápidos (flicks) que terminen antes de cruzar el umbral continuo
+            if (!swipeTriggeredInSession && e.changedTouches.length > 0) {
+                const t = e.changedTouches[0];
+                const dx = t.clientX - touchStartX;
+                const dy = t.clientY - touchStartY;
+                const FLICK_THRESHOLD = 18;
+                const elapsed = Date.now() - touchStartTime;
+
+                if (elapsed < 300 && (Math.abs(dx) >= FLICK_THRESHOLD || Math.abs(dy) >= FLICK_THRESHOLD)) {
+                    let action = null;
                     if (Math.abs(dx) > Math.abs(dy)) {
-                        handleTankInput(dx > 0 ? 'RIGHT' : 'LEFT');
+                        action = dx > 0 ? 'RIGHT' : 'LEFT';
                     } else {
-                        handleTankInput(dy > 0 ? 'REVERSE' : 'FORWARD');
+                        action = dy > 0 ? 'REVERSE' : 'FORWARD';
                     }
+                    highlightDpad(action);
+                    handleTankInput(action);
                 }
             }
         }, { passive: true });
