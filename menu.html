@@ -603,8 +603,41 @@
   .brief-video.hidden,
   .brief-count.hidden,
   .brief-tap.hidden,
-  .brief-back.hidden {
+  .brief-back.hidden,
+  .brief-skip.hidden {
     display: none;
+  }
+
+  /* Saltar el video de instrucciones y pasar directo a la cuenta regresiva */
+  .brief-skip {
+    position: fixed;
+    right: 14px;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    z-index: 5700;
+    padding: 12px 24px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 229, 255, .45);
+    background: rgba(6, 10, 24, .72);
+    color: #d8f6ff;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .18em;
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    opacity: .6;
+    transition: opacity .2s ease, transform .15s ease;
+  }
+
+  .brief-skip:hover,
+  .brief-skip:focus-visible {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+
+  .brief-skip:active {
+    transform: scale(.96);
   }
 
   .brief-tap {
@@ -1035,6 +1068,7 @@
       <path d="M15 5 L8 12 L15 19" />
     </svg>
   </button>
+  <button id="brief-skip" class="brief-skip hidden" type="button">SALTAR VIDEO</button>
   <div id="brief-count" class="brief-count hidden"></div>
 
   
@@ -1310,6 +1344,7 @@
       const briefTap = doc.getElementById('brief-tap');
       const briefCount = doc.getElementById('brief-count');
       const briefBack = doc.getElementById('brief-back');
+      const briefSkip = doc.getElementById('brief-skip');
       
       const REQ = doc.documentElement.requestFullscreen || doc.documentElement.webkitRequestFullscreen;
       const EXIT = doc.exitFullscreen || doc.webkitExitFullscreen;
@@ -1490,6 +1525,7 @@
           briefCount.innerHTML = '';
         }
         if (briefBack) briefBack.classList.add('hidden');
+        if (briefSkip) briefSkip.classList.add('hidden');
         doc.body.classList.remove('in-brief');
       }
 
@@ -1526,6 +1562,7 @@
         if (briefVideo) briefVideo.classList.add('hidden');
         if (briefTap) briefTap.classList.add('hidden');
         if (briefBack) briefBack.classList.add('hidden');
+        if (briefSkip) briefSkip.classList.add('hidden');
 
         var steps = ['3', '2', '1', '\u00a1YA!'];
         steps.forEach(function (s, i) {
@@ -1557,6 +1594,7 @@
         enter();
         paintFs();
         if (briefBack) briefBack.classList.remove('hidden');
+        if (briefSkip) briefSkip.classList.remove('hidden');
         if (briefCount) briefCount.classList.add('hidden');
         briefVideo.src = file;
         briefVideo.classList.remove('hidden');
@@ -1591,6 +1629,15 @@
       }
 
       if (briefBack) briefBack.addEventListener('click', cancelBrief);
+
+      /* SALTAR: corta el video y arranca igual la cuenta regresiva, como si
+         el video hubiera terminado. clearBrief() limpia el estado para que la
+         cuenta no compita con el 'ended' que podria llegar despues. */
+      if (briefSkip) briefSkip.addEventListener('click', function () {
+        if (phase !== 'brief') return;
+        try { briefVideo.pause(); } catch (e) { }
+        runCountdown();
+      });
 
       function closeGame() {
         if (!frame) return;
