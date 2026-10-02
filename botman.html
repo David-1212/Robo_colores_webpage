@@ -559,6 +559,21 @@
             line-height: 1.6;
         }
 
+        /* Aviso de regreso automatico al menu (ya no hay boton de replay) */
+        .auto-return-note {
+            margin: 18px 0 0;
+            font-size: 0.8rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(164, 168, 197, .75);
+            animation: autoReturnBlink 1.8s ease-in-out infinite;
+        }
+
+        @keyframes autoReturnBlink {
+            0%, 100% { opacity: .45; }
+            50% { opacity: 1; }
+        }
+
         .btn {
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
@@ -817,11 +832,6 @@
                         <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
                     </svg>
                 </button>
-                <button id="menu-back-btn" class="control-btn" title="Volver al Menú Principal">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-                    </svg>
-                </button>
             </div>
         </footer>
     </div>
@@ -870,14 +880,7 @@
             </div>
         </div>
 
-        <div class="diff-selector" style="margin-bottom: 14px;">
-            <button type="button" class="diff-btn" data-diff="easy">FÁCIL (30)</button>
-            <button type="button" class="diff-btn active" data-diff="normal">NORMAL (50)</button>
-            <button type="button" class="diff-btn" data-diff="hard">DIFÍCIL (FULL)</button>
-        </div>
-
-        <button id="restart-btn" class="btn btn-restart">REINTENTAR SECTOR</button>
-        <button id="exit-menu-btn" class="btn btn-secondary">VOLVER AL MENÚ</button>
+        <p class="game-subtitle auto-return-note">Regresando al menu...</p>
     </div>
 
     <!-- Victory Screen Overlay -->
@@ -898,14 +901,7 @@
             </div>
         </div>
 
-        <div class="diff-selector" style="margin-bottom: 14px;">
-            <button type="button" class="diff-btn" data-diff="easy">FÁCIL (30)</button>
-            <button type="button" class="diff-btn active" data-diff="normal">NORMAL (50)</button>
-            <button type="button" class="diff-btn" data-diff="hard">DIFÍCIL (FULL)</button>
-        </div>
-
-        <button id="victory-replay-btn" class="btn">JUGAR DE NUEVO</button>
-        <button id="victory-menu-btn" class="btn btn-secondary">VOLVER AL MENÚ</button>
+        <p class="game-subtitle auto-return-note">Regresando al menu...</p>
     </div>
 
     <!-- Fullscreen Button -->
@@ -945,13 +941,6 @@
 
     <!-- Game Engine Script -->
     <script>
-        // -------------------------------------------------------------
-        // NAVEGACIÓN
-        // -------------------------------------------------------------
-        document.getElementById('menu-back-btn').addEventListener('click', () => { papirolasGoMenu(); });
-        document.getElementById('exit-menu-btn').addEventListener('click', () => { papirolasGoMenu(); });
-        document.getElementById('victory-menu-btn').addEventListener('click', () => { papirolasGoMenu(); });
-
         // -------------------------------------------------------------
         // STARFIELD BACKGROUND
         // -------------------------------------------------------------
@@ -2262,6 +2251,7 @@
 
         function endGameByDefeat() {
             isPlaying = false;
+            if (typeof papirolasGameFinished === 'function') papirolasGameFinished();
             document.getElementById('final-gears').textContent = `${gearsCollected} / ${targetGears}`;
             document.getElementById('final-dismantled').textContent = dismantledCount;
             document.getElementById('final-score').textContent = score;
@@ -2270,6 +2260,7 @@
 
         function triggerVictory() {
             isPlaying = false;
+            if (typeof papirolasGameFinished === 'function') papirolasGameFinished();
             audio.playVictory();
 
             document.getElementById('victory-gears').textContent = `${gearsCollected} / ${targetGears}`;
@@ -2499,8 +2490,6 @@
         // INICIO Y REINICIO
         // -------------------------------------------------------------
         document.getElementById('start-btn').addEventListener('click', startNewGame);
-        document.getElementById('restart-btn').addEventListener('click', startNewGame);
-        document.getElementById('victory-replay-btn').addEventListener('click', startNewGame);
         document.getElementById('cam-btn').addEventListener('click', toggleCameraMode);
 
         const minimapSizeBtn = document.getElementById('minimap-size-btn');
@@ -2521,10 +2510,10 @@
             });
         });
 
-        const goToMenu = () => { papirolasGoMenu(); };
-        document.getElementById('menu-back-btn').addEventListener('click', goToMenu);
-        document.getElementById('exit-menu-btn').addEventListener('click', goToMenu);
-        document.getElementById('victory-menu-btn').addEventListener('click', goToMenu);
+        /* La dificultad se elige en el menu principal y llega por ?nivel= */
+        const qsDiff = new URLSearchParams(location.search).get('nivel');
+        const VALID_DIFF = ['easy', 'normal', 'hard'];
+        if (VALID_DIFF.includes(qsDiff)) setDifficulty(qsDiff);
 
         function startNewGame() {
             audio.init();
@@ -2547,6 +2536,9 @@
             clock.start();
             gameLoop();
         }
+
+        /* Las instrucciones ahora las da el video del menu: arrancamos directo */
+        startNewGame();
     </script>
 </body>
 </html>

@@ -442,7 +442,23 @@
       color: #fff;
     }
 
-    .btn-action {
+    /* Aviso de regreso automatico al menu (ya no hay boton de REPETIR) */
+.auto-return-note {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(220, 230, 255, .7);
+  animation: autoReturnBlink 1.8s ease-in-out infinite;
+}
+
+@keyframes autoReturnBlink {
+  0%, 100% { opacity: .45; }
+  50% { opacity: 1; }
+}
+
+.btn-action {
       background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
       color: white;
       border: none;
@@ -711,31 +727,7 @@
     </div>
   </div>
 
-  <!-- Pantalla de Inicio -->
-  <div class="overlay" id="menu-overlay">
-    <div class="card">
-      <h1>ROBO·LANE</h1>
-      <p style="color: var(--accent-cyan); font-family: 'Orbitron'; font-weight: 700; letter-spacing: 1px;">EL TREADMILL DE COLORES</p>
-      
-      <div class="story-box">
-        <p>Tu robot <b>Volt</b> ha sido decolorado y está atrapado en una cinta sin fin en el hiperespacio.</p>
-        <p>Elige las puertas correctas según el objetivo 3D. <b>¡Cuidado con los bloques de advertencia naranja!</b> Debes saltarlos o esquivarlos. ¡Un choque destruye al robot!</p>
-      </div>
-
-      <ul class="rules-list">
-        <li><b>1.</b> Hay <b>7 partes</b> para pintar: Torso, Cabeza, Brazos, Panel, Piernas, Cuello y Antena.</li>
-        <li><b>2.</b> Las puertas de colores y los obstáculos aparecen alternadamente.</li>
-        <li><b>3.</b> Controles: <b>Flechas Izquierda / Derecha</b> o <b>A / D</b> para esquivar.</li>
-        <li><b>4.</b> <b>Barra Espaciadora</b> o botón central <b>SALTAR</b> para saltar obstáculos.</li>
-        <li><b>5.</b> Logra un <b>80% de aciertos</b> (mínimo 6/7) sin chocar para ganar.</li>
-      </ul>
-
-      <button class="btn-action" id="btn-start">INICIAR CARRERA</button>
-      <button class="btn-action" id="btn-exit-hub" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); box-shadow: none;">VOLVER AL MENÚ</button>
-    </div>
-  </div>
-
-  <!-- Pantalla Cuenta Atrás -->
+<!-- Pantalla Cuenta Atrás -->
   <div class="overlay hidden" id="countdown-overlay">
     <div class="countdown-num" id="countdown-num">3</div>
   </div>
@@ -777,10 +769,7 @@
         </table>
       </div>
 
-      <div style="display: flex; gap: 15px; width: 100%;">
-        <button class="btn-action" id="btn-replay" style="flex: 1; margin-top: 0;">REPETIR</button>
-        <button class="btn-action" id="btn-main-menu" style="flex: 1; margin-top: 0; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); box-shadow: none;">MENÚ</button>
-      </div>
+      <p class="auto-return-note">Regresando al menu...</p>
     </div>
   </div>
 
@@ -900,7 +889,6 @@
       // ELEMENTOS DEL DOM
       // -------------------------------------------------------------
       const $ = s => document.querySelector(s);
-      const menuOverlay = $('#menu-overlay');
       const countdownOverlay = $('#countdown-overlay');
       const countdownNum = $('#countdown-num');
       const resultOverlay = $('#result-overlay');
@@ -1931,7 +1919,10 @@
 
       function endGameByCrash() {
         gameState = 'gameover';
-        
+
+        /* Fin de partida por choque: el menu vuelve solo a los 5 s */
+        if (typeof papirolasGameFinished === 'function') papirolasGameFinished();
+
         const titleEl = $('#result-title');
         const messageEl = $('#result-message');
         const verdictEl = $('#res-verdict');
@@ -2014,7 +2005,8 @@
         }
       }
 
-      function startNewGame() {
+      /* Las instrucciones ahora las da el video del menu: arrancamos directo */
+        function startNewGame() {
         getAudioContext();
         
         score = 0;
@@ -2041,7 +2033,6 @@
         updateHUDBlueprints();
         updateHUDStats();
 
-        menuOverlay.classList.add('hidden');
         resultOverlay.classList.add('hidden');
         
         startCountdown();
@@ -2165,7 +2156,10 @@
 
       function endGame() {
         gameState = 'gameover';
-        
+
+        /* Fin de partida: el menu vuelve solo a los 5 s */
+        if (typeof papirolasGameFinished === 'function') papirolasGameFinished();
+
         const pct = Math.round((score / 7) * 100);
         const victory = pct >= 80;
 
@@ -2246,11 +2240,7 @@
       $('#btn-right').addEventListener('click', moveRight);
       $('#btn-jump').addEventListener('click', triggerJump);
       
-      $('#btn-start').addEventListener('click', startNewGame);
-      $('#btn-replay').addEventListener('click', startNewGame);
       
-      $('#btn-main-menu').addEventListener('click', () => { papirolasGoMenu(); });
-      $('#btn-exit-hub').addEventListener('click', () => { papirolasGoMenu(); });
 
       // -------------------------------------------------------------
       // LOOP DE JUEGO Y RENDER
@@ -2359,6 +2349,9 @@
       }
 
       animate();
+
+      /* Las instrucciones ahora las da el video del menu: arrancamos directo */
+      startNewGame();
 
     })();
   </script>

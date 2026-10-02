@@ -96,6 +96,7 @@
       background: linear-gradient(160deg, rgba(23, 30, 60, .92), rgba(12, 15, 32, .92));
       border: 1px solid rgba(120, 150, 255, .35);
       box-shadow: 0 18px 50px rgba(0, 0, 0, .5);
+      -webkit-backdrop-filter: blur(6px);
       backdrop-filter: blur(6px);
       overflow: hidden;
       text-decoration: none;
@@ -264,6 +265,7 @@
       border-radius: 16px;
       background: rgba(14, 19, 46, .72);
       border: 1px solid rgba(120, 150, 255, .25);
+      -webkit-backdrop-filter: blur(6px);
       backdrop-filter: blur(6px);
       box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
       opacity: .92;
@@ -317,9 +319,17 @@
       right: 18px;
     }
 
+    /* El logo ":_" no lleva imagen: solo el texto en blanco */
     .corner-logo.tr {
       top: 18px;
       right: 18px;
+      padding: 9px 18px;
+    }
+
+    .corner-logo.tr .cl-text strong {
+      color: #ffffff;
+      font-size: 20px;
+      letter-spacing: .1em;
     }
 
     /* Botón de música */
@@ -381,8 +391,9 @@
     /* Botón de pantalla completa */
     .fs-btn {
       position: fixed;
-      right: 22px;
+      left: 50%;
       top: 22px;
+      transform: translateX(-50%);
       z-index: 3;
       width: 54px;
       height: 54px;
@@ -398,11 +409,11 @@
     }
 
     .fs-btn:hover {
-      transform: scale(1.1);
+      transform: translateX(-50%) scale(1.1);
     }
 
     .fs-btn:active {
-      transform: scale(.95);
+      transform: translateX(-50%) scale(.95);
     }
 
     .fs-btn svg path {
@@ -527,6 +538,19 @@
       .corner-logo {
         display: none;
       }
+
+      /* El logo ":_" si se muestra en movil: es solo texto, no ocupa lugar */
+      .corner-logo.tr {
+        display: flex;
+        top: 12px;
+        right: 12px;
+        padding: 6px 12px;
+        border-radius: 12px;
+      }
+
+      .corner-logo.tr .cl-text strong {
+        font-size: 15px;
+      }
     }
 
     @media (max-width: 340px) {
@@ -565,12 +589,176 @@
     display: none;
   }
 
-  /* Controles del hub durante el juego:Offsets centro superior para no
-     tapar el HUD de los juegos (que usan las esquinas). */
+  /* ===== Video de instrucciones + cuenta regresiva ===== */
+  .brief-video {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+    z-index: 5500;
+  }
+
+  .brief-video.hidden,
+  .brief-count.hidden,
+  .brief-tap.hidden,
+  .brief-back.hidden {
+    display: none;
+  }
+
+  .brief-tap {
+    position: fixed;
+    left: 50%;
+    bottom: 14%;
+    transform: translateX(-50%);
+    z-index: 5600;
+    padding: 14px 26px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 229, 255, .5);
+    background: rgba(6, 10, 24, .8);
+    color: #d8f6ff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .18em;
+    cursor: pointer;
+  }
+
+  .brief-count {
+    position: fixed;
+    inset: 0;
+    z-index: 5600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #04060d;
+    font-family: 'Orbitron', 'Segoe UI', sans-serif;
+    font-size: clamp(120px, 26vw, 260px);
+    font-weight: 900;
+    line-height: 1;
+    color: #eaf6ff;
+    text-shadow: 0 0 40px rgba(0, 229, 255, .8);
+  }
+
+  .brief-count.pop .bc-num {
+    animation: briefPop .62s ease-out;
+  }
+
+  .brief-count .bc-num {
+    display: block;
+  }
+
+  @keyframes briefPop {
+    0% { transform: scale(1.7); opacity: 0; }
+    22% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(.92); opacity: .85; }
+  }
+
+  /* Selector de dificultad: se despliega dentro de la tarjeta, justo debajo
+     del boton JUGAR. */
+  .card-diff {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .card-diff.open {
+    display: flex;
+  }
+
+  .card-diff-label {
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: rgba(0, 229, 255, .85);
+  }
+
+  .card-diff-opt {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(120, 150, 255, .3);
+    background: rgba(8, 13, 32, .75);
+    color: #dfe8ff;
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+    transition: transform .15s ease, border-color .2s ease, background .2s ease;
+  }
+
+  .card-diff-opt:hover,
+  .card-diff-opt:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(0, 229, 255, .75);
+    background: rgba(16, 26, 58, .9);
+    outline: none;
+  }
+
+  .card-diff-opt:active {
+    transform: translateY(0);
+  }
+
+  .card-diff-opt-name {
+    font-size: .82rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+
+  .card-diff-opt-desc {
+    font-size: .7rem;
+    color: rgba(200, 214, 255, .65);
+  }
+
+  /* Salir al menu mientras se reproduce el video */
+  .brief-back {
+    position: fixed;
+    top: 70px;
+    left: 10px;
+    z-index: 5700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 229, 255, .45);
+    background: rgba(6, 10, 24, .7);
+    color: #d8f6ff;
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    opacity: .5;
+    transition: opacity .2s ease, transform .15s ease;
+  }
+
+  .brief-back:hover,
+  .brief-back:focus-visible {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  body.in-brief .menu,
+  body.in-brief .corner-logo,
+  body.in-brief #bg-anim {
+    display: none;
+  }
+
+  /* Controles del hub durante el juego: centrados arriba, en espejo del boton
+     de musica (que va centrado abajo). Asi no tapa el HUD de los juegos,
+     que usa las esquinas. */
   .hub-bar {
     position: fixed;
     top: max(10px, env(safe-area-inset-top));
-    right: 10px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 6000;
     display: flex;
     align-items: center;
@@ -579,6 +767,7 @@
     border-radius: 999px;
     background: rgba(6, 10, 24, .6);
     border: 1px solid rgba(0, 229, 255, .26);
+    -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, .45);
     opacity: .45;
@@ -667,6 +856,12 @@
     <div class="cl-text">
       <strong>CÓMPUTO APLICADO</strong>
       <span>Maestría · CUCEI</span>
+    </div>
+  </div>
+
+  <div class="corner-logo tr">
+    <div class="cl-text">
+      <strong>[_cuceiMobile]</strong>
     </div>
   </div>
 
@@ -829,6 +1024,20 @@
   <!-- Escenario de juego: mantiene la pantalla completa al cambiar de juego -->
   <iframe id="stage-frame" class="hidden" title="Juego" allow="fullscreen; autoplay; gamepad"
     allowfullscreen></iframe>
+
+  <!-- Video de instrucciones antes de cada juego -->
+  <video id="brief-video" class="brief-video hidden" playsinline webkit-playsinline preload="auto"></video>
+  <button id="brief-tap" class="brief-tap hidden" type="button">TOCA PARA VER EL VIDEO</button>
+  <button id="brief-back" class="brief-back hidden" type="button" title="Volver al menú"
+    aria-label="Volver al menú">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M15 5 L8 12 L15 19" />
+    </svg>
+  </button>
+  <div id="brief-count" class="brief-count hidden"></div>
+
+  
 
   <!-- Control de pantalla completa durante el juego (el boton de back va dentro del juego) -->
   <div id="hub-bar" class="hub-bar hidden">
@@ -1097,8 +1306,54 @@
       const bar = doc.getElementById('hub-bar');
       const fsBtn = doc.getElementById('fs-btn');
       const hubFs = doc.getElementById('hub-fs');
+      const briefVideo = doc.getElementById('brief-video');
+      const briefTap = doc.getElementById('brief-tap');
+      const briefCount = doc.getElementById('brief-count');
+      const briefBack = doc.getElementById('brief-back');
+      
       const REQ = doc.documentElement.requestFullscreen || doc.documentElement.webkitRequestFullscreen;
       const EXIT = doc.exitFullscreen || doc.webkitExitFullscreen;
+
+      /* Video de instrucciones de cada juego.
+         Convertidos a H.264 / yuv420p porque los originales en HEVC Main 10
+         no los reproducia el navegador (pantalla negra con audio). */
+      const BRIEF = {
+        'robotcolores.html': 'assets/video/juegos/robo_colores.mp4',
+        'secuenciador.html': 'assets/video/juegos/secuenciador_3D.mp4',
+        'botman.html': 'assets/video/juegos/botman.mp4',
+        'robolane.html': 'assets/video/juegos/robo_lane.mp4'
+      };
+
+      /* Dificultad de los juegos que la tienen. Se elige aqui, en el menu,
+         y se pasa al juego por la URL (?nivel=...) para que no tenga que
+         mostrar su propia pantalla de inicio.
+         Opciones por defecto: indice 1 (MEDIO / NORMAL). */
+      const DIFF = {
+        'robotcolores.html': {
+          label: 'Dificultad',
+          options: [
+            { id: 'facil', name: 'FÁCIL', desc: '3 a 4 colores' },
+            { id: 'medio', name: 'MEDIO', desc: '3 a 5 colores' },
+            { id: 'dificil', name: 'DIFÍCIL', desc: '3 a 6 colores' }
+          ]
+        },
+        'botman.html': {
+          label: 'Dificultad',
+          options: [
+            { id: 'easy', name: 'FÁCIL', desc: '30 engranajes' },
+            { id: 'normal', name: 'NORMAL', desc: '50 engranajes' },
+            { id: 'hard', name: 'DIFÍCIL', desc: 'Sector completo' }
+          ]
+        }
+      };
+
+      let phase = 'idle';
+      let briefTimers = [];
+      let pendingSrc = '';
+      let pendingLevel = '';
+      let diffGame = '';
+      let diffBox = null;
+      let diffGo = null;
 
       function isFull() {
         return !!doc.fullscreenElement || !!doc.webkitFullscreenElement;
@@ -1142,17 +1397,207 @@
 
       function openGame(src) {
         if (!frame || !src) return;
+        clearBrief();
+        closeDiff();
+        phase = 'game';
         doc.body.classList.add('in-game');
         frame.classList.remove('hidden');
         bar.classList.remove('hidden');
         pauseMenuMusic();
-        if (frame.getAttribute('src') !== src) frame.setAttribute('src', src);
+        /* La dificultad elegida viaja en la URL del juego */
+        var url = pendingLevel ? (src + '?nivel=' + pendingLevel) : src;
+        pendingLevel = '';
+        if (frame.getAttribute('src') !== url) frame.setAttribute('src', url);
         enter();
         paintFs();
       }
 
+      /* ---------- Selector de dificultad del menu ---------- */
+
+      function closeDiff() {
+        if (diffBox) {
+          diffBox.classList.remove('open');
+          diffBox.innerHTML = '';
+        }
+        if (diffGo) diffGo.style.display = '';
+        diffGame = '';
+      }
+
+      /* Se despliega dentro de la tarjeta, justo debajo del boton JUGAR. */
+      function openDiff(src, card) {
+        var cfg = DIFF[src];
+        if (!cfg || !card) { openBrief(src); return; }
+
+        if (diffGame && diffGame !== src) closeDiff();
+
+        diffGame = src;
+        diffBox = card.querySelector('.card-diff');
+        diffGo = card.querySelector('.game-go');
+        if (!diffBox) {
+          /* La tarjeta no tiene contenedor: se crea despues del boton JUGAR */
+          diffBox = doc.createElement('div');
+          diffBox.className = 'card-diff';
+          if (diffGo) diffGo.insertAdjacentElement('afterend', diffBox);
+          else card.appendChild(diffBox);
+        }
+        if (diffGo) diffGo.style.display = 'none';
+
+        diffBox.innerHTML = '';
+        var label = doc.createElement('div');
+        label.className = 'card-diff-label';
+        label.textContent = cfg.label;
+        diffBox.appendChild(label);
+
+        cfg.options.forEach(function (o) {
+          var b = doc.createElement('button');
+          b.type = 'button';
+          b.className = 'card-diff-opt';
+          var nm = doc.createElement('span');
+          nm.className = 'card-diff-opt-name';
+          nm.textContent = o.name;
+          var ds = doc.createElement('span');
+          ds.className = 'card-diff-opt-desc';
+          ds.textContent = o.desc;
+          b.appendChild(nm);
+          b.appendChild(ds);
+          b.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            pendingLevel = o.id;
+            closeDiff();
+            openBrief(src);
+          });
+          diffBox.appendChild(b);
+        });
+
+        diffBox.classList.add('open');
+      }
+
+      /* ---------- Video de instrucciones ---------- */
+
+      function clearBrief() {
+        briefTimers.forEach(clearTimeout);
+        briefTimers = [];
+        pendingSrc = '';
+        if (briefVideo) {
+          try { briefVideo.pause(); } catch (e) { }
+          briefVideo.removeAttribute('src');
+          briefVideo.classList.add('hidden');
+        }
+        if (briefTap) briefTap.classList.add('hidden');
+        if (briefCount) {
+          briefCount.classList.add('hidden');
+          briefCount.innerHTML = '';
+        }
+        if (briefBack) briefBack.classList.add('hidden');
+        doc.body.classList.remove('in-brief');
+      }
+
+      function beep(ok) {
+        try {
+          var actx = window.__menuAudio;
+          if (!actx) return;
+          var o = actx.createOscillator();
+          var g = actx.createGain();
+          o.type = 'triangle';
+          o.frequency.value = ok ? 880 : 440;
+          o.connect(g);
+          g.connect(actx.destination);
+          g.gain.setValueAtTime(0.0001, actx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.12, actx.currentTime + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.16);
+          o.start();
+          o.stop(actx.currentTime + 0.2);
+        } catch (e) { }
+      }
+
+      function cancelBrief() {
+        if (phase !== 'brief' && phase !== 'count') return;
+        clearBrief();
+        phase = 'idle';
+        closeDiff();
+        resumeMenuMusic();
+      }
+
+      function runCountdown() {
+        var src = pendingSrc;
+        if (!src) return;
+        phase = 'count';
+        if (briefVideo) briefVideo.classList.add('hidden');
+        if (briefTap) briefTap.classList.add('hidden');
+        if (briefBack) briefBack.classList.add('hidden');
+
+        var steps = ['3', '2', '1', '\u00a1YA!'];
+        steps.forEach(function (s, i) {
+          briefTimers.push(setTimeout(function () {
+            if (phase !== 'count') return;
+            if (briefCount) {
+              briefCount.innerHTML = '<span class="bc-num">' + s + '</span>';
+              briefCount.classList.remove('hidden', 'pop');
+              void briefCount.offsetWidth;
+              briefCount.classList.add('pop');
+            }
+            beep(i === steps.length - 1);
+          }, i * 650));
+        });
+        briefTimers.push(setTimeout(function () {
+          if (phase !== 'count') return;
+          openGame(src);
+        }, steps.length * 650 + 250));
+      }
+
+      function openBrief(src) {
+        var file = BRIEF[src];
+        if (!frame || !file) { openGame(src); return; }
+        clearBrief();
+        phase = 'brief';
+        pendingSrc = src;
+        doc.body.classList.add('in-brief');
+        pauseMenuMusic();
+        enter();
+        paintFs();
+        if (briefBack) briefBack.classList.remove('hidden');
+        if (briefCount) briefCount.classList.add('hidden');
+        briefVideo.src = file;
+        briefVideo.classList.remove('hidden');
+
+        var playing = briefVideo.play();
+        if (playing && playing.catch) {
+          playing.catch(function () {
+            /* Autoplay bloqueado: pedimos un toque para reproducir */
+            if (phase !== 'brief') return;
+            if (briefTap) briefTap.classList.remove('hidden');
+          });
+        }
+      }
+
+      if (briefVideo) {
+        briefVideo.addEventListener('ended', function () {
+          if (phase === 'brief') runCountdown();
+        });
+        briefVideo.addEventListener('error', function () {
+          if (phase === 'brief') runCountdown();
+        });
+      }
+
+      if (briefTap) {
+        briefTap.addEventListener('click', function () {
+          if (phase !== 'brief') return;
+          briefTap.classList.add('hidden');
+          briefVideo.play().catch(function () {
+            if (phase === 'brief') briefTap.classList.remove('hidden');
+          });
+        });
+      }
+
+      if (briefBack) briefBack.addEventListener('click', cancelBrief);
+
       function closeGame() {
         if (!frame) return;
+        clearBrief();
+        phase = 'idle';
+        exit();
+        closeDiff();
         doc.body.classList.remove('in-game');
         frame.classList.add('hidden');
         frame.removeAttribute('src');
@@ -1162,7 +1607,17 @@
 
       window.addEventListener('message', function (ev) {
         const d = ev && ev.data;
-        if (d && d.type === 'papirolas:menu') closeGame();
+        if (!d) return;
+        if (d.type === 'papirolas:menu') { closeGame(); return; }
+        /* Fin de partida: esperamos 5 s y volvemos al menu solo, sin contador */
+        if (d.type === 'papirolas:end') {
+          if (phase !== 'game') return;
+          phase = 'ending';
+          briefTimers.push(setTimeout(function () {
+            if (phase !== 'ending') return;
+            closeGame();
+          }, 5000));
+        }
       });
 
       if (fsBtn) fsBtn.addEventListener('click', toggle);
@@ -1171,12 +1626,34 @@
       doc.addEventListener('fullscreenchange', paintFs);
       doc.addEventListener('webkitfullscreenchange', paintFs);
 
-      /* Las tarjetas ya no navegan: el juego se carga dentro del iframe para
-         que el navegador no descargue la pagina y el fullscreen no se apague. */
+      /* Las tarjetas ya no navegan: primero se muestra el video de
+         instrucciones, luego la cuenta regresiva y al final el juego se
+         carga en el iframe (asi el fullscreen nunca se apaga). */
       doc.querySelectorAll('.game-card').forEach(function (card) {
+        /* Precarga el video al pasar el cursor: son archivos de 5-10 MB */
+        const warm = function () {
+          var file = BRIEF[card.getAttribute('href')];
+          if (!file || !briefVideo) return;
+          if (briefVideo.dataset.warm === file) return;
+          briefVideo.dataset.warm = file;
+          briefVideo.src = file;
+          briefVideo.load();
+        };
+        card.addEventListener('mouseenter', warm);
+        card.addEventListener('focus', warm);
+        card.addEventListener('touchstart', warm, { passive: true });
+
         card.addEventListener('click', function (ev) {
           ev.preventDefault();
-          openGame(card.getAttribute('href'));
+          var src = card.getAttribute('href');
+          if (phase === 'brief' || phase === 'count') return;
+          /* Los juegos con dificultad despliegan las opciones bajo su boton JUGAR */
+          if (DIFF[src]) {
+            if (diffGame === src) { closeDiff(); return; }
+            openDiff(src, card);
+            return;
+          }
+          openBrief(src);
         });
       });
 

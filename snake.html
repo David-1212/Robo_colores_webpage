@@ -259,6 +259,21 @@
             line-height: 1.5;
         }
 
+        /* Aviso de regreso automatico al menu (ya no hay boton de replay) */
+        .auto-return-note {
+            margin: 18px 0 0;
+            font-size: 0.78rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(157, 154, 167, .8);
+            animation: autoReturnBlink 1.8s ease-in-out infinite;
+        }
+
+        @keyframes autoReturnBlink {
+            0%, 100% { opacity: .45; }
+            50% { opacity: 1; }
+        }
+
         .btn {
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
@@ -588,12 +603,6 @@
                     <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
                 </svg>
             </button>
-            <button id="menu-back-btn" class="control-btn" title="Volver al Menú Principal">
-                <!-- Home Icon -->
-                <svg viewBox="0 0 24 24">
-                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-                </svg>
-            </button>
         </footer>
     </div>
 
@@ -631,7 +640,7 @@
             </div>
         </div>
 
-        <button id="restart-btn" class="btn">JUGAR DE NUEVO</button>
+        <p class="game-subtitle auto-return-note">Regresando al menu...</p>
     </div>
 
     <!-- Three.js Library -->
@@ -1174,13 +1183,12 @@
         // Initial setup
         init3D();
 
-        // Bind interactive events
-        document.getElementById('start-btn').addEventListener('click', startGame);
-        document.getElementById('restart-btn').addEventListener('click', startGame);
+        /* Las instrucciones ahora las da el video del menu: arrancamos directo */
+        if (startScreen && startScreen.parentNode) startScreen.parentNode.removeChild(startScreen);
+        startGame();
+
+        // Bind interactive events (la pantalla de inicio ya se elimino)
         document.getElementById('mute-btn').addEventListener('click', () => audio.toggleMute());
-        document.getElementById('menu-back-btn').addEventListener('click', () => {
-            papirolasGoMenu();
-        });
 
         // Guide Panel Expand / Collapse
         const guideBtn = document.getElementById('guide-toggle-btn');
@@ -1256,7 +1264,7 @@
         function backToMenu() {
             if (gameTicker) clearInterval(gameTicker);
             gameState = 'START_MENU';
-            startScreen.classList.remove('hidden');
+            if (startScreen) startScreen.classList.add('hidden');
             gameOverScreen.classList.add('hidden');
             shieldActive = false;
             slowmoActive = false;
@@ -2197,6 +2205,9 @@
         function endGame(reason) {
             gameState = 'GAME_OVER';
             audio.playGameOver();
+
+            /* Fin de partida: el menu vuelve solo a los 5 s */
+            if (typeof papirolasGameFinished === 'function') papirolasGameFinished();
 
             if (gameTicker) clearInterval(gameTicker);
 

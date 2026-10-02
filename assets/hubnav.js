@@ -4,10 +4,9 @@
  * modo pantalla completa NO se apague al cambiar de juego (los navegadores
  * apagan el fullscreen en cualquier navegacion de pagina).
  *
- * Cuando un juego corre dentro del hub, sus botones de "volver al menu" no
- * navegan: avisan al menu mediante postMessage para que solo se cierre el
- * iframe. Si el juego se abre directamente (fuera del hub), se comporta como
- * siempre, y se inyecta un boton fijo de salida al menu.
+ * Al terminar cada partida el juego avisa el fin y el menu vuelve a la portada
+ * tras 5 s. Ademas hay un boton fijo de "volver al menu" durante toda la
+ * partida, por si alguien quiere salir antes.
  */
 (function (global) {
   'use strict';
@@ -37,7 +36,20 @@
     global.location.href = 'menu.html';
   };
 
-  /* Boton fijo de "salir al menu", siempre visible durante la partida.
+  /* Fin de partida: el menu cierra el juego y regresa al hub.
+   * El menu aplica la espera de 5 s; si el juego se abrio directo (fuera del
+   * hub) se vuelve al menu pasado ese mismo tiempo. */
+  global.papirolasGameFinished = function () {
+    if (IN_FRAME) {
+      try {
+        global.parent.postMessage({ type: 'papirolas:end' }, '*');
+      } catch (e) { }
+      return;
+    }
+    global.setTimeout(function () { global.location.href = 'menu.html'; }, 5000);
+  };
+
+  /* Boton fijo de "volver al menu", disponible durante toda la partida.
    * Va pegado al borde izquierdo (zona libre en todos los juegos) y se
    * desvanece solo tras unos segundos de inactividad para no estorbar; al
    * mover el raton o tocar la pantalla vuelve a aparecer. */
@@ -51,7 +63,8 @@
       'z-index:9998;display:inline-flex;align-items:center;justify-content:center;' +
       'width:36px;height:36px;padding:0;border-radius:50%;' +
       'border:1px solid rgba(0,229,255,.45);background:rgba(6,10,24,.7);' +
-      'color:#d8f6ff;cursor:pointer;backdrop-filter:blur(6px);' +
+      'color:#d8f6ff;cursor:pointer;' +
+      '-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);' +
       'box-shadow:0 4px 16px rgba(0,0,0,.45);opacity:.5;' +
       'transition:opacity .25s ease,transform .15s ease}' +
       '#papirolas-exit:hover,#papirolas-exit:focus-visible{opacity:1;transform:scale(1.1)}' +
@@ -61,8 +74,8 @@
     var btn = doc.createElement('button');
     btn.id = 'papirolas-exit';
     btn.type = 'button';
-    btn.title = 'Regresar al men\u00fa';
-    btn.setAttribute('aria-label', 'Regresar al men\u00fa');
+    btn.title = 'Volver al men\u00fa';
+    btn.setAttribute('aria-label', 'Volver al men\u00fa');
     btn.innerHTML =
       '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" ' +
       'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +

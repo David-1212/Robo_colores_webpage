@@ -46,7 +46,7 @@
     <div class="intro-box">
       <p id="intro-title"></p>
       <div class="video-wrap">
-        <video id="intro-video" playsinline preload="auto"></video>
+        <video id="intro-video" playsinline webkit-playsinline preload="auto"></video>
         <button id="btn-intro-tap" class="hidden">TOCA PARA VER EL VIDEO</button>
       </div>
       <button id="btn-skip">SALTAR</button>
@@ -57,19 +57,7 @@
   <div id="overlay-menu" class="overlay hidden">
     <div class="card">
       <h1>ROBO·COLORES</h1>
-      <p class="sub">Duelo de memoria · 6 Colores</p>
-
-      <div class="story">
-        <p>En la fábrica de colores de <b>Pixelópolis</b>, el malvado <b>Dr. Gris</b> disparó su rayo decolorante y dejó apagados a los cinco robots de la fábrica.</p>
-        <p>La máquina arcoíris lanza secuencias mágicas de colores: quien las repita de memoria <b>primero</b>, recuperará los colores de su robot.</p>
-      </div>
-
-      <div class="rules">
-        <div><b>1.</b> Los 5 robots van uno después de otro: <b>VOLT</b>, <b>NOVA</b>, <b>TURBO</b>, <b>PIXEL</b> y <b>LUNA</b>. Los triunfos de cada robot se acumulan.</div>
-        <div><b>2.</b> Elige el nivel antes de jugar: <b>FÁCIL</b> (3 a 4 colores), <b>MEDIO</b> (3 a 5) o <b>DIFÍCIL</b> (3 a 6). Los 5 robots sacan su número de colores al azar dentro del rango del nivel.</div>
-        <div><b>3.</b> Jugador 1: teclas <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>7</kbd><kbd>5</kbd><kbd>6</kbd> · Jugador 2: teclas <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><kbd>J</kbd><kbd>G</kbd><kbd>H</kbd> (o toca los botones).</div>
-        <div><b>4.</b> Un color equivocado = derrota inmediata.</div>
-      </div>
+      <p class="sub">Duelo de memoria · Elige la dificultad</p>
 
       <div class="level-row" id="level-row">
         <div class="level-row-label">Nivel</div>
@@ -104,7 +92,6 @@
       </div>
       <div class="btnrow">
         <button id="btn-next" class="hidden">SIGUIENTE ROBOT</button>
-        <button id="btn-menu">MENÚ</button>
       </div>
     </div>
   </div>

@@ -960,6 +960,9 @@ function showFinal() {
   els.btnNext.classList.add('hidden');
   els.nextTimer.classList.add('hidden');
   els.result.classList.remove('hidden');
+
+  /* Fin de los 5 robots: sin contador, el menu vuelve solo a los 5 s. */
+  if (typeof papirolasGameFinished === 'function') papirolasGameFinished();
 }
 
 function goMenu() {
@@ -982,6 +985,10 @@ function goMenu() {
 buildControls();
 buildRobots(ROSTER[0]);
 
+/* La dificultad se elige en el menu principal y llega por ?nivel= */
+const qsLevel = new URLSearchParams(location.search).get('nivel');
+if (qsLevel && LEVELS[qsLevel]) levelId = qsLevel;
+
 document.querySelectorAll('.level-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const id = btn.dataset.level;
@@ -992,6 +999,13 @@ document.querySelectorAll('.level-btn').forEach(btn => {
   });
 });
 
+/* Como el menu ya muestra el video y la dificultad, aqui se entra directo. */
+if (qsLevel && LEVELS[qsLevel]) {
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.toggle('active', b.dataset.level === qsLevel));
+  els.menu.classList.add('hidden');
+  startSeqGame();
+}
+
 $('#btn-play').addEventListener('click', () => {
   tone(660, 0.1, 'square', 0.12);
   startSeqGame();
@@ -1000,7 +1014,7 @@ els.btnNext.addEventListener('click', () => {
   if (overAction === 'final') { showFinal(); return; }
   advanceRobot();
 });
-$('#btn-menu').addEventListener('click', () => { papirolasGoMenu(); });
+
 els.btnSkip.addEventListener('click', () => endIntro());
 els.introTap.addEventListener('click', () => {
   els.introTap.classList.add('hidden');
@@ -1019,8 +1033,8 @@ addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     if (state === 'menu') { $('#btn-play').click(); return; }
     if (state === 'over' && !els.result.classList.contains('hidden')) {
-      if (overAction === 'next' || overAction === 'final') els.btnNext.click();
-      else $('#btn-menu').click();
+      /* Sin boton de menu: el final de partida regresa solo */
+      if (overAction === 'next') els.btnNext.click();
       overAction = null;
       return;
     }
@@ -1037,8 +1051,12 @@ addEventListener('keydown', e => {
   else if (i2 >= 0) press(2, i2);
 });
 
-state = 'menu';
-els.menu.classList.remove('hidden');
+/* Si el menu principal ya mando la dificultad (?nivel=) la partida arranco
+   sola mas arriba: no volvemos a mostrar el selector interno. */
+if (!(qsLevel && LEVELS[qsLevel])) {
+  state = 'menu';
+  els.menu.classList.remove('hidden');
+}
 
 const clock = new THREE.Clock();
 (function loop() {

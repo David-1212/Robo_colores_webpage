@@ -642,6 +642,21 @@
             line-height: 1.6;
         }
 
+        /* Aviso de regreso automatico al menu (ya no hay boton de replay) */
+        .auto-return-note {
+            margin: 18px 0 0;
+            font-size: 0.8rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(157, 154, 167, .8);
+            animation: autoReturnBlink 1.8s ease-in-out infinite;
+        }
+
+        @keyframes autoReturnBlink {
+            0%, 100% { opacity: .45; }
+            50% { opacity: 1; }
+        }
+
         .btn {
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
@@ -977,8 +992,7 @@
             </div>
         </div>
 
-        <button id="restart-btn" class="btn btn-restart">REINICIAR DESDE CERO</button>
-        <button id="gameover-menu-btn" class="btn btn-secondary">VOLVER AL MENÚ</button>
+        <p class="game-subtitle auto-return-note">Regresando al menu...</p>
     </div>
 
     <!-- Instructions Modal -->
@@ -2065,10 +2079,6 @@
 
         // Buttons
         document.getElementById('start-btn').addEventListener('click', startGame);
-        document.getElementById('restart-btn').addEventListener('click', startGame);
-        document.getElementById('gameover-menu-btn').addEventListener('click', () => {
-            papirolasGoMenu();
-        });
         document.getElementById('mute-btn').addEventListener('click', () => audio.toggleMute());
 
         // Modals
@@ -2085,6 +2095,10 @@
         initMain3D();
         initRobotSidebar3D();
         animate3D();
+
+        /* Las instrucciones ahora las da el video del menu: arrancamos directo */
+        if (startScreen) startScreen.remove();
+        startGame();
 
         function startGame() {
             audio.init();
@@ -2289,6 +2303,9 @@
             reasonEl.innerHTML = `¡Fallaste en <b>${failedPart.name}</b> (${reason})!<br>La pieza se oxidó y Volt colapsó. <b>No hay segundas oportunidades: debes empezar desde cero.</b>`;
 
             gameOverScreen.classList.remove('hidden');
+
+            /* Fin de partida: el menu vuelve solo a los 5 s */
+            if (typeof papirolasGameFinished === 'function') papirolasGameFinished();
         }
 
         function finishVictory() {
@@ -2315,6 +2332,9 @@
             reasonEl.innerHTML = "¡Proeza insuperable! Completaste las 7 secuencias sin cometer un solo error. ¡Volt está reluciente y listo para la carrera!";
 
             gameOverScreen.classList.remove('hidden');
+
+            /* Fin de partida: el menu vuelve solo a los 5 s */
+            if (typeof papirolasGameFinished === 'function') papirolasGameFinished();
         }
     </script>
 </body>
