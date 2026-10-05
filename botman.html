@@ -1906,6 +1906,9 @@
         // Entradas de teclado (Tank Controls: W/S/A/D o Flechas)
         window.addEventListener('keydown', (e) => {
             const k = e.key.toLowerCase();
+            if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd', ' ', 'spacebar'].includes(k)) {
+                e.preventDefault();
+            }
             keysDown[k] = true;
             if (!isPlaying || isDying) return;
 
@@ -2766,6 +2769,7 @@
         if (VALID_DIFF.includes(qsDiff)) setDifficulty(qsDiff);
 
         function startNewGame() {
+            try { window.focus(); } catch (e) { }
             audio.init();
 
             score = 0;

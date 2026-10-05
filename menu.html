@@ -1276,8 +1276,11 @@
       }
 
       let step = 0, nextT = 0, started = false, muted = false;
+      let isPausedForGame = false;
+      let timer = null;
 
       function schedule() {
+        if (isPausedForGame || muted) return;
         const horizon = actx.currentTime + 0.4;
         if (nextT < actx.currentTime) nextT = actx.currentTime + 0.06;
         while (nextT < horizon) {
@@ -1297,38 +1300,114 @@
         }
       }
 
-      let timer = null;
       function startLoop() {
+        if (timer) clearInterval(timer);
         schedule();
         timer = setInterval(schedule, 120);
       }
       function stopLoop() {
-        if (timer) clearInterval(timer);
-        timer = null;
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
       }
 
       function turn(on) {
         muted = !on;
-        master.gain.setTargetAtTime(on ? 0.9 : 0, actx.currentTime, 0.05);
+        if (on && !isPausedForGame) {
+          if (actx.state === 'suspended') actx.resume();
+          master.gain.setTargetAtTime(0.9, actx.currentTime, 0.05);
+          if (!timer) {
+            nextT = actx.currentTime + 0.05;
+            startLoop();
+          }
+        } else {
+          master.gain.setTargetAtTime(0, actx.currentTime, 0.05);
+          if (muted) stopLoop();
+        }
         btn.classList.toggle('is-on', on);
         btn.classList.toggle('is-off', !on);
       }
 
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isPausedForGame) return;
         if (actx.state === 'suspended') actx.resume();
-        if (!started) { startLoop(); started = true; }
+        if (!started) {
+          started = true;
+          nextT = actx.currentTime + 0.05;
+          startLoop();
+        }
         turn(muted);
       });
 
+      function pauseForGame() {
+        isPausedForGame = true;
+        stopLoop();
+        try {
+          master.gain.setValueAtTime(master.gain.value, actx.currentTime);
+          master.gain.linearRampToValueAtTime(0.0001, actx.currentTime + 0.03);
+        } catch (e) {
+          master.gain.value = 0;
+        }
+        try {
+          if (actx && actx.state === 'running') actx.suspend();
+        } catch (e) { }
+      }
+
+      function resumeFromGame() {
+        isPausedForGame = false;
+        if (muted) {
+          turn(false);
+          return;
+        }
+        try {
+          if (actx.state === 'suspended') {
+            actx.resume().then(() => {
+              if (isPausedForGame || muted) return;
+              master.gain.setValueAtTime(0.0001, actx.currentTime);
+              master.gain.linearRampToValueAtTime(0.9, actx.currentTime + 0.06);
+              nextT = actx.currentTime + 0.06;
+              startLoop();
+            }).catch(() => { });
+          } else {
+            master.gain.setValueAtTime(0.0001, actx.currentTime);
+            master.gain.linearRampToValueAtTime(0.9, actx.currentTime + 0.06);
+            nextT = actx.currentTime + 0.06;
+            startLoop();
+          }
+        } catch (e) { }
+        btn.classList.add('is-on');
+        btn.classList.remove('is-off');
+      }
+
       function boot() {
+        if (isPausedForGame || muted) return;
         if (actx.state === 'suspended') actx.resume();
-        if (!started) { startLoop(); started = true; }
+        if (!started) {
+          started = true;
+          nextT = actx.currentTime + 0.05;
+          startLoop();
+        }
       }
 
       // Los navegadores bloquean el audio hasta la 1ª interacción
-      const once = () => { boot(); document.removeEventListener('pointerdown', once); };
+      const once = () => {
+        document.removeEventListener('pointerdown', once);
+        window.removeEventListener('keydown', once);
+        boot();
+      };
       document.addEventListener('pointerdown', once);
       window.addEventListener('keydown', once);
+
+      window.__menuMusic = {
+        actx: actx,
+        master: master,
+        pause: pauseForGame,
+        resume: resumeFromGame,
+        isPaused: () => isPausedForGame,
+        isMuted: () => muted
+      };
     })();
   </script>
 
@@ -1423,11 +1502,23 @@
       }
 
       function pauseMenuMusic() {
-        try { if (window.__menuAudio) window.__menuAudio.suspend(); } catch (e) { }
+        try {
+          if (window.__menuMusic && window.__menuMusic.pause) {
+            window.__menuMusic.pause();
+          } else if (window.__menuAudio) {
+            window.__menuAudio.suspend();
+          }
+        } catch (e) { }
       }
 
       function resumeMenuMusic() {
-        try { if (window.__menuAudio) window.__menuAudio.resume(); } catch (e) { }
+        try {
+          if (window.__menuMusic && window.__menuMusic.resume) {
+            window.__menuMusic.resume();
+          } else if (window.__menuAudio) {
+            window.__menuAudio.resume();
+          }
+        } catch (e) { }
       }
 
       function openGame(src) {
@@ -1445,6 +1536,19 @@
         if (frame.getAttribute('src') !== url) frame.setAttribute('src', url);
         enter();
         paintFs();
+
+        /* Foco automático en el juego para que los controles de teclado
+           (flechas, WASD, espacio) respondan de inmediato sin requerir clic previo. */
+        const focusGame = function () {
+          try {
+            frame.focus();
+            if (frame.contentWindow) frame.contentWindow.focus();
+          } catch (e) { }
+        };
+        frame.addEventListener('load', focusGame, { once: true });
+        setTimeout(focusGame, 100);
+        setTimeout(focusGame, 350);
+        setTimeout(focusGame, 700);
       }
 
       /* ---------- Selector de dificultad del menu ---------- */
@@ -1533,6 +1637,7 @@
         try {
           var actx = window.__menuAudio;
           if (!actx) return;
+          if (actx.state === 'suspended') actx.resume();
           var o = actx.createOscillator();
           var g = actx.createGain();
           o.type = 'triangle';
@@ -1711,6 +1816,55 @@
       };
       window.addEventListener('pointerdown', autoFS);
       window.addEventListener('keydown', autoFS);
+
+      var wasPlayingBeforeHidden = false;
+      doc.addEventListener('visibilitychange', function () {
+        if (doc.hidden) {
+          if (phase === 'idle' && window.__menuMusic && !window.__menuMusic.isMuted() && !window.__menuMusic.isPaused()) {
+            pauseMenuMusic();
+            wasPlayingBeforeHidden = true;
+          }
+        } else {
+          if (wasPlayingBeforeHidden && phase === 'idle') {
+            wasPlayingBeforeHidden = false;
+            resumeMenuMusic();
+          }
+        }
+      });
+
+      /* Puente de teclado: si el usuario pulsa teclas mientras está jugando pero el
+         foco quedó en la ventana padre (menú), enfocamos el juego y reenviamos el evento */
+      window.addEventListener('keydown', function (e) {
+        if (phase !== 'game' || !frame || !frame.contentWindow) return;
+        if (doc.activeElement === frame) return;
+        try {
+          frame.focus();
+          frame.contentWindow.focus();
+          frame.contentWindow.dispatchEvent(new KeyboardEvent('keydown', {
+            key: e.key,
+            code: e.code,
+            keyCode: e.keyCode,
+            which: e.which,
+            bubbles: true,
+            cancelable: true
+          }));
+        } catch (err) { }
+      });
+
+      window.addEventListener('keyup', function (e) {
+        if (phase !== 'game' || !frame || !frame.contentWindow) return;
+        if (doc.activeElement === frame) return;
+        try {
+          frame.contentWindow.dispatchEvent(new KeyboardEvent('keyup', {
+            key: e.key,
+            code: e.code,
+            keyCode: e.keyCode,
+            which: e.which,
+            bubbles: true,
+            cancelable: true
+          }));
+        } catch (err) { }
+      });
 
       paintFs();
     })();

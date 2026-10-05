@@ -2085,6 +2085,7 @@
 
       /* Las instrucciones ahora las da el video del menu: arrancamos directo */
         function startNewGame() {
+        try { window.focus(); } catch (e) { }
         getAudioContext();
         
         score = 0;
@@ -2305,10 +2306,12 @@
 
       window.addEventListener('keydown', e => {
         if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+          e.preventDefault();
           moveLeft();
         } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+          e.preventDefault();
           moveRight();
-        } else if (e.key === ' ' || e.key === 'Spacebar') {
+        } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ' || e.key === 'Spacebar') {
           e.preventDefault();
           triggerJump();
         }
